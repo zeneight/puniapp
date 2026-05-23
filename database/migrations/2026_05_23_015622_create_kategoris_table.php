@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('kategoris', function (Blueprint $table) {
             $table->id();
+            $table->string('nama_kategori'); // cth: Domisili/SKTT, Dudukan Usaha
+            $table->text('deskripsi')->nullable();
             $table->timestamps();
         });
     }
