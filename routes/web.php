@@ -11,6 +11,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // banjar
     Route::livewire('/master/banjar', 'master-banjar-index')->name('master.banjar');
+    Route::livewire('/master/wajib-punia', 'master-wajib-punia-index')->name('master.wajibpunia');
 });
 
 require __DIR__.'/settings.php';
