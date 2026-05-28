@@ -5,6 +5,7 @@ use Livewire\Attributes\Layout;
 use App\Models\WajibPunia;
 use App\Models\Banjar;
 use App\Models\Kategori;
+use App\Models\User;
 
 new class extends Component {
     #[Layout('layouts.app')]
@@ -19,6 +20,7 @@ new class extends Component {
     public int $jumlah_unit = 1;
     public int $pagu_dudukan = 0;
     public string $kontak_pengelola = '';
+    public string $user_id = '';
 
     protected function rules()
     {
@@ -27,6 +29,7 @@ new class extends Component {
             'alamat' => 'required',
             'banjar_id' => 'required|exists:banjars,id',
             'kategori_id' => 'required|exists:kategoris,id',
+            'user_id' => 'nullable|exists:users,id',
             'pagu_dudukan' => 'required|numeric|min:0',
             'jumlah_unit' => 'required|numeric|min:1',
         ];
@@ -42,6 +45,7 @@ new class extends Component {
             'alamat' => $this->alamat,
             'banjar_id' => $this->banjar_id,
             'kategori_id' => $this->kategori_id,
+            'user_id' => $this->user_id ?: Auth::id(), // Set petugas yang input data, default ke user saat ini
             'jenis_usaha' => $this->jenis_usaha,
             'jumlah_unit' => $this->jumlah_unit,
             'pagu_dudukan' => $this->pagu_dudukan,
@@ -63,6 +67,7 @@ new class extends Component {
         // Konversi ke string agar sinkron dengan flux:select
         $this->banjar_id = (string) $wp->banjar_id;
         $this->kategori_id = (string) $wp->kategori_id;
+        $this->user_id = (string) $wp->user_id;
         $this->jenis_usaha = $wp->jenis_usaha ?? '';
         $this->jumlah_unit = $wp->jumlah_unit;
         $this->pagu_dudukan = $wp->pagu_dudukan;
@@ -82,6 +87,7 @@ new class extends Component {
             'alamat' => $this->alamat,
             'banjar_id' => $this->banjar_id,
             'kategori_id' => $this->kategori_id,
+            'user_id' => $this->user_id ?: null,
             'jenis_usaha' => $this->jenis_usaha,
             'jumlah_unit' => $this->jumlah_unit,
             'pagu_dudukan' => $this->pagu_dudukan,
@@ -119,6 +125,7 @@ new class extends Component {
             'wajibPunias' => WajibPunia::with(['banjar', 'kategori'])->latest()->get(),
             'banjars' => Banjar::all(),
             'kategoris' => Kategori::all(),
+            'petugas' => User::where('role', 'inputer')->get(),
         ];
     }
 };
@@ -190,6 +197,12 @@ new class extends Component {
                     @endforeach
                 </flux:select>
 
+                <flux:select wire:model="user_id" label="Petugas Penagih (Opsional)" placeholder="Pilih Petugas...">
+                    @foreach($petugas as $p)
+                        <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
                 <flux:select wire:model="kategori_id" label="Kategori Pembayaran" placeholder="Pilih Kategori...">
                     @foreach($kategoris as $kat)
                         <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
@@ -228,6 +241,12 @@ new class extends Component {
                 <flux:select wire:model="banjar_id" label="Wilayah Banjar">
                     @foreach($banjars as $banjar)
                         <flux:select.option value="{{ $banjar->id }}">{{ $banjar->nama_banjar }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                <flux:select wire:model="user_id" label="Petugas Penagih (Opsional)">
+                    @foreach($petugas as $p)
+                        <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
                     @endforeach
                 </flux:select>
 

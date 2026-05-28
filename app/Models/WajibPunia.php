@@ -19,4 +19,10 @@ class WajibPunia extends Model
     {
         return $this->belongsTo(Kategori::class);
     }
+
+    // Definisikan relasi balik ke User (petugas)
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }
