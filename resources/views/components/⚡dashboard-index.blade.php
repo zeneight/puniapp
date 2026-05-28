@@ -33,7 +33,8 @@ new class extends Component {
     <livewire:dashboard-widget-statistik />
 
     <div class="mb-8">
-        </div>
+        <livewire:dashboard-grafik-pendapatan />
+    </div>
 
     <flux:card>
         <div class="mb-4">

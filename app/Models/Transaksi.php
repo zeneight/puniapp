@@ -15,4 +15,10 @@ class Transaksi extends Model
     {
         return $this->belongsTo(WajibPunia::class, 'wajib_punia_id');
     }
+
+    // Relasi ke User (Petugas Input)
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }
