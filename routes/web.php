@@ -15,8 +15,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::livewire('/master/wajib-punia', 'master-wajib-punia-index')->name('master.wajibpunia');
     });
 
-    // input punia
+    // transaksi
     Route::livewire('/transaksi/input', 'transaksi-input-punia')->name('transaksi.input');
+    Route::livewire('/transaksi/riwayat', 'transaksi-riwayat')->name('transaksi.riwayat');
 });
 
 require __DIR__.'/settings.php';

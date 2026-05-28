@@ -6,27 +6,27 @@
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+                <x-app-logo :sidebar="true" :href="route('dashboard')" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
             <flux:navlist variant="outline">
                 <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')">
+                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:navlist.item>
 
-                    <flux:navlist.item icon="banknotes" href="{{ route('transaksi.input') }}" :current="request()->routeIs('transaksi.input')">
+                    <flux:navlist.item icon="banknotes" :href="route('transaksi.input')" :current="request()->routeIs('transaksi.input')" wire:navigate>
                         {{ __('Input Pembayaran') }}
                     </flux:navlist.item>
 
                     @if(Auth::user()->role === 'admin')
                     <flux:navlist.group expandable heading="Master Data" class="mt-2">
-                        <flux:navlist.item icon="users" href="{{ route('master.wajibpunia') }}" :current="request()->routeIs('master.wajibpunia')">
+                        <flux:navlist.item icon="users" :href="route('master.wajibpunia')" :current="request()->routeIs('master.wajibpunia')" wire:navigate>
                             {{ __('Wajib Punia') }}
                         </flux:navlist.item>
                         
-                        <flux:navlist.item icon="map-pin" href="{{ route('master.banjar') }}" :current="request()->routeIs('master.banjar')">
+                        <flux:navlist.item icon="map-pin" :href="route('master.banjar')" :current="request()->routeIs('master.banjar')" wire:navigate>
                             {{ __('Master Banjar') }}
                         </flux:navlist.item>
                     </flux:navlist.group>

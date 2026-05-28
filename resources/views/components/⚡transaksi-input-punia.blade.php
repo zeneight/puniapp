@@ -105,7 +105,6 @@ new class extends Component {
         <flux:heading size="xl">Input Pembayaran Punia</flux:heading>
         <flux:subheading>Catat transaksi penerimaan punia dudukan bulanan.</flux:subheading>
     </div>
-
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         <div class="col-span-2">
@@ -174,6 +173,10 @@ new class extends Component {
                         <div class="text-center text-sm text-zinc-500 py-4">Belum ada transaksi diinput hari ini.</div>
                     @endforelse
                 </div>
+
+                <flux:button class="mt-4" href="{{ route('transaksi.riwayat') }}" wire:navigate variant="subtle" icon="clock">
+                    Lihat Semua Riwayat
+                </flux:button>
             </flux:card>
         </div>
 
