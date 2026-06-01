@@ -2,99 +2,115 @@
 
 use Livewire\Component;
 use Livewire\Attributes\Layout;
-use App\Models\WajibPunia;
 use App\Models\Transaksi;
+use App\Models\WajibPunia;
 use Illuminate\Support\Facades\Auth;
 
 new class extends Component {
     #[Layout('layouts.app')]
 
-    // Variabel Form
-    public string $wajib_punia_id = '';
-    public string $periode_bulan = '';
-    public string $periode_tahun = '2026'; // Default tahun saat ini
-    public int $nominal = 0;
-    public string $tanggal_bayar = '';
-    public string $keterangan = '';
+    public $wajib_punia_id = '';
+    public $bulan_awal = '';   // Menggantikan periode_bulan
+    public $bulan_akhir = '';  // Tambahan baru
+    public $periode_tahun = '';
+    public $tanggal_bayar = '';
+    public $nominal = '';
+    public $keterangan = '';
 
     public function mount()
     {
-        // Set default tanggal hari ini saat halaman dibuka
+        $this->bulan_awal = (string) date('n');
+        $this->bulan_akhir = (string) date('n'); // Default sama dengan bulan awal
+        $this->periode_tahun = (string) date('Y');
         $this->tanggal_bayar = date('Y-m-d');
-        // Set default bulan saat ini
-        $this->periode_bulan = date('n');
     }
 
-    // Fungsi otomatis berjalan setiap kali $wajib_punia_id berubah
+    // Fungsi otomatis mengisi nominal saat Wajib Punia dipilih
     public function updatedWajibPuniaId($value)
     {
         if ($value) {
             $wp = WajibPunia::find($value);
-            // Otomatis isi nominal sesuai pagu dudukan
-            $this->nominal = $wp ? $wp->pagu_dudukan : 0;
+            if ($wp) {
+                $this->nominal = $wp->pagu_dudukan;
+            }
         } else {
-            $this->nominal = 0;
+            $this->nominal = '';
         }
     }
 
-    protected function rules()
-    {
-        return [
-            'wajib_punia_id' => 'required|exists:wajib_punias,id',
-            'periode_bulan' => 'required|numeric|between:1,12',
-            'periode_tahun' => 'required|numeric',
-            'nominal' => 'required|numeric|min:0',
-            'tanggal_bayar' => 'required|date',
-            // Mencegah input double untuk bulan & tahun yang sama (memanfaatkan index unik di DB)
-            'periode_bulan' => 'unique:transaksis,periode_bulan,NULL,id,wajib_punia_id,' . $this->wajib_punia_id . ',periode_tahun,' . $this->periode_tahun,
-        ];
-    }
-
-    protected $messages = [
-        'periode_bulan.unique' => 'Wajib Punia ini sudah melakukan pembayaran untuk periode bulan dan tahun tersebut.',
-    ];
-
     public function simpan()
     {
-        $this->validate();
-
-        Transaksi::create([
-            'wajib_punia_id' => $this->wajib_punia_id,
-            'user_id' => Auth::id(), // ID petugas yang sedang login
-            'periode_bulan' => $this->periode_bulan,
-            'periode_tahun' => $this->periode_tahun,
-            'nominal' => $this->nominal,
-            'tanggal_bayar' => $this->tanggal_bayar,
-            'keterangan' => $this->keterangan,
+        $this->validate([
+            'wajib_punia_id' => 'required',
+            'bulan_awal' => 'required|numeric|min:1|max:12',
+            'bulan_akhir' => 'required|numeric|min:1|max:12|gte:bulan_awal', // Harus lebih besar/sama dengan bulan awal
+            'periode_tahun' => 'required|numeric',
+            'tanggal_bayar' => 'required|date',
+            'nominal' => 'required|numeric|min:1',
+        ], [
+            'bulan_akhir.gte' => 'Bulan akhir tidak boleh lebih kecil dari bulan awal.'
         ]);
 
-        // Reset form setelah sukses, kecuali bulan dan tahun
+        $jumlahBulan = 0;
+        $bulanDilewati = 0;
+
+        // Looping berdasarkan rentang bulan
+        for ($bln = $this->bulan_awal; $bln <= $this->bulan_akhir; $bln++) {
+            
+            // Pengecekan ekstra: Cegah input ganda untuk bulan yang sama
+            $sudahBayar = Transaksi::where('wajib_punia_id', $this->wajib_punia_id)
+                                   ->where('periode_bulan', $bln)
+                                   ->where('periode_tahun', $this->periode_tahun)
+                                   ->exists();
+
+            if (!$sudahBayar) {
+                Transaksi::create([
+                    'wajib_punia_id' => $this->wajib_punia_id,
+                    'user_id' => Auth::id(),
+                    'periode_bulan' => $bln,
+                    'periode_tahun' => $this->periode_tahun,
+                    'tanggal_bayar' => $this->tanggal_bayar,
+                    'nominal' => $this->nominal, // Dicatat sebagai nominal PER BULAN
+                    'keterangan' => $this->keterangan,
+                ]);
+                $jumlahBulan++;
+            } else {
+                $bulanDilewati++;
+            }
+        }
+
+        // Tampilkan notifikasi yang dinamis
+        if ($jumlahBulan > 0) {
+            $pesan = "Berhasil menyimpan pembayaran untuk $jumlahBulan bulan.";
+            if ($bulanDilewati > 0) {
+                $pesan .= " ($bulanDilewati bulan dilewati karena sudah lunas sebelumnya).";
+            }
+            \Flux::toast($pesan, variant: 'success');
+        } elseif ($bulanDilewati > 0) {
+            \Flux::toast('Gagal! Semua bulan dalam rentang tersebut sudah lunas sebelumnya.', variant: 'danger');
+        }
+
         $this->reset(['wajib_punia_id', 'nominal', 'keterangan']);
-        
-        // Memunculkan pesan toast sukses (harus ada komponen toast di layout utama nanti)
-        // $this->js('$flux.toast("Pembayaran berhasil dicatat!")');
+        $this->mount(); // Kembalikan form ke kondisi default
     }
 
     public function with()
     {
-        // query dasar
-        $queryWajibPunia = WajibPunia::where('is_active', true);
-
-        // Cek role user yang sedang login
+        $queryWP = WajibPunia::where('is_active', true);
         if (Auth::user()->role === 'inputer') {
-            // Jika inputer, KUNCI hanya untuk Wajib Punia miliknya saja
-            $queryWajibPunia->where('user_id', Auth::id());
+            $queryWP->where('user_id', Auth::id());
+        }
+
+        $queryRiwayat = Transaksi::with(['wajib_punia', 'user'])
+                                 ->whereDate('tanggal_bayar', date('Y-m-d'))
+                                 ->orderBy('created_at', 'desc');
+        if (Auth::user()->role === 'inputer') {
+            $queryRiwayat->where('user_id', Auth::id());
         }
 
         return [
-            // 3. Eksekusi query
-            'wajibPunias' => $queryWajibPunia->orderBy('nama')->get(),
-            
-            'riwayatHariIni' => Transaksi::with('wajib_punia')
-                                ->where('user_id', Auth::id())
-                                ->whereDate('created_at', date('Y-m-d'))
-                                ->latest()
-                                ->get()
+            'daftarWajibPunia' => $queryWP->orderBy('nama')->get(),
+            'riwayatHariIni' => $queryRiwayat->get(),
         ];
     }
 };
@@ -112,15 +128,16 @@ new class extends Component {
                 <form wire:submit="simpan" class="space-y-6">
                     
                     <flux:select wire:model.live="wajib_punia_id" label="Pilih Wajib Punia" placeholder="Cari Nama Usaha / Donatur..." searchable>
-                        @foreach($wajibPunias as $wp)
+                        @foreach($daftarWajibPunia as $wp)
                             <flux:select.option value="{{ $wp->id }}">
                                 {{ $wp->nama }} (Br. {{ $wp->banjar->nama_banjar }})
                             </flux:select.option>
                         @endforeach
                     </flux:select>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <flux:select wire:model="periode_bulan" label="Periode Bulan">
+                    <!-- Baris Rentang Bulan -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <flux:select wire:model="bulan_awal" label="Mulai Bulan">
                             <flux:select.option value="1">Januari</flux:select.option>
                             <flux:select.option value="2">Februari</flux:select.option>
                             <flux:select.option value="3">Maret</flux:select.option>
@@ -135,12 +152,30 @@ new class extends Component {
                             <flux:select.option value="12">Desember</flux:select.option>
                         </flux:select>
 
-                        <flux:input wire:model="periode_tahun" type="number" label="Periode Tahun" />
+                        <flux:select wire:model="bulan_akhir" label="Sampai Bulan (Rapel)">
+                            <flux:select.option value="1">Januari</flux:select.option>
+                            <flux:select.option value="2">Februari</flux:select.option>
+                            <flux:select.option value="3">Maret</flux:select.option>
+                            <flux:select.option value="4">April</flux:select.option>
+                            <flux:select.option value="5">Mei</flux:select.option>
+                            <flux:select.option value="6">Juni</flux:select.option>
+                            <flux:select.option value="7">Juli</flux:select.option>
+                            <flux:select.option value="8">Agustus</flux:select.option>
+                            <flux:select.option value="9">September</flux:select.option>
+                            <flux:select.option value="10">Oktober</flux:select.option>
+                            <flux:select.option value="11">November</flux:select.option>
+                            <flux:select.option value="12">Desember</flux:select.option>
+                        </flux:select>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <flux:input wire:model="nominal" type="number" label="Nominal Pembayaran (Rp)" />
-                        <flux:input wire:model="tanggal_bayar" type="date" label="Tanggal Transaksi" />
+                    <!-- Bagian Tahun dan Nominal -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <flux:input wire:model="nominal" type="number" label="Nominal Per Bulan (Rp)" description="Terisi otomatis sesuai pagu. Ubah jika ada kurang/lebih bayar." />
+                        
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <flux:input wire:model="periode_tahun" type="number" label="Tahun" />
                     </div>
 
                     <flux:textarea wire:model="keterangan" label="Catatan Tambahan (Opsional)" placeholder="Misal: Pembayaran rapel, titipan, dsb." />
