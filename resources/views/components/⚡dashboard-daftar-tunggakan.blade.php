@@ -23,7 +23,7 @@ new class extends Component {
             // Jika tahun yang dipilih adalah tahun ini, batasnya adalah bulan ini (misal: 6). Jika tahun lalu, batasnya 12 bulan.
             $targetBulan = ($this->tahun == date('Y')) ? (int) date('n') : 12;
 
-            $queryWP = WajibPunia::with('banjar')->where('is_active', true);
+            $queryWP = WajibPunia::with('banjar', 'user')->where('is_active', true);
             if ($user->role === 'inputer') $queryWP->where('user_id', $user->id);
             
             $semuaWp = $queryWP->get();
@@ -52,7 +52,7 @@ new class extends Component {
                                      ->where('periode_tahun', $this->tahun)
                                      ->pluck('wajib_punia_id');
 
-            $query = WajibPunia::with('banjar')
+            $query = WajibPunia::with('banjar', 'user')
                                ->where('is_active', true)
                                ->whereNotIn('id', $idSudahBayar);
 
@@ -97,7 +97,9 @@ new class extends Component {
                 <div>
                     <div class="font-semibold text-sm text-zinc-800 dark:text-zinc-200 line-clamp-1">{{ $tunggakan->nama }}</div>
                     <div class="text-[11px] text-zinc-500 mt-0.5">
-                        Br. {{ $tunggakan->banjar->nama_banjar ?? '-' }} 
+                        Br. {{ $tunggakan->banjar->nama_banjar ?? '-' }}
+                        <span class="text-zinc-300 dark:text-zinc-600">|</span>
+                        <span class="text-indigo-600 dark:text-indigo-400 font-medium">Petugas: {{ $tunggakan->user->name ?? '-' }}</span>
                         @if($modeTahunan) 
                             <span class="font-semibold text-red-500 ml-1">• Nunggak {{ $tunggakan->jumlah_tunggakan }} Bln</span> 
                         @endif

@@ -197,6 +197,7 @@ new class extends Component {
 						<flux:table.columns>
 							<flux:table.column>Wajib Punia</flux:table.column>
 							<flux:table.column>Periode</flux:table.column>
+							<flux:table.column>Petugas</flux:table.column>
 							<flux:table.column>Nominal</flux:table.column>
 						</flux:table.columns>
 						<flux:table.rows>
@@ -207,6 +208,9 @@ new class extends Component {
 									<div class="text-[10px] text-zinc-400">Oleh: {{ $trx->user->name ?? '-' }}</div>
 								</flux:table.cell>
 								<flux:table.cell class="text-xs">Bl {{ $trx->periode_bulan }}/{{ substr($trx->periode_tahun, -2) }}</flux:table.cell>
+								<flux:table.cell>
+									<flux:badge size="sm" variant="subtle" inset="top bottom">{{ $trx->user->name ?? '-' }}</flux:badge>
+								</flux:table.cell>
 								<flux:table.cell class="font-mono text-green-600 font-semibold text-sm">Rp {{ number_format($trx->nominal, 0, ',', '.') }}</flux:table.cell>
 							</flux:table.row>
 							@empty
