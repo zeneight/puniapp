@@ -1,88 +1,122 @@
 <?php
 
 use Livewire\Component;
-use App\Models\WajibPunia;
+use Livewire\Attributes\Reactive;
 use App\Models\Transaksi;
+use App\Models\WajibPunia;
 use Illuminate\Support\Facades\Auth;
 
 new class extends Component {
-    public function with()
-    {
+    #[Reactive]
+    public $bulan;
+
+    #[Reactive]
+    public $tahun;
+
+    public function with() {
         $user = Auth::user();
-        $bulanIni = date('n');
-        $tahunIni = date('Y');
+        $daftarTunggakan = collect();
+        $modeTahunan = empty($this->bulan);
 
-        // 1. Ambil semua ID Wajib Punia yang SUDAH bayar di bulan & tahun ini
-        $sudahBayarIds = Transaksi::where('periode_bulan', $bulanIni)
-                                  ->where('periode_tahun', $tahunIni)
-                                  ->pluck('wajib_punia_id')
-                                  ->toArray();
+        if ($modeTahunan) {
+            // MODE 1: SEMUA BULAN (Hitung Akumulasi Tunggakan dalam 1 Tahun)
+            // Jika tahun yang dipilih adalah tahun ini, batasnya adalah bulan ini (misal: 6). Jika tahun lalu, batasnya 12 bulan.
+            $targetBulan = ($this->tahun == date('Y')) ? (int) date('n') : 12;
 
-        // 2. Query data master Wajib Punia yang BELUM bayar (tidak ada di array di atas)
-        $queryTunggakan = WajibPunia::with(['banjar', 'kategori'])
-                                    ->where('is_active', true)
-                                    ->whereNotIn('id', $sudahBayarIds);
+            $queryWP = WajibPunia::with('banjar')->where('is_active', true);
+            if ($user->role === 'inputer') $queryWP->where('user_id', $user->id);
+            
+            $semuaWp = $queryWP->get();
 
-        // 3. Filter berdasarkan hak akses petugas lapangan
-        if ($user->role === 'inputer') {
-            $queryTunggakan->where('user_id', $user->id);
+            foreach($semuaWp as $wp) {
+                // Hitung berapa kali orang ini sudah bayar di tahun tersebut
+                $jmlBayar = Transaksi::where('wajib_punia_id', $wp->id)
+                                     ->where('periode_tahun', $this->tahun)
+                                     ->count();
+                
+                $tunggakan = $targetBulan - $jmlBayar;
+                
+                if ($tunggakan > 0) {
+                    $wp->jumlah_tunggakan = $tunggakan;
+                    $wp->total_hutang = $tunggakan * $wp->pagu_dudukan;
+                    $daftarTunggakan->push($wp);
+                }
+            }
+            
+            // Urutkan dari yang tunggakannya paling besar, ambil 6 teratas
+            $daftarTunggakan = $daftarTunggakan->sortByDesc('jumlah_tunggakan')->take(6);
+            
+        } else {
+            // MODE 2: SPESIFIK BULAN (Cek siapa yang belum bayar di bulan tersebut)
+            $idSudahBayar = Transaksi::where('periode_bulan', $this->bulan)
+                                     ->where('periode_tahun', $this->tahun)
+                                     ->pluck('wajib_punia_id');
+
+            $query = WajibPunia::with('banjar')
+                               ->where('is_active', true)
+                               ->whereNotIn('id', $idSudahBayar);
+
+            if ($user->role === 'inputer') $query->where('user_id', $user->id);
+            
+            $daftarWP = $query->take(6)->get();
+
+            // Format agar struktur datanya sama dengan Mode 1
+            foreach($daftarWP as $wp) {
+                $wp->jumlah_tunggakan = 1;
+                $wp->total_hutang = $wp->pagu_dudukan;
+                $daftarTunggakan->push($wp);
+            }
         }
 
-        // Mapping nama bulan Indonesia sederhana
-        $bulanIndo = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
-            7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-        ];
-
         return [
-            'daftarTunggakan' => $queryTunggakan->orderBy('nama')->get(),
-            'namaBulan' => $bulanIndo[$bulanIni],
-            'tahun' => $tahunIni
+            'daftarTunggakan' => $daftarTunggakan,
+            'modeTahunan' => $modeTahunan
         ];
     }
 };
 ?>
 
 <flux:card>
-    <div class="mb-4">
-        <flux:heading size="lg">Daftar Belum Bayar (Periode {{ $namaBulan }} {{ $tahun }})</flux:heading>
-        <flux:subheading>Wajib punia aktif yang belum menyetorkan iuran dudukan bulan ini.</flux:subheading>
+    <div class="mb-4 flex items-start justify-between gap-4">
+        <div>
+            <flux:heading size="lg">
+                {{ $modeTahunan ? 'Top Tunggakan Tahun Ini' : 'Belum Membayar' }}
+            </flux:heading>
+            <flux:subheading>
+                {{ $modeTahunan ? 'Akumulasi tunggakan sepanjang tahun ' . $tahun : 'Periode Bulan ' . $bulan . ' / ' . $tahun }}
+            </flux:subheading>
+        </div>
+        <flux:badge color="warning" icon="exclamation-triangle">
+            {{ $modeTahunan ? 'Perhatian' : 'Tunggakan' }}
+        </flux:badge>
     </div>
 
-    <flux:table>
-        <flux:table.columns>
-            <flux:table.column>Nama / Tempat Usaha</flux:table.column>
-            <flux:table.column>Wilayah</flux:table.column>
-            <flux:table.column>Tagihan</flux:table.column>
-            <flux:table.column>Kontak</flux:table.column>
-        </flux:table.columns>
-
-        <flux:table.rows>
-            @forelse ($daftarTunggakan as $wp)
-            <flux:table.row>
-                <flux:table.cell>
-                    <div class="font-semibold text-zinc-800 dark:text-white">{{ $wp->nama }}</div>
-                    <div class="text-xs text-zinc-400">{{ $wp->kategori->nama_kategori }}</div>
-                </flux:table.cell>
-                <flux:table.cell>Br. {{ $wp->banjar->nama_banjar }}</flux:table.cell>
-                <flux:table.cell class="font-mono text-amber-600 dark:text-amber-400 font-semibold">
-                    Rp {{ number_format($wp->pagu_dudukan, 0, ',', '.') }}
-                </flux:table.cell>
-                <flux:table.cell>
-                    @if($wp->kontak_pengelola)
-                        <span class="text-sm text-zinc-600 dark:text-zinc-300">{{ $wp->kontak_pengelola }}</span>
-                    @else
-                        <span class="text-xs italic text-zinc-400">Tidak ada kontak</span>
-                    @endif
-                </flux:table.cell>
-            </flux:table.row>
-            @empty
-            <flux:table.row>
-                <flux:table.cell colspan="4" class="text-center text-emerald-600 py-4 font-medium">
-                    🎉 Luar biasa! Semua wajib punia di bawah wewenang Anda telah melunasi pembayaran bulan ini.
-                </flux:table.cell>
-            </flux:table.row>
-            @endforelse
-        </flux:table.rows>
-    </flux:table>
+    <div class="space-y-4 max-h-[280px] overflow-y-auto pr-1">
+        @forelse($daftarTunggakan as $tunggakan)
+            <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-lg">
+                <div>
+                    <div class="font-semibold text-sm text-zinc-800 dark:text-zinc-200 line-clamp-1">{{ $tunggakan->nama }}</div>
+                    <div class="text-[11px] text-zinc-500 mt-0.5">
+                        Br. {{ $tunggakan->banjar->nama_banjar ?? '-' }} 
+                        @if($modeTahunan) 
+                            <span class="font-semibold text-red-500 ml-1">• Nunggak {{ $tunggakan->jumlah_tunggakan }} Bln</span> 
+                        @endif
+                    </div>
+                </div>
+                <div class="text-right shrink-0">
+                    <div class="font-mono text-sm text-red-600 dark:text-red-400 font-bold">
+                        Rp {{ number_format($tunggakan->total_hutang, 0, ',', '.') }}
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="text-center py-8">
+                <flux:icon.check-circle class="w-10 h-10 mx-auto text-emerald-500 mb-2" />
+                <div class="text-sm font-medium text-zinc-600">Luar biasa!</div>
+                <div class="text-xs text-zinc-500">
+                    {{ $modeTahunan ? 'Semua tagihan lunas di tahun ini.' : 'Semua Wajib Punia sudah lunas di periode ini.' }}
+                </div>
+            </div>
+        @endforelse
+    </div>
 </flux:card>

@@ -1,17 +1,21 @@
 <?php
 
 use Livewire\Component;
+use Livewire\Attributes\Reactive;
 use App\Models\Transaksi;
 use App\Models\WajibPunia;
 use Illuminate\Support\Facades\Auth;
 
 new class extends Component {
+    #[Reactive]
+    public $bulan;
+
+    #[Reactive]
+    public $tahun;
+
     public function with()
     {
         $user = Auth::user();
-        $bulanIni = date('n');
-        $tahunIni = date('Y');
-
         $queryTransaksi = Transaksi::query();
         $queryWajibPunia = WajibPunia::where('is_active', true);
 
@@ -20,15 +24,31 @@ new class extends Component {
             $queryWajibPunia->where('user_id', $user->id);
         }
 
+        // Hitungan Default (Tahun dan Total WP)
+        $totalTahunIni = (clone $queryTransaksi)->where('periode_tahun', $this->tahun)->sum('nominal');
+        $jumlahWajibPunia = $queryWajibPunia->count();
+
+        // Hitungan Dinamis untuk Kotak Biru (Card 1)
+        if (empty($this->bulan)) {
+            $infoCard1 = [
+                'label' => 'Total Transaksi Tahun ' . $this->tahun,
+                'value' => (clone $queryTransaksi)->where('periode_tahun', $this->tahun)->count() . ' Kali',
+            ];
+        } else {
+            $totalBulanIni = (clone $queryTransaksi)
+                ->where('periode_bulan', $this->bulan)
+                ->where('periode_tahun', $this->tahun)
+                ->sum('nominal');
+            $infoCard1 = [
+                'label' => 'Penerimaan Bulan ' . $this->bulan,
+                'value' => 'Rp ' . number_format($totalBulanIni, 0, ',', '.'),
+            ];
+        }
+
         return [
-            'totalBulanIni' => (clone $queryTransaksi)
-                ->where('periode_bulan', $bulanIni)
-                ->where('periode_tahun', $tahunIni)
-                ->sum('nominal'),
-            'totalTahunIni' => (clone $queryTransaksi)
-                ->where('periode_tahun', $tahunIni)
-                ->sum('nominal'),
-            'jumlahWajibPunia' => $queryWajibPunia->count(),
+            'infoCard1' => $infoCard1,
+            'totalTahunIni' => $totalTahunIni,
+            'jumlahWajibPunia' => $jumlahWajibPunia,
         ];
     }
 };
@@ -38,12 +58,16 @@ new class extends Component {
     <flux:card>
         <div class="flex items-center gap-4">
             <div class="p-3 bg-blue-100 text-blue-600 rounded-lg dark:bg-blue-900/50 dark:text-blue-400">
-                <flux:icon.banknotes class="w-8 h-8" />
+                @if(empty($bulan))
+                    <flux:icon.receipt-percent class="w-8 h-8" />
+                @else
+                    <flux:icon.banknotes class="w-8 h-8" />
+                @endif
             </div>
             <div>
-                <div class="text-sm font-medium text-zinc-500">Penerimaan Bulan Ini</div>
+                <div class="text-sm font-medium text-zinc-500">{{ $infoCard1['label'] }}</div>
                 <div class="text-2xl font-bold text-zinc-800 dark:text-white">
-                    Rp {{ number_format($totalBulanIni, 0, ',', '.') }}
+                    {{ $infoCard1['value'] }}
                 </div>
             </div>
         </div>
@@ -55,7 +79,7 @@ new class extends Component {
                 <flux:icon.chart-bar class="w-8 h-8" />
             </div>
             <div>
-                <div class="text-sm font-medium text-zinc-500">Total Tahun {{ date('Y') }}</div>
+                <div class="text-sm font-medium text-zinc-500">Total Tahun {{ $tahun }}</div>
                 <div class="text-2xl font-bold text-zinc-800 dark:text-white">
                     Rp {{ number_format($totalTahunIni, 0, ',', '.') }}
                 </div>
