@@ -205,7 +205,7 @@ new class extends Component {
 							<flux:table.row>
 								<flux:table.cell>
 									<div class="font-semibold line-clamp-1">{{ $trx->wajib_punia->nama ?? 'Terhapus' }}</div>
-									<div class="text-[10px] text-zinc-400">Oleh: {{ $trx->user->name ?? '-' }}</div>
+									<div class="text-[10px] text-zinc-400">Br. {{ $trx->wajib_punia->banjar->nama_banjar ?? '-' }}</div>
 								</flux:table.cell>
 								<flux:table.cell class="text-xs">Bl {{ $trx->periode_bulan }}/{{ substr($trx->periode_tahun, -2) }}</flux:table.cell>
 								<flux:table.cell>
