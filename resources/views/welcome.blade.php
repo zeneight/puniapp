@@ -1,202 +1,1234 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desa Wisata Munggu - Harmoni Tradisi & Pesisir Bali</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Poppins (Modern) & Playfair Display (Elegant Culture) -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Cultural & Travel Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Style Config & Animations -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        baligold: '#D4AF37',
+                        balired: '#8B0000',
+                        baliterra: '#C85A17',
+                        balidark: '#121212',
+                        oceanblue: '#0E7490',
+                        oceandeep: '#155E75',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .parallax-bg {
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+        /* Glassmorphism utility */
+        .glass-nav {
+            background: rgba(18, 18, 18, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121212;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #C85A17;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4AF37;
+        }
+        
+        /* Interactive map styles */
+        .map-zone {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .map-zone:hover {
+            filter: drop-shadow(0px 0px 8px currentColor);
+            opacity: 0.95;
+        }
+    </style>
+</head>
+<body class="bg-[#1C1917] text-stone-100 font-sans overflow-x-hidden">
 
-        <title>{{ __('Welcome') }} - {{ config('app.name', 'Laravel') }}</title>
-
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-        @fonts
-
-        <!-- Styles -->
-        <style>
-            @layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-translate-x:0;--tw-translate-y:0;--tw-translate-z:0;--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-space-x-reverse:0;--tw-border-style:solid;--tw-leading:initial;--tw-font-weight:initial;--tw-shadow:0 0 #0000;--tw-shadow-color:initial;--tw-shadow-alpha:100%;--tw-inset-shadow:0 0 #0000;--tw-inset-shadow-color:initial;--tw-inset-shadow-alpha:100%;--tw-ring-color:initial;--tw-ring-shadow:0 0 #0000;--tw-inset-ring-color:initial;--tw-inset-ring-shadow:0 0 #0000;--tw-ring-inset:initial;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-offset-shadow:0 0 #0000;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial;--tw-duration:initial;--tw-content:""}}}@layer theme{:root,:host{--font-sans:"Instrument Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--font-serif:ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;--font-mono:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;--color-red-50:oklch(97.1% .013 17.38);--color-red-100:oklch(93.6% .032 17.717);--color-red-200:oklch(88.5% .062 18.334);--color-red-300:oklch(80.8% .114 19.571);--color-red-400:oklch(70.4% .191 22.216);--color-red-500:oklch(63.7% .237 25.331);--color-red-600:oklch(57.7% .245 27.325);--color-red-700:oklch(50.5% .213 27.518);--color-red-800:oklch(44.4% .177 26.899);--color-red-900:oklch(39.6% .141 25.723);--color-red-950:oklch(25.8% .092 26.042);--color-orange-50:oklch(98% .016 73.684);--color-orange-100:oklch(95.4% .038 75.164);--color-orange-200:oklch(90.1% .076 70.697);--color-orange-300:oklch(83.7% .128 66.29);--color-orange-400:oklch(75% .183 55.934);--color-orange-500:oklch(70.5% .213 47.604);--color-orange-600:oklch(64.6% .222 41.116);--color-orange-700:oklch(55.3% .195 38.402);--color-orange-800:oklch(47% .157 37.304);--color-orange-900:oklch(40.8% .123 38.172);--color-orange-950:oklch(26.6% .079 36.259);--color-amber-50:oklch(98.7% .022 95.277);--color-amber-100:oklch(96.2% .059 95.617);--color-amber-200:oklch(92.4% .12 95.746);--color-amber-300:oklch(87.9% .169 91.605);--color-amber-400:oklch(82.8% .189 84.429);--color-amber-500:oklch(76.9% .188 70.08);--color-amber-600:oklch(66.6% .179 58.318);--color-amber-700:oklch(55.5% .163 48.998);--color-amber-800:oklch(47.3% .137 46.201);--color-amber-900:oklch(41.4% .112 45.904);--color-amber-950:oklch(27.9% .077 45.635);--color-yellow-50:oklch(98.7% .026 102.212);--color-yellow-100:oklch(97.3% .071 103.193);--color-yellow-200:oklch(94.5% .129 101.54);--color-yellow-300:oklch(90.5% .182 98.111);--color-yellow-400:oklch(85.2% .199 91.936);--color-yellow-500:oklch(79.5% .184 86.047);--color-yellow-600:oklch(68.1% .162 75.834);--color-yellow-700:oklch(55.4% .135 66.442);--color-yellow-800:oklch(47.6% .114 61.907);--color-yellow-900:oklch(42.1% .095 57.708);--color-yellow-950:oklch(28.6% .066 53.813);--color-lime-50:oklch(98.6% .031 120.757);--color-lime-100:oklch(96.7% .067 122.328);--color-lime-200:oklch(93.8% .127 124.321);--color-lime-300:oklch(89.7% .196 126.665);--color-lime-400:oklch(84.1% .238 128.85);--color-lime-500:oklch(76.8% .233 130.85);--color-lime-600:oklch(64.8% .2 131.684);--color-lime-700:oklch(53.2% .157 131.589);--color-lime-800:oklch(45.3% .124 130.933);--color-lime-900:oklch(40.5% .101 131.063);--color-lime-950:oklch(27.4% .072 132.109);--color-green-50:oklch(98.2% .018 155.826);--color-green-100:oklch(96.2% .044 156.743);--color-green-200:oklch(92.5% .084 155.995);--color-green-300:oklch(87.1% .15 154.449);--color-green-400:oklch(79.2% .209 151.711);--color-green-500:oklch(72.3% .219 149.579);--color-green-600:oklch(62.7% .194 149.214);--color-green-700:oklch(52.7% .154 150.069);--color-green-800:oklch(44.8% .119 151.328);--color-green-900:oklch(39.3% .095 152.535);--color-green-950:oklch(26.6% .065 152.934);--color-emerald-50:oklch(97.9% .021 166.113);--color-emerald-100:oklch(95% .052 163.051);--color-emerald-200:oklch(90.5% .093 164.15);--color-emerald-300:oklch(84.5% .143 164.978);--color-emerald-400:oklch(76.5% .177 163.223);--color-emerald-500:oklch(69.6% .17 162.48);--color-emerald-600:oklch(59.6% .145 163.225);--color-emerald-700:oklch(50.8% .118 165.612);--color-emerald-800:oklch(43.2% .095 166.913);--color-emerald-900:oklch(37.8% .077 168.94);--color-emerald-950:oklch(26.2% .051 172.552);--color-teal-50:oklch(98.4% .014 180.72);--color-teal-100:oklch(95.3% .051 180.801);--color-teal-200:oklch(91% .096 180.426);--color-teal-300:oklch(85.5% .138 181.071);--color-teal-400:oklch(77.7% .152 181.912);--color-teal-500:oklch(70.4% .14 182.503);--color-teal-600:oklch(60% .118 184.704);--color-teal-700:oklch(51.1% .096 186.391);--color-teal-800:oklch(43.7% .078 188.216);--color-teal-900:oklch(38.6% .063 188.416);--color-teal-950:oklch(27.7% .046 192.524);--color-cyan-50:oklch(98.4% .019 200.873);--color-cyan-100:oklch(95.6% .045 203.388);--color-cyan-200:oklch(91.7% .08 205.041);--color-cyan-300:oklch(86.5% .127 207.078);--color-cyan-400:oklch(78.9% .154 211.53);--color-cyan-500:oklch(71.5% .143 215.221);--color-cyan-600:oklch(60.9% .126 221.723);--color-cyan-700:oklch(52% .105 223.128);--color-cyan-800:oklch(45% .085 224.283);--color-cyan-900:oklch(39.8% .07 227.392);--color-cyan-950:oklch(30.2% .056 229.695);--color-sky-50:oklch(97.7% .013 236.62);--color-sky-100:oklch(95.1% .026 236.824);--color-sky-200:oklch(90.1% .058 230.902);--color-sky-300:oklch(82.8% .111 230.318);--color-sky-400:oklch(74.6% .16 232.661);--color-sky-500:oklch(68.5% .169 237.323);--color-sky-600:oklch(58.8% .158 241.966);--color-sky-700:oklch(50% .134 242.749);--color-sky-800:oklch(44.3% .11 240.79);--color-sky-900:oklch(39.1% .09 240.876);--color-sky-950:oklch(29.3% .066 243.157);--color-blue-50:oklch(97% .014 254.604);--color-blue-100:oklch(93.2% .032 255.585);--color-blue-200:oklch(88.2% .059 254.128);--color-blue-300:oklch(80.9% .105 251.813);--color-blue-400:oklch(70.7% .165 254.624);--color-blue-500:oklch(62.3% .214 259.815);--color-blue-600:oklch(54.6% .245 262.881);--color-blue-700:oklch(48.8% .243 264.376);--color-blue-800:oklch(42.4% .199 265.638);--color-blue-900:oklch(37.9% .146 265.522);--color-blue-950:oklch(28.2% .091 267.935);--color-indigo-50:oklch(96.2% .018 272.314);--color-indigo-100:oklch(93% .034 272.788);--color-indigo-200:oklch(87% .065 274.039);--color-indigo-300:oklch(78.5% .115 274.713);--color-indigo-400:oklch(67.3% .182 276.935);--color-indigo-500:oklch(58.5% .233 277.117);--color-indigo-600:oklch(51.1% .262 276.966);--color-indigo-700:oklch(45.7% .24 277.023);--color-indigo-800:oklch(39.8% .195 277.366);--color-indigo-900:oklch(35.9% .144 278.697);--color-indigo-950:oklch(25.7% .09 281.288);--color-violet-50:oklch(96.9% .016 293.756);--color-violet-100:oklch(94.3% .029 294.588);--color-violet-200:oklch(89.4% .057 293.283);--color-violet-300:oklch(81.1% .111 293.571);--color-violet-400:oklch(70.2% .183 293.541);--color-violet-500:oklch(60.6% .25 292.717);--color-violet-600:oklch(54.1% .281 293.009);--color-violet-700:oklch(49.1% .27 292.581);--color-violet-800:oklch(43.2% .232 292.759);--color-violet-900:oklch(38% .189 293.745);--color-violet-950:oklch(28.3% .141 291.089);--color-purple-50:oklch(97.7% .014 308.299);--color-purple-100:oklch(94.6% .033 307.174);--color-purple-200:oklch(90.2% .063 306.703);--color-purple-300:oklch(82.7% .119 306.383);--color-purple-400:oklch(71.4% .203 305.504);--color-purple-500:oklch(62.7% .265 303.9);--color-purple-600:oklch(55.8% .288 302.321);--color-purple-700:oklch(49.6% .265 301.924);--color-purple-800:oklch(43.8% .218 303.724);--color-purple-900:oklch(38.1% .176 304.987);--color-purple-950:oklch(29.1% .149 302.717);--color-fuchsia-50:oklch(97.7% .017 320.058);--color-fuchsia-100:oklch(95.2% .037 318.852);--color-fuchsia-200:oklch(90.3% .076 319.62);--color-fuchsia-300:oklch(83.3% .145 321.434);--color-fuchsia-400:oklch(74% .238 322.16);--color-fuchsia-500:oklch(66.7% .295 322.15);--color-fuchsia-600:oklch(59.1% .293 322.896);--color-fuchsia-700:oklch(51.8% .253 323.949);--color-fuchsia-800:oklch(45.2% .211 324.591);--color-fuchsia-900:oklch(40.1% .17 325.612);--color-fuchsia-950:oklch(29.3% .136 325.661);--color-pink-50:oklch(97.1% .014 343.198);--color-pink-100:oklch(94.8% .028 342.258);--color-pink-200:oklch(89.9% .061 343.231);--color-pink-300:oklch(82.3% .12 346.018);--color-pink-400:oklch(71.8% .202 349.761);--color-pink-500:oklch(65.6% .241 354.308);--color-pink-600:oklch(59.2% .249 .584);--color-pink-700:oklch(52.5% .223 3.958);--color-pink-800:oklch(45.9% .187 3.815);--color-pink-900:oklch(40.8% .153 2.432);--color-pink-950:oklch(28.4% .109 3.907);--color-rose-50:oklch(96.9% .015 12.422);--color-rose-100:oklch(94.1% .03 12.58);--color-rose-200:oklch(89.2% .058 10.001);--color-rose-300:oklch(81% .117 11.638);--color-rose-400:oklch(71.2% .194 13.428);--color-rose-500:oklch(64.5% .246 16.439);--color-rose-600:oklch(58.6% .253 17.585);--color-rose-700:oklch(51.4% .222 16.935);--color-rose-800:oklch(45.5% .188 13.697);--color-rose-900:oklch(41% .159 10.272);--color-rose-950:oklch(27.1% .105 12.094);--color-slate-50:oklch(98.4% .003 247.858);--color-slate-100:oklch(96.8% .007 247.896);--color-slate-200:oklch(92.9% .013 255.508);--color-slate-300:oklch(86.9% .022 252.894);--color-slate-400:oklch(70.4% .04 256.788);--color-slate-500:oklch(55.4% .046 257.417);--color-slate-600:oklch(44.6% .043 257.281);--color-slate-700:oklch(37.2% .044 257.287);--color-slate-800:oklch(27.9% .041 260.031);--color-slate-900:oklch(20.8% .042 265.755);--color-slate-950:oklch(12.9% .042 264.695);--color-gray-50:oklch(98.5% .002 247.839);--color-gray-100:oklch(96.7% .003 264.542);--color-gray-200:oklch(92.8% .006 264.531);--color-gray-300:oklch(87.2% .01 258.338);--color-gray-400:oklch(70.7% .022 261.325);--color-gray-500:oklch(55.1% .027 264.364);--color-gray-600:oklch(44.6% .03 256.802);--color-gray-700:oklch(37.3% .034 259.733);--color-gray-800:oklch(27.8% .033 256.848);--color-gray-900:oklch(21% .034 264.665);--color-gray-950:oklch(13% .028 261.692);--color-zinc-50:oklch(98.5% 0 0);--color-zinc-100:oklch(96.7% .001 286.375);--color-zinc-200:oklch(92% .004 286.32);--color-zinc-300:oklch(87.1% .006 286.286);--color-zinc-400:oklch(70.5% .015 286.067);--color-zinc-500:oklch(55.2% .016 285.938);--color-zinc-600:oklch(44.2% .017 285.786);--color-zinc-700:oklch(37% .013 285.805);--color-zinc-800:oklch(27.4% .006 286.033);--color-zinc-900:oklch(21% .006 285.885);--color-zinc-950:oklch(14.1% .005 285.823);--color-neutral-50:oklch(98.5% 0 0);--color-neutral-100:oklch(97% 0 0);--color-neutral-200:oklch(92.2% 0 0);--color-neutral-300:oklch(87% 0 0);--color-neutral-400:oklch(70.8% 0 0);--color-neutral-500:oklch(55.6% 0 0);--color-neutral-600:oklch(43.9% 0 0);--color-neutral-700:oklch(37.1% 0 0);--color-neutral-800:oklch(26.9% 0 0);--color-neutral-900:oklch(20.5% 0 0);--color-neutral-950:oklch(14.5% 0 0);--color-stone-50:oklch(98.5% .001 106.423);--color-stone-100:oklch(97% .001 106.424);--color-stone-200:oklch(92.3% .003 48.717);--color-stone-300:oklch(86.9% .005 56.366);--color-stone-400:oklch(70.9% .01 56.259);--color-stone-500:oklch(55.3% .013 58.071);--color-stone-600:oklch(44.4% .011 73.639);--color-stone-700:oklch(37.4% .01 67.558);--color-stone-800:oklch(26.8% .007 34.298);--color-stone-900:oklch(21.6% .006 56.043);--color-stone-950:oklch(14.7% .004 49.25);--color-black:#000;--color-white:#fff;--spacing:.25rem;--breakpoint-sm:40rem;--breakpoint-md:48rem;--breakpoint-lg:64rem;--breakpoint-xl:80rem;--breakpoint-2xl:96rem;--container-3xs:16rem;--container-2xs:18rem;--container-xs:20rem;--container-sm:24rem;--container-md:28rem;--container-lg:32rem;--container-xl:36rem;--container-2xl:42rem;--container-3xl:48rem;--container-4xl:56rem;--container-5xl:64rem;--container-6xl:72rem;--container-7xl:80rem;--text-xs:.75rem;--text-xs--line-height:calc(1 / .75);--text-sm:.875rem;--text-sm--line-height:calc(1.25 / .875);--text-base:1rem;--text-base--line-height: 1.5 ;--text-lg:1.125rem;--text-lg--line-height:calc(1.75 / 1.125);--text-xl:1.25rem;--text-xl--line-height:calc(1.75 / 1.25);--text-2xl:1.5rem;--text-2xl--line-height:calc(2 / 1.5);--text-3xl:1.875rem;--text-3xl--line-height: 1.2 ;--text-4xl:2.25rem;--text-4xl--line-height:calc(2.5 / 2.25);--text-5xl:3rem;--text-5xl--line-height:1;--text-6xl:3.75rem;--text-6xl--line-height:1;--text-7xl:4.5rem;--text-7xl--line-height:1;--text-8xl:6rem;--text-8xl--line-height:1;--text-9xl:8rem;--text-9xl--line-height:1;--font-weight-thin:100;--font-weight-extralight:200;--font-weight-light:300;--font-weight-normal:400;--font-weight-medium:500;--font-weight-semibold:600;--font-weight-bold:700;--font-weight-extrabold:800;--font-weight-black:900;--tracking-tighter:-.05em;--tracking-tight:-.025em;--tracking-normal:0em;--tracking-wide:.025em;--tracking-wider:.05em;--tracking-widest:.1em;--leading-tight:1.25;--leading-snug:1.375;--leading-normal:1.5;--leading-relaxed:1.625;--leading-loose:2;--radius-xs:.125rem;--radius-sm:.25rem;--radius-md:.375rem;--radius-lg:.5rem;--radius-xl:.75rem;--radius-2xl:1rem;--radius-3xl:1.5rem;--radius-4xl:2rem;--shadow-2xs:0 1px #0000000d;--shadow-xs:0 1px 2px 0 #0000000d;--shadow-sm:0 1px 3px 0 #0000001a, 0 1px 2px -1px #0000001a;--shadow-md:0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a;--shadow-lg:0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a;--shadow-xl:0 20px 25px -5px #0000001a, 0 8px 10px -6px #0000001a;--shadow-2xl:0 25px 50px -12px #00000040;--inset-shadow-2xs:inset 0 1px #0000000d;--inset-shadow-xs:inset 0 1px 1px #0000000d;--inset-shadow-sm:inset 0 2px 4px #0000000d;--drop-shadow-xs:0 1px 1px #0000000d;--drop-shadow-sm:0 1px 2px #00000026;--drop-shadow-md:0 3px 3px #0000001f;--drop-shadow-lg:0 4px 4px #00000026;--drop-shadow-xl:0 9px 7px #0000001a;--drop-shadow-2xl:0 25px 25px #00000026;--ease-in:cubic-bezier(.4, 0, 1, 1);--ease-out:cubic-bezier(0, 0, .2, 1);--ease-in-out:cubic-bezier(.4, 0, .2, 1);--animate-spin:spin 1s linear infinite;--animate-ping:ping 1s cubic-bezier(0, 0, .2, 1) infinite;--animate-pulse:pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;--animate-bounce:bounce 1s infinite;--blur-xs:4px;--blur-sm:8px;--blur-md:12px;--blur-lg:16px;--blur-xl:24px;--blur-2xl:40px;--blur-3xl:64px;--perspective-dramatic:100px;--perspective-near:300px;--perspective-normal:500px;--perspective-midrange:800px;--perspective-distant:1200px;--aspect-video:16 / 9;--default-transition-duration:.15s;--default-transition-timing-function:cubic-bezier(.4, 0, .2, 1);--default-font-family:var(--font-sans);--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}::file-selector-button{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring{outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab,red,red)){::placeholder{color:color-mix(in oklab,currentcolor 50%,transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}::-webkit-calendar-picker-indicator{line-height:1}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}}@layer components;@layer utilities{.absolute{position:absolute}.relative{position:relative}.static{position:static}.inset-0{inset:calc(var(--spacing) * 0)}.start{inset-inline-start:var(--spacing)}.ms-1{margin-inline-start:calc(var(--spacing) * 1)}.-mt-\[6\.6rem\]{margin-top:-6.6rem}.-mb-px{margin-bottom:-1px}.mb-1{margin-bottom:calc(var(--spacing) * 1)}.mb-2{margin-bottom:calc(var(--spacing) * 2)}.mb-4{margin-bottom:calc(var(--spacing) * 4)}.mb-6{margin-bottom:calc(var(--spacing) * 6)}.-ml-8{margin-left:calc(var(--spacing) * -8)}.contents{display:contents}.flex{display:flex}.hidden{display:none}.inline-block{display:inline-block}.inline-flex{display:inline-flex}.table{display:table}.aspect-\[335\/364\]{aspect-ratio:335/364}.h-1{height:calc(var(--spacing) * 1)}.h-1\.5{height:calc(var(--spacing) * 1.5)}.h-2{height:calc(var(--spacing) * 2)}.h-2\.5{height:calc(var(--spacing) * 2.5)}.h-3{height:calc(var(--spacing) * 3)}.h-3\.5{height:calc(var(--spacing) * 3.5)}.h-14{height:calc(var(--spacing) * 14)}.h-14\.5{height:calc(var(--spacing) * 14.5)}.min-h-screen{min-height:100vh}.w-1{width:calc(var(--spacing) * 1)}.w-1\.5{width:calc(var(--spacing) * 1.5)}.w-2{width:calc(var(--spacing) * 2)}.w-2\.5{width:calc(var(--spacing) * 2.5)}.w-3{width:calc(var(--spacing) * 3)}.w-3\.5{width:calc(var(--spacing) * 3.5)}.w-\[438px\]{width:438px}.w-full{width:100%}.max-w-\[335px\]{max-width:335px}.max-w-none{max-width:none}.flex-1{flex:1}.shrink-0{flex-shrink:0}.translate-y-0{--tw-translate-y:calc(var(--spacing) * 0);translate:var(--tw-translate-x) var(--tw-translate-y)}.transform{transform:var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,)}.flex-col{flex-direction:column}.flex-col-reverse{flex-direction:column-reverse}.items-center{align-items:center}.justify-center{justify-content:center}.justify-end{justify-content:flex-end}.gap-3{gap:calc(var(--spacing) * 3)}.gap-4{gap:calc(var(--spacing) * 4)}:where(.space-x-1>:not(:last-child)){--tw-space-x-reverse:0;margin-inline-start:calc(calc(var(--spacing) * 1) * var(--tw-space-x-reverse));margin-inline-end:calc(calc(var(--spacing) * 1) * calc(1 - var(--tw-space-x-reverse)))}.overflow-hidden{overflow:hidden}.rounded-full{border-radius:3.40282e38px}.rounded-sm{border-radius:var(--radius-sm)}.rounded-ee-lg{border-end-end-radius:var(--radius-lg)}.rounded-es-lg{border-end-start-radius:var(--radius-lg)}.rounded-t-lg{border-top-left-radius:var(--radius-lg);border-top-right-radius:var(--radius-lg)}.rounded-br-lg{border-bottom-right-radius:var(--radius-lg)}.rounded-bl-lg{border-bottom-left-radius:var(--radius-lg)}.border{border-style:var(--tw-border-style);border-width:1px}.border-\[\#19140035\]{border-color:#19140035}.border-\[\#e3e3e0\]{border-color:#e3e3e0}.border-black{border-color:var(--color-black)}.border-transparent{border-color:#0000}.bg-\[\#1b1b18\]{background-color:#1b1b18}.bg-\[\#FDFDFC\]{background-color:#fdfdfc}.bg-\[\#dbdbd7\]{background-color:#dbdbd7}.bg-\[\#fff2f2\]{background-color:#fff2f2}.bg-white{background-color:var(--color-white)}.p-6{padding:calc(var(--spacing) * 6)}.px-5{padding-inline:calc(var(--spacing) * 5)}.py-1{padding-block:calc(var(--spacing) * 1)}.py-1\.5{padding-block:calc(var(--spacing) * 1.5)}.py-2{padding-block:calc(var(--spacing) * 2)}.pb-12{padding-bottom:calc(var(--spacing) * 12)}.text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}.text-\[13px\]{font-size:13px}.leading-\[20px\]{--tw-leading:20px;line-height:20px}.leading-normal{--tw-leading:var(--leading-normal);line-height:var(--leading-normal)}.font-medium{--tw-font-weight:var(--font-weight-medium);font-weight:var(--font-weight-medium)}.text-\[\#1B1B18\],.text-\[\#1b1b18\]{color:#1b1b18}.text-\[\#706f6c\]{color:#706f6c}.text-\[\#F3BEC7\]{color:#f3bec7}.text-\[\#F8B803\]{color:#f8b803}.text-\[\#F53003\],.text-\[\#f53003\]{color:#f53003}.text-white{color:var(--color-white)}.underline{text-decoration-line:underline}.underline-offset-4{text-underline-offset:4px}.opacity-100{opacity:1}.mix-blend-color{mix-blend-mode:color}.mix-blend-darken{mix-blend-mode:darken}.mix-blend-hard-light{mix-blend-mode:hard-light}.mix-blend-multiply{mix-blend-mode:multiply}.shadow-\[0px_0px_1px_0px_rgba\(0\,0\,0\,0\.03\)\,0px_1px_2px_0px_rgba\(0\,0\,0\,0\.06\)\]{--tw-shadow:0px 0px 1px 0px var(--tw-shadow-color,#00000008), 0px 1px 2px 0px var(--tw-shadow-color,#0000000f);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.shadow-\[inset_0px_0px_0px_1px_rgba\(26\,26\,0\,0\.16\)\]{--tw-shadow:inset 0px 0px 0px 1px var(--tw-shadow-color,#1a1a0029);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.filter{filter:var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,)}.transition-all{transition-property:all;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.transition-opacity{transition-property:opacity;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.delay-300{transition-delay:.3s}.delay-400{transition-delay:.4s}.duration-750{--tw-duration:.75s;transition-duration:.75s}.\[--stroke-color\:\#1B1B18\]{--stroke-color:#1b1b18}.not-has-\[nav\]\:hidden:not(:has(:is(nav))){display:none}.before\:absolute:before{content:var(--tw-content);position:absolute}.before\:start-\[0\.4rem\]:before{content:var(--tw-content);inset-inline-start:.4rem}.before\:top-0:before{content:var(--tw-content);top:calc(var(--spacing) * 0)}.before\:top-1\/2:before{content:var(--tw-content);top:50%}.before\:bottom-0:before{content:var(--tw-content);bottom:calc(var(--spacing) * 0)}.before\:bottom-1\/2:before{content:var(--tw-content);bottom:50%}.before\:left-\[0\.4rem\]:before{content:var(--tw-content);left:.4rem}.before\:border-l:before{content:var(--tw-content);border-left-style:var(--tw-border-style);border-left-width:1px}.before\:border-\[\#e3e3e0\]:before{content:var(--tw-content);border-color:#e3e3e0}@media(hover:hover){.hover\:border-\[\#1915014a\]:hover{border-color:#1915014a}.hover\:border-\[\#19140035\]:hover{border-color:#19140035}.hover\:border-black:hover{border-color:var(--color-black)}.hover\:bg-black:hover{background-color:var(--color-black)}}@media(min-width:64rem){.lg\:mb-0{margin-bottom:calc(var(--spacing) * 0)}.lg\:mb-6{margin-bottom:calc(var(--spacing) * 6)}.lg\:-ml-px{margin-left:-1px}.lg\:ml-0{margin-left:calc(var(--spacing) * 0)}.lg\:block{display:block}.lg\:aspect-auto{aspect-ratio:auto}.lg\:w-\[438px\]{width:438px}.lg\:max-w-4xl{max-width:var(--container-4xl)}.lg\:grow{flex-grow:1}.lg\:flex-row{flex-direction:row}.lg\:justify-center{justify-content:center}.lg\:rounded-ss-lg{border-start-start-radius:var(--radius-lg)}.lg\:rounded-ee-none{border-end-end-radius:0}.lg\:rounded-t-none{border-top-left-radius:0;border-top-right-radius:0}.lg\:rounded-r-lg{border-top-right-radius:var(--radius-lg);border-bottom-right-radius:var(--radius-lg)}.lg\:p-8{padding:calc(var(--spacing) * 8)}.lg\:p-20{padding:calc(var(--spacing) * 20)}}@media(prefers-color-scheme:dark){.dark\:border-\[\#3E3E3A\]{border-color:#3e3e3a}.dark\:border-\[\#eeeeec\]{border-color:#eeeeec}.dark\:bg-\[\#0a0a0a\]{background-color:#0a0a0a}.dark\:bg-\[\#1D0002\]{background-color:#1d0002}.dark\:bg-\[\#3E3E3A\]{background-color:#3e3e3a}.dark\:bg-\[\#161615\]{background-color:#161615}.dark\:bg-\[\#eeeeec\]{background-color:#eeeeec}.dark\:text-\[\#1C1C1A\]{color:#1c1c1a}.dark\:text-\[\#4B0600\]{color:#4b0600}.dark\:text-\[\#391800\]{color:#391800}.dark\:text-\[\#733000\]{color:#733000}.dark\:text-\[\#A1A09A\]{color:#a1a09a}.dark\:text-\[\#EDEDEC\]{color:#ededec}.dark\:text-\[\#F61500\]{color:#f61500}.dark\:text-\[\#FF4433\]{color:#f43}.dark\:text-black{color:var(--color-black)}.dark\:mix-blend-hard-light{mix-blend-mode:hard-light}.dark\:mix-blend-normal{mix-blend-mode:normal}.dark\:shadow-\[inset_0px_0px_0px_1px_\#fffaed2d\]{--tw-shadow:inset 0px 0px 0px 1px var(--tw-shadow-color,#fffaed2d);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.dark\:\[--stroke-color\:\#FF750F\]{--stroke-color:#ff750f}.dark\:before\:border-\[\#3E3E3A\]:before{content:var(--tw-content);border-color:#3e3e3a}@media(hover:hover){.dark\:hover\:border-\[\#3E3E3A\]:hover{border-color:#3e3e3a}.dark\:hover\:border-\[\#62605b\]:hover{border-color:#62605b}.dark\:hover\:border-white:hover{border-color:var(--color-white)}.dark\:hover\:bg-white:hover{background-color:var(--color-white)}}}@starting-style{.starting\:opacity-0{opacity:0}}@media(prefers-reduced-motion:no-preference){@starting-style{.motion-safe\:starting\:-translate-x-\[26px\]{--tw-translate-x: -26px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:-translate-x-\[51px\]{--tw-translate-x: -51px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:-translate-x-\[78px\]{--tw-translate-x: -78px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:-translate-x-\[102px\]{--tw-translate-x: -102px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:translate-y-6{--tw-translate-y:calc(var(--spacing) * 6);translate:var(--tw-translate-x) var(--tw-translate-y)}}}}@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-z{syntax:"*";inherits:false;initial-value:0}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-space-x-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-leading{syntax:"*";inherits:false}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}@property --tw-content{syntax:"*";inherits:false;initial-value:""}@keyframes spin{to{transform:rotate(360deg)}}@keyframes ping{75%,to{opacity:0;transform:scale(2)}}@keyframes pulse{50%{opacity:.5}}@keyframes bounce{0%,to{animation-timing-function:cubic-bezier(.8,0,1,1);transform:translateY(-25%)}50%{animation-timing-function:cubic-bezier(0,0,.2,1);transform:none}}
-        </style>
-    </head>
-    <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
-        <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
-            @if (Route::has('login'))
-                <nav class="flex items-center justify-end gap-4">
-                    @auth
-                        <a
-                            href="{{ route('dashboard') }}"
-                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
-                        >
-                            Dashboard
-                        </a>
-                    @else
-                        <a
-                            href="{{ route('login') }}"
-                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
-                        >
-                            Log in
-                        </a>
-
-                        @if (Route::has('register'))
-                            <a
-                                href="{{ route('register') }}"
-                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">
-                                Register
-                            </a>
-                        @endif
-                    @endauth
-                </nav>
-            @endif
-        </header>
-        <div class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
-            <main class="flex max-w-[335px] w-full flex-col-reverse lg:max-w-4xl lg:flex-row">
-                <div class="text-[13px] leading-[20px] flex-1 p-6 pb-12 lg:p-20 bg-white dark:bg-[#161615] dark:text-[#EDEDEC] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d] rounded-es-lg rounded-ee-lg lg:rounded-ss-lg lg:rounded-ee-none">
-                    <h1 class="mb-1 font-medium">Let's get started</h1>
-                    <p class="mb-2 text-[#706f6c] dark:text-[#A1A09A]">Laravel has an incredibly rich ecosystem. <br>We suggest starting with the following.</p>
-                    <ul class="flex flex-col mb-4 lg:mb-6">
-                        <li class="flex items-center gap-4 py-2 relative before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A] before:top-1/2 before:bottom-0 before:left-[0.4rem] before:absolute">
-                            <span class="relative py-1 bg-white dark:bg-[#161615]">
-                                <span class="flex items-center justify-center rounded-full bg-[#FDFDFC] dark:bg-[#161615] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.03),0px_1px_2px_0px_rgba(0,0,0,0.06)] w-3.5 h-3.5 border dark:border-[#3E3E3A] border-[#e3e3e0]">
-                                    <span class="rounded-full bg-[#dbdbd7] dark:bg-[#3E3E3A] w-1.5 h-1.5"></span>
-                                </span>
-                            </span>
-                            <span>
-                                Read the
-                                <a href="https://laravel.com/docs" target="_blank" class="inline-flex items-center space-x-1 font-medium underline underline-offset-4 text-[#f53003] dark:text-[#FF4433] ms-1">
-                                    <span>Documentation</span>
-                                    <svg
-                                        width="10"
-                                        height="11"
-                                        viewBox="0 0 10 11"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-2.5 h-2.5"
-                                    >
-                                        <path
-                                            d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                            stroke="currentColor"
-                                            stroke-linecap="square"
-                                        />
-                                    </svg>
-                                </a>
-                            </span>
-                        </li>
-                        <li class="flex items-center gap-4 py-2 relative before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A] before:bottom-1/2 before:top-0 before:start-[0.4rem] before:absolute">
-                            <span class="relative py-1 bg-white dark:bg-[#161615]">
-                                <span class="flex items-center justify-center rounded-full bg-[#FDFDFC] dark:bg-[#161615] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.03),0px_1px_2px_0px_rgba(0,0,0,0.06)] w-3.5 h-3.5 border dark:border-[#3E3E3A] border-[#e3e3e0]">
-                                    <span class="rounded-full bg-[#dbdbd7] dark:bg-[#3E3E3A] w-1.5 h-1.5"></span>
-                                </span>
-                            </span>
-                            <span>
-                                Watch video tutorials at
-                                <a href="https://laracasts.com" target="_blank" class="inline-flex items-center space-x-1 font-medium underline underline-offset-4 text-[#f53003] dark:text-[#FF4433] ms-1">
-                                    <span>Laracasts</span>
-                                    <svg
-                                        width="10"
-                                        height="11"
-                                        viewBox="0 0 10 11"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-2.5 h-2.5"
-                                    >
-                                        <path
-                                            d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                            stroke="currentColor"
-                                            stroke-linecap="square"
-                                        />
-                                    </svg>
-                                </a>
-                            </span>
-                        </li>
-                    </ul>
-                    <ul class="flex gap-3 text-sm leading-normal">
-                        <li>
-                            <a href="https://cloud.laravel.com" target="_blank" class="inline-block dark:bg-[#eeeeec] dark:border-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white dark:hover:border-white hover:bg-black hover:border-black px-5 py-1.5 bg-[#1b1b18] rounded-sm border border-black text-white text-sm leading-normal">
-                                Deploy now
-                            </a>
-                        </li>
-                    </ul>
+    <!-- NAVIGATION BAR -->
+    <nav class="fixed top-0 left-0 w-full z-50 glass-nav transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo & Brand -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-baliterra to-baligold flex items-center justify-center text-white shadow-lg">
+                        <i class="fa-solid fa-gopuran text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-serif text-xl font-bold tracking-wider text-baligold block leading-tight">MUNGGU</span>
+                        <span class="text-xs text-stone-400 uppercase tracking-widest block">Desa Wisata Bali</span>
+                    </div>
                 </div>
-                <div class="bg-[#fff2f2] dark:bg-[#1D0002] relative lg:-ml-px -mb-px lg:mb-0 rounded-t-lg lg:rounded-t-none lg:rounded-r-lg aspect-[335/364] lg:aspect-auto w-full lg:w-[438px] shrink-0 overflow-hidden">
-                    {{-- Laravel Logo --}}
-                    <svg class="w-full text-[#F53003] dark:text-[#F61500] transition-all translate-y-0 opacity-100 max-w-none duration-750 starting:opacity-0 motion-safe:starting:translate-y-6" viewBox="0 0 438 104" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17.2036 -3H0V102.197H49.5189V86.7187H17.2036V-3Z" fill="currentColor" />
-                        <path d="M110.256 41.6337C108.061 38.1275 104.945 35.3731 100.905 33.3681C96.8667 31.3647 92.8016 30.3618 88.7131 30.3618C83.4247 30.3618 78.5885 31.3389 74.201 33.2923C69.8111 35.2456 66.0474 37.928 62.9059 41.3333C59.7643 44.7401 57.3198 48.6726 55.5754 53.1293C53.8287 57.589 52.9572 62.274 52.9572 67.1813C52.9572 72.1925 53.8287 76.8995 55.5754 81.3069C57.3191 85.7173 59.7636 89.6241 62.9059 93.0293C66.0474 96.4361 69.8119 99.1155 74.201 101.069C78.5885 103.022 83.4247 103.999 88.7131 103.999C92.8016 103.999 96.8667 102.997 100.905 100.994C104.945 98.9911 108.061 96.2359 110.256 92.7282V102.195H126.563V32.1642H110.256V41.6337ZM108.76 75.7472C107.762 78.4531 106.366 80.8078 104.572 82.8112C102.776 84.8161 100.606 86.4183 98.0637 87.6206C95.5202 88.823 92.7004 89.4238 89.6103 89.4238C86.5178 89.4238 83.7252 88.823 81.2324 87.6206C78.7388 86.4183 76.5949 84.8161 74.7998 82.8112C73.004 80.8078 71.6319 78.4531 70.6856 75.7472C69.7356 73.0421 69.2644 70.1868 69.2644 67.1821C69.2644 64.1758 69.7356 61.3205 70.6856 58.6154C71.6319 55.9102 73.004 53.5571 74.7998 51.5522C76.5949 49.5495 78.738 47.9451 81.2324 46.7427C83.7252 45.5404 86.5178 44.9396 89.6103 44.9396C92.7012 44.9396 95.5202 45.5404 98.0637 46.7427C100.606 47.9451 102.776 49.5487 104.572 51.5522C106.367 53.5571 107.762 55.9102 108.76 58.6154C109.756 61.3205 110.256 64.1758 110.256 67.1821C110.256 70.1868 109.756 73.0421 108.76 75.7472Z" fill="currentColor" />
-                        <path d="M242.805 41.6337C240.611 38.1275 237.494 35.3731 233.455 33.3681C229.416 31.3647 225.351 30.3618 221.262 30.3618C215.974 30.3618 211.138 31.3389 206.75 33.2923C202.36 35.2456 198.597 37.928 195.455 41.3333C192.314 44.7401 189.869 48.6726 188.125 53.1293C186.378 57.589 185.507 62.274 185.507 67.1813C185.507 72.1925 186.378 76.8995 188.125 81.3069C189.868 85.7173 192.313 89.6241 195.455 93.0293C198.597 96.4361 202.361 99.1155 206.75 101.069C211.138 103.022 215.974 103.999 221.262 103.999C225.351 103.999 229.416 102.997 233.455 100.994C237.494 98.9911 240.611 96.2359 242.805 92.7282V102.195H259.112V32.1642H242.805V41.6337ZM241.31 75.7472C240.312 78.4531 238.916 80.8078 237.122 82.8112C235.326 84.8161 233.156 86.4183 230.614 87.6206C228.07 88.823 225.251 89.4238 222.16 89.4238C219.068 89.4238 216.275 88.823 213.782 87.6206C211.289 86.4183 209.145 84.8161 207.35 82.8112C205.554 80.8078 204.182 78.4531 203.236 75.7472C202.286 73.0421 201.814 70.1868 201.814 67.1821C201.814 64.1758 202.286 61.3205 203.236 58.6154C204.182 55.9102 205.554 53.5571 207.35 51.5522C209.145 49.5495 211.288 47.9451 213.782 46.7427C216.275 45.5404 219.068 44.9396 222.16 44.9396C225.251 44.9396 228.07 45.5404 230.614 46.7427C233.156 47.9451 235.326 49.5487 237.122 51.5522C238.917 53.5571 240.312 55.9102 241.31 58.6154C242.306 61.3205 242.806 64.1758 242.806 67.1821C242.805 70.1868 242.305 73.0421 241.31 75.7472Z" fill="currentColor" />
-                        <path d="M438 -3H421.694V102.197H438V-3Z" fill="currentColor" />
-                        <path d="M139.43 102.197H155.735V48.2834H183.712V32.1665H139.43V102.197Z" fill="currentColor" />
-                        <path d="M324.49 32.1665L303.995 85.794L283.498 32.1665H266.983L293.748 102.197H314.242L341.006 32.1665H324.49Z" fill="currentColor" />
-                        <path d="M376.571 30.3656C356.603 30.3656 340.797 46.8497 340.797 67.1828C340.797 89.6597 356.094 104 378.661 104C391.29 104 399.354 99.1488 409.206 88.5848L398.189 80.0226C398.183 80.031 389.874 90.9895 377.468 90.9895C363.048 90.9895 356.977 79.3111 356.977 73.269H411.075C413.917 50.1328 398.775 30.3656 376.571 30.3656ZM357.02 61.0967C357.145 59.7487 359.023 43.3761 376.442 43.3761C393.861 43.3761 395.978 59.7464 396.099 61.0967H357.02Z" fill="currentColor" />
-                    </svg>
 
-                    {{-- 13 --}}
-                    <svg class="w-[438px] max-w-none relative -mt-[6.6rem] -ml-8 lg:ml-0 [--stroke-color:#1B1B18] dark:[--stroke-color:#FF750F]" viewBox="0 0 440 392" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <g class="mix-blend-darken dark:mix-blend-normal transition-all delay-300 opacity-100 duration-750 starting:opacity-0 text-[#1B1B18] dark:text-black">
-                            <mask id="path-1-mask" maskUnits="userSpaceOnUse" x="-0.328613" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="-0.328613" y="103" width="338" height="299"/>
-                                <path d="M234.936 400.8C204.136 400.8 178.936 392.4 159.336 375.6C140.136 358.8 130.536 337 130.536 310.2H200.736C200.736 318.2 203.736 324.8 209.736 330C215.736 335.2 223.736 337.8 233.736 337.8C243.336 337.8 251.136 335 257.136 329.4C263.536 323.8 266.736 316.6 266.736 307.8C266.736 299.8 263.936 293.2 258.336 288C252.736 282.8 245.536 280.2 236.736 280.2H199.536V218.4H236.736C243.536 218.4 249.336 216 254.136 211.2C258.936 206.4 261.336 200.4 261.336 193.2C261.336 184.8 258.736 178.2 253.536 173.4C248.336 168.6 241.736 166.2 233.736 166.2C226.536 166.2 220.336 168.4 215.136 172.8C210.336 177.2 207.936 182.8 207.936 189.6H141.336C141.336 164.8 150.136 144.6 167.736 129C185.336 113 207.936 105 235.536 105C263.136 105 285.536 112.2 302.736 126.6C320.336 141 329.136 160 329.136 183.6C329.136 200.8 324.536 214.8 315.336 225.6C306.136 236 294.336 243.2 279.936 247.2C297.136 252 310.736 260.2 320.736 271.8C331.136 283.4 336.336 298 336.336 315.6C336.336 340.4 326.936 360.8 308.136 376.8C289.336 392.8 264.936 400.8 234.936 400.8Z"/>
-                                <path d="M26.8714 167.6H1.67139V105.2H94.6714V400.2H26.8714V167.6Z"/>
-                            </mask>
-                            <path d="M234.936 400.8C204.136 400.8 178.936 392.4 159.336 375.6C140.136 358.8 130.536 337 130.536 310.2H200.736C200.736 318.2 203.736 324.8 209.736 330C215.736 335.2 223.736 337.8 233.736 337.8C243.336 337.8 251.136 335 257.136 329.4C263.536 323.8 266.736 316.6 266.736 307.8C266.736 299.8 263.936 293.2 258.336 288C252.736 282.8 245.536 280.2 236.736 280.2H199.536V218.4H236.736C243.536 218.4 249.336 216 254.136 211.2C258.936 206.4 261.336 200.4 261.336 193.2C261.336 184.8 258.736 178.2 253.536 173.4C248.336 168.6 241.736 166.2 233.736 166.2C226.536 166.2 220.336 168.4 215.136 172.8C210.336 177.2 207.936 182.8 207.936 189.6H141.336C141.336 164.8 150.136 144.6 167.736 129C185.336 113 207.936 105 235.536 105C263.136 105 285.536 112.2 302.736 126.6C320.336 141 329.136 160 329.136 183.6C329.136 200.8 324.536 214.8 315.336 225.6C306.136 236 294.336 243.2 279.936 247.2C297.136 252 310.736 260.2 320.736 271.8C331.136 283.4 336.336 298 336.336 315.6C336.336 340.4 326.936 360.8 308.136 376.8C289.336 392.8 264.936 400.8 234.936 400.8Z" fill="currentColor"/>
-                            <path d="M26.8714 167.6H1.67139V105.2H94.6714V400.2H26.8714V167.6Z" fill="currentColor"/>
-                            <path d="M234.936 400.8C204.136 400.8 178.936 392.4 159.336 375.6C140.136 358.8 130.536 337 130.536 310.2H200.736C200.736 318.2 203.736 324.8 209.736 330C215.736 335.2 223.736 337.8 233.736 337.8C243.336 337.8 251.136 335 257.136 329.4C263.536 323.8 266.736 316.6 266.736 307.8C266.736 299.8 263.936 293.2 258.336 288C252.736 282.8 245.536 280.2 236.736 280.2H199.536V218.4H236.736C243.536 218.4 249.336 216 254.136 211.2C258.936 206.4 261.336 200.4 261.336 193.2C261.336 184.8 258.736 178.2 253.536 173.4C248.336 168.6 241.736 166.2 233.736 166.2C226.536 166.2 220.336 168.4 215.136 172.8C210.336 177.2 207.936 182.8 207.936 189.6H141.336C141.336 164.8 150.136 144.6 167.736 129C185.336 113 207.936 105 235.536 105C263.136 105 285.536 112.2 302.736 126.6C320.336 141 329.136 160 329.136 183.6C329.136 200.8 324.536 214.8 315.336 225.6C306.136 236 294.336 243.2 279.936 247.2C297.136 252 310.736 260.2 320.736 271.8C331.136 283.4 336.336 298 336.336 315.6C336.336 340.4 326.936 360.8 308.136 376.8C289.336 392.8 264.936 400.8 234.936 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-1-mask)"/>
-                            <path d="M26.8714 167.6H1.67139V105.2H94.6714V400.2H26.8714V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-1-mask)"/>
-                        </g>
-
-                        <g class="transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[26px] text-[#F3BEC7] dark:text-[#4B0600]">
-                            <mask id="path-2-mask" maskUnits="userSpaceOnUse" x="25.3357" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="25.3357" y="103" width="338" height="299"/>
-                                <path d="M260.6 400.8C229.8 400.8 204.6 392.4 185 375.6C165.8 358.8 156.2 337 156.2 310.2H226.4C226.4 318.2 229.4 324.8 235.4 330C241.4 335.2 249.4 337.8 259.4 337.8C269 337.8 276.8 335 282.8 329.4C289.2 323.8 292.4 316.6 292.4 307.8C292.4 299.8 289.6 293.2 284 288C278.4 282.8 271.2 280.2 262.4 280.2H225.2V218.4H262.4C269.2 218.4 275 216 279.8 211.2C284.6 206.4 287 200.4 287 193.2C287 184.8 284.4 178.2 279.2 173.4C274 168.6 267.4 166.2 259.4 166.2C252.2 166.2 246 168.4 240.8 172.8C236 177.2 233.6 182.8 233.6 189.6H167C167 164.8 175.8 144.6 193.4 129C211 113 233.6 105 261.2 105C288.8 105 311.2 112.2 328.4 126.6C346 141 354.8 160 354.8 183.6C354.8 200.8 350.2 214.8 341 225.6C331.8 236 320 243.2 305.6 247.2C322.8 252 336.4 260.2 346.4 271.8C356.8 283.4 362 298 362 315.6C362 340.4 352.6 360.8 333.8 376.8C315 392.8 290.6 400.8 260.6 400.8Z"/>
-                                <path d="M52.5357 167.6H27.3357V105.2H120.336V400.2H52.5357V167.6Z"/>
-                            </mask>
-                            <path d="M260.6 400.8C229.8 400.8 204.6 392.4 185 375.6C165.8 358.8 156.2 337 156.2 310.2H226.4C226.4 318.2 229.4 324.8 235.4 330C241.4 335.2 249.4 337.8 259.4 337.8C269 337.8 276.8 335 282.8 329.4C289.2 323.8 292.4 316.6 292.4 307.8C292.4 299.8 289.6 293.2 284 288C278.4 282.8 271.2 280.2 262.4 280.2H225.2V218.4H262.4C269.2 218.4 275 216 279.8 211.2C284.6 206.4 287 200.4 287 193.2C287 184.8 284.4 178.2 279.2 173.4C274 168.6 267.4 166.2 259.4 166.2C252.2 166.2 246 168.4 240.8 172.8C236 177.2 233.6 182.8 233.6 189.6H167C167 164.8 175.8 144.6 193.4 129C211 113 233.6 105 261.2 105C288.8 105 311.2 112.2 328.4 126.6C346 141 354.8 160 354.8 183.6C354.8 200.8 350.2 214.8 341 225.6C331.8 236 320 243.2 305.6 247.2C322.8 252 336.4 260.2 346.4 271.8C356.8 283.4 362 298 362 315.6C362 340.4 352.6 360.8 333.8 376.8C315 392.8 290.6 400.8 260.6 400.8Z" fill="currentColor"/>
-                            <path d="M52.5357 167.6H27.3357V105.2H120.336V400.2H52.5357V167.6Z" fill="currentColor"/>
-                            <path d="M260.6 400.8C229.8 400.8 204.6 392.4 185 375.6C165.8 358.8 156.2 337 156.2 310.2H226.4C226.4 318.2 229.4 324.8 235.4 330C241.4 335.2 249.4 337.8 259.4 337.8C269 337.8 276.8 335 282.8 329.4C289.2 323.8 292.4 316.6 292.4 307.8C292.4 299.8 289.6 293.2 284 288C278.4 282.8 271.2 280.2 262.4 280.2H225.2V218.4H262.4C269.2 218.4 275 216 279.8 211.2C284.6 206.4 287 200.4 287 193.2C287 184.8 284.4 178.2 279.2 173.4C274 168.6 267.4 166.2 259.4 166.2C252.2 166.2 246 168.4 240.8 172.8C236 177.2 233.6 182.8 233.6 189.6H167C167 164.8 175.8 144.6 193.4 129C211 113 233.6 105 261.2 105C288.8 105 311.2 112.2 328.4 126.6C346 141 354.8 160 354.8 183.6C354.8 200.8 350.2 214.8 341 225.6C331.8 236 320 243.2 305.6 247.2C322.8 252 336.4 260.2 346.4 271.8C356.8 283.4 362 298 362 315.6C362 340.4 352.6 360.8 333.8 376.8C315 392.8 290.6 400.8 260.6 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-2-mask)"/>
-                            <path d="M52.5357 167.6H27.3357V105.2H120.336V400.2H52.5357V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-2-mask)"/>
-                        </g>
-
-                        <g class="mix-blend-color dark:mix-blend-hard-light transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[51px] text-[#F8B803] dark:text-[#391800]">
-                            <mask id="path-3-mask" maskUnits="userSpaceOnUse" x="51" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="51" y="103" width="338" height="299"/>
-                                <path d="M286.264 400.8C255.464 400.8 230.264 392.4 210.664 375.6C191.464 358.8 181.864 337 181.864 310.2H252.064C252.064 318.2 255.064 324.8 261.064 330C267.064 335.2 275.064 337.8 285.064 337.8C294.664 337.8 302.464 335 308.464 329.4C314.864 323.8 318.064 316.6 318.064 307.8C318.064 299.8 315.264 293.2 309.664 288C304.064 282.8 296.864 280.2 288.064 280.2H250.864V218.4H288.064C294.864 218.4 300.664 216 305.464 211.2C310.264 206.4 312.664 200.4 312.664 193.2C312.664 184.8 310.064 178.2 304.864 173.4C299.664 168.6 293.064 166.2 285.064 166.2C277.864 166.2 271.664 168.4 266.464 172.8C261.664 177.2 259.264 182.8 259.264 189.6H192.664C192.664 164.8 201.464 144.6 219.064 129C236.664 113 259.264 105 286.864 105C314.464 105 336.864 112.2 354.064 126.6C371.664 141 380.464 160 380.464 183.6C380.464 200.8 375.864 214.8 366.664 225.6C357.464 236 345.664 243.2 331.264 247.2C348.464 252 362.064 260.2 372.064 271.8C382.464 283.4 387.664 298 387.664 315.6C387.664 340.4 378.264 360.8 359.464 376.8C340.664 392.8 316.264 400.8 286.264 400.8Z"/>
-                                <path d="M78.2 167.6H53V105.2H146V400.2H78.2V167.6Z"/>
-                            </mask>
-                            <path d="M286.264 400.8C255.464 400.8 230.264 392.4 210.664 375.6C191.464 358.8 181.864 337 181.864 310.2H252.064C252.064 318.2 255.064 324.8 261.064 330C267.064 335.2 275.064 337.8 285.064 337.8C294.664 337.8 302.464 335 308.464 329.4C314.864 323.8 318.064 316.6 318.064 307.8C318.064 299.8 315.264 293.2 309.664 288C304.064 282.8 296.864 280.2 288.064 280.2H250.864V218.4H288.064C294.864 218.4 300.664 216 305.464 211.2C310.264 206.4 312.664 200.4 312.664 193.2C312.664 184.8 310.064 178.2 304.864 173.4C299.664 168.6 293.064 166.2 285.064 166.2C277.864 166.2 271.664 168.4 266.464 172.8C261.664 177.2 259.264 182.8 259.264 189.6H192.664C192.664 164.8 201.464 144.6 219.064 129C236.664 113 259.264 105 286.864 105C314.464 105 336.864 112.2 354.064 126.6C371.664 141 380.464 160 380.464 183.6C380.464 200.8 375.864 214.8 366.664 225.6C357.464 236 345.664 243.2 331.264 247.2C348.464 252 362.064 260.2 372.064 271.8C382.464 283.4 387.664 298 387.664 315.6C387.664 340.4 378.264 360.8 359.464 376.8C340.664 392.8 316.264 400.8 286.264 400.8Z" fill="currentColor"/>
-                            <path d="M78.2 167.6H53V105.2H146V400.2H78.2V167.6Z" fill="currentColor"/>
-                            <path d="M286.264 400.8C255.464 400.8 230.264 392.4 210.664 375.6C191.464 358.8 181.864 337 181.864 310.2H252.064C252.064 318.2 255.064 324.8 261.064 330C267.064 335.2 275.064 337.8 285.064 337.8C294.664 337.8 302.464 335 308.464 329.4C314.864 323.8 318.064 316.6 318.064 307.8C318.064 299.8 315.264 293.2 309.664 288C304.064 282.8 296.864 280.2 288.064 280.2H250.864V218.4H288.064C294.864 218.4 300.664 216 305.464 211.2C310.264 206.4 312.664 200.4 312.664 193.2C312.664 184.8 310.064 178.2 304.864 173.4C299.664 168.6 293.064 166.2 285.064 166.2C277.864 166.2 271.664 168.4 266.464 172.8C261.664 177.2 259.264 182.8 259.264 189.6H192.664C192.664 164.8 201.464 144.6 219.064 129C236.664 113 259.264 105 286.864 105C314.464 105 336.864 112.2 354.064 126.6C371.664 141 380.464 160 380.464 183.6C380.464 200.8 375.864 214.8 366.664 225.6C357.464 236 345.664 243.2 331.264 247.2C348.464 252 362.064 260.2 372.064 271.8C382.464 283.4 387.664 298 387.664 315.6C387.664 340.4 378.264 360.8 359.464 376.8C340.664 392.8 316.264 400.8 286.264 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-3-mask)"/>
-                            <path d="M78.2 167.6H53V105.2H146V400.2H78.2V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-3-mask)"/>
-                        </g>
-
-                        <g class="mix-blend-multiply dark:mix-blend-normal transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[78px] text-[#F3BEC7] dark:text-[#733000]">
-                            <mask id="path-4-mask" maskUnits="userSpaceOnUse" x="76.6643" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="76.6643" y="103" width="338" height="299"/>
-                                <path d="M311.929 400.8C281.129 400.8 255.929 392.4 236.329 375.6C217.129 358.8 207.529 337 207.529 310.2H277.729C277.729 318.2 280.729 324.8 286.729 330C292.729 335.2 300.729 337.8 310.729 337.8C320.329 337.8 328.129 335 334.129 329.4C340.529 323.8 343.729 316.6 343.729 307.8C343.729 299.8 340.929 293.2 335.329 288C329.729 282.8 322.529 280.2 313.729 280.2H276.529V218.4H313.729C320.529 218.4 326.329 216 331.129 211.2C335.929 206.4 338.329 200.4 338.329 193.2C338.329 184.8 335.729 178.2 330.529 173.4C325.329 168.6 318.729 166.2 310.729 166.2C303.529 166.2 297.329 168.4 292.129 172.8C287.329 177.2 284.929 182.8 284.929 189.6H218.329C218.329 164.8 227.129 144.6 244.729 129C262.329 113 284.929 105 312.529 105C340.129 105 362.529 112.2 379.729 126.6C397.329 141 406.129 160 406.129 183.6C406.129 200.8 401.529 214.8 392.329 225.6C383.129 236 371.329 243.2 356.929 247.2C374.129 252 387.729 260.2 397.729 271.8C408.129 283.4 413.329 298 413.329 315.6C413.329 340.4 403.929 360.8 385.129 376.8C366.329 392.8 341.929 400.8 311.929 400.8Z"/>
-                                <path d="M103.864 167.6H78.6643V105.2H171.664V400.2H103.864V167.6Z"/>
-                            </mask>
-                            <path d="M311.929 400.8C281.129 400.8 255.929 392.4 236.329 375.6C217.129 358.8 207.529 337 207.529 310.2H277.729C277.729 318.2 280.729 324.8 286.729 330C292.729 335.2 300.729 337.8 310.729 337.8C320.329 337.8 328.129 335 334.129 329.4C340.529 323.8 343.729 316.6 343.729 307.8C343.729 299.8 340.929 293.2 335.329 288C329.729 282.8 322.529 280.2 313.729 280.2H276.529V218.4H313.729C320.529 218.4 326.329 216 331.129 211.2C335.929 206.4 338.329 200.4 338.329 193.2C338.329 184.8 335.729 178.2 330.529 173.4C325.329 168.6 318.729 166.2 310.729 166.2C303.529 166.2 297.329 168.4 292.129 172.8C287.329 177.2 284.929 182.8 284.929 189.6H218.329C218.329 164.8 227.129 144.6 244.729 129C262.329 113 284.929 105 312.529 105C340.129 105 362.529 112.2 379.729 126.6C397.329 141 406.129 160 406.129 183.6C406.129 200.8 401.529 214.8 392.329 225.6C383.129 236 371.329 243.2 356.929 247.2C374.129 252 387.729 260.2 397.729 271.8C408.129 283.4 413.329 298 413.329 315.6C413.329 340.4 403.929 360.8 385.129 376.8C366.329 392.8 341.929 400.8 311.929 400.8Z" fill="currentColor"/>
-                            <path d="M103.864 167.6H78.6643V105.2H171.664V400.2H103.864V167.6Z" fill="currentColor"/>
-                            <path d="M311.929 400.8C281.129 400.8 255.929 392.4 236.329 375.6C217.129 358.8 207.529 337 207.529 310.2H277.729C277.729 318.2 280.729 324.8 286.729 330C292.729 335.2 300.729 337.8 310.729 337.8C320.329 337.8 328.129 335 334.129 329.4C340.529 323.8 343.729 316.6 343.729 307.8C343.729 299.8 340.929 293.2 335.329 288C329.729 282.8 322.529 280.2 313.729 280.2H276.529V218.4H313.729C320.529 218.4 326.329 216 331.129 211.2C335.929 206.4 338.329 200.4 338.329 193.2C338.329 184.8 335.729 178.2 330.529 173.4C325.329 168.6 318.729 166.2 310.729 166.2C303.529 166.2 297.329 168.4 292.129 172.8C287.329 177.2 284.929 182.8 284.929 189.6H218.329C218.329 164.8 227.129 144.6 244.729 129C262.329 113 284.929 105 312.529 105C340.129 105 362.529 112.2 379.729 126.6C397.329 141 406.129 160 406.129 183.6C406.129 200.8 401.529 214.8 392.329 225.6C383.129 236 371.329 243.2 356.929 247.2C374.129 252 387.729 260.2 397.729 271.8C408.129 283.4 413.329 298 413.329 315.6C413.329 340.4 403.929 360.8 385.129 376.8C366.329 392.8 341.929 400.8 311.929 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-4-mask)"/>
-                            <path d="M103.864 167.6H78.6643V105.2H171.664V400.2H103.864V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-4-mask)"/>
-                        </g>
-
-                        <g class="mix-blend-hard-light transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[102px] text-[#F3BEC7] dark:text-[#4B0600]">
-                            <mask id="path-5-mask" maskUnits="userSpaceOnUse" x="102.329" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="102.329" y="103" width="338" height="299"/>
-                                <path d="M337.593 400.8C306.793 400.8 281.593 392.4 261.993 375.6C242.793 358.8 233.193 337 233.193 310.2H303.393C303.393 318.2 306.393 324.8 312.393 330C318.393 335.2 326.393 337.8 336.393 337.8C345.993 337.8 353.793 335 359.793 329.4C366.193 323.8 369.393 316.6 369.393 307.8C369.393 299.8 366.593 293.2 360.993 288C355.393 282.8 348.193 280.2 339.393 280.2H302.193V218.4H339.393C346.193 218.4 351.993 216 356.793 211.2C361.593 206.4 363.993 200.4 363.993 193.2C363.993 184.8 361.393 178.2 356.193 173.4C350.993 168.6 344.393 166.2 336.393 166.2C329.193 166.2 322.993 168.4 317.793 172.8C312.993 177.2 310.593 182.8 310.593 189.6H243.993C243.993 164.8 252.793 144.6 270.393 129C287.993 113 310.593 105 338.193 105C365.793 105 388.193 112.2 405.393 126.6C422.993 141 431.793 160 431.793 183.6C431.793 200.8 427.193 214.8 417.993 225.6C408.793 236 396.993 243.2 382.593 247.2C399.793 252 413.393 260.2 423.393 271.8C433.793 283.4 438.993 298 438.993 315.6C438.993 340.4 429.593 360.8 410.793 376.8C391.993 392.8 367.593 400.8 337.593 400.8Z"/>
-                                <path d="M129.529 167.6H104.329V105.2H197.329V400.2H129.529V167.6Z"/>
-                            </mask>
-                            <path d="M337.593 400.8C306.793 400.8 281.593 392.4 261.993 375.6C242.793 358.8 233.193 337 233.193 310.2H303.393C303.393 318.2 306.393 324.8 312.393 330C318.393 335.2 326.393 337.8 336.393 337.8C345.993 337.8 353.793 335 359.793 329.4C366.193 323.8 369.393 316.6 369.393 307.8C369.393 299.8 366.593 293.2 360.993 288C355.393 282.8 348.193 280.2 339.393 280.2H302.193V218.4H339.393C346.193 218.4 351.993 216 356.793 211.2C361.593 206.4 363.993 200.4 363.993 193.2C363.993 184.8 361.393 178.2 356.193 173.4C350.993 168.6 344.393 166.2 336.393 166.2C329.193 166.2 322.993 168.4 317.793 172.8C312.993 177.2 310.593 182.8 310.593 189.6H243.993C243.993 164.8 252.793 144.6 270.393 129C287.993 113 310.593 105 338.193 105C365.793 105 388.193 112.2 405.393 126.6C422.993 141 431.793 160 431.793 183.6C431.793 200.8 427.193 214.8 417.993 225.6C408.793 236 396.993 243.2 382.593 247.2C399.793 252 413.393 260.2 423.393 271.8C433.793 283.4 438.993 298 438.993 315.6C438.993 340.4 429.593 360.8 410.793 376.8C391.993 392.8 367.593 400.8 337.593 400.8Z" fill="currentColor"/>
-                            <path d="M129.529 167.6H104.329V105.2H197.329V400.2H129.529V167.6Z" fill="currentColor"/>
-                            <path d="M337.593 400.8C306.793 400.8 281.593 392.4 261.993 375.6C242.793 358.8 233.193 337 233.193 310.2H303.393C303.393 318.2 306.393 324.8 312.393 330C318.393 335.2 326.393 337.8 336.393 337.8C345.993 337.8 353.793 335 359.793 329.4C366.193 323.8 369.393 316.6 369.393 307.8C369.393 299.8 366.593 293.2 360.993 288C355.393 282.8 348.193 280.2 339.393 280.2H302.193V218.4H339.393C346.193 218.4 351.993 216 356.793 211.2C361.593 206.4 363.993 200.4 363.993 193.2C363.993 184.8 361.393 178.2 356.193 173.4C350.993 168.6 344.393 166.2 336.393 166.2C329.193 166.2 322.993 168.4 317.793 172.8C312.993 177.2 310.593 182.8 310.593 189.6H243.993C243.993 164.8 252.793 144.6 270.393 129C287.993 113 310.593 105 338.193 105C365.793 105 388.193 112.2 405.393 126.6C422.993 141 431.793 160 431.793 183.6C431.793 200.8 427.193 214.8 417.993 225.6C408.793 236 396.993 243.2 382.593 247.2C399.793 252 413.393 260.2 423.393 271.8C433.793 283.4 438.993 298 438.993 315.6C438.993 340.4 429.593 360.8 410.793 376.8C391.993 392.8 367.593 400.8 337.593 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-5-mask)"/>
-                            <path d="M129.529 167.6H104.329V105.2H197.329V400.2H129.529V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-5-mask)"/>
-                        </g>
-                    </svg>
-                    <div class="absolute inset-0 rounded-t-lg lg:rounded-t-none lg:rounded-r-lg shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"></div>
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#beranda" class="text-stone-300 hover:text-baligold transition-colors duration-200 text-sm font-medium tracking-wide">Beranda</a>
+                    <a href="#tentang" class="text-stone-300 hover:text-baligold transition-colors duration-200 text-sm font-medium tracking-wide">Tentang</a>
+                    <a href="#mekotek" class="text-stone-300 hover:text-baligold transition-colors duration-200 text-sm font-medium tracking-wide">Mekotek</a>
+                    <a href="#pantai" class="text-stone-300 hover:text-baligold transition-colors duration-200 text-sm font-medium tracking-wide">Pantai Munggu</a>
+                    <a href="#itinerary" class="text-stone-300 hover:text-baligold transition-colors duration-200 text-sm font-medium tracking-wide">Rencanakan Trip</a>
+                    <a href="#panduan" class="text-stone-300 hover:text-baligold transition-colors duration-200 text-sm font-medium tracking-wide">Panduan</a>
                 </div>
-            </main>
+
+                <!-- Ambient Audio Button & Mobile Toggle -->
+                <div class="flex items-center gap-4">
+                    <button id="audioBtn" onclick="toggleGamelanAmbient()" class="flex items-center gap-2 px-3 py-1.5 bg-stone-800 hover:bg-baliterra border border-stone-700 hover:border-baligold rounded-full text-xs transition-all duration-300 text-stone-300 hover:text-white" title="Nyalakan Musik Latar Gamelan Bali">
+                        <i class="fa-solid fa-music animate-pulse"></i>
+                        <span id="audioBtnText">Gamelan Ambient</span>
+                    </button>
+                    
+                    <button id="mobileMenuBtn" class="md:hidden text-stone-300 hover:text-white focus:outline-none">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        @if (Route::has('login'))
-            <div class="h-14.5 hidden lg:block"></div>
-        @endif
-    </body>
+        <!-- Mobile Menu (Hidden by default) -->
+        <div id="mobileMenu" class="hidden md:hidden bg-stone-900 border-t border-stone-800 px-4 pt-2 pb-6 space-y-3">
+            <a href="#beranda" class="block text-stone-300 hover:text-baligold py-2 font-medium" onclick="toggleMobileMenu()">Beranda</a>
+            <a href="#tentang" class="block text-stone-300 hover:text-baligold py-2 font-medium" onclick="toggleMobileMenu()">Tentang Desa</a>
+            <a href="#mekotek" class="block text-stone-300 hover:text-baligold py-2 font-medium" onclick="toggleMobileMenu()">Tradisi Mekotek</a>
+            <a href="#pantai" class="block text-stone-300 hover:text-baligold py-2 font-medium" onclick="toggleMobileMenu()">Pantai Munggu</a>
+            <a href="#itinerary" class="block text-stone-300 hover:text-baligold py-2 font-medium" onclick="toggleMobileMenu()">Rencanakan Trip</a>
+            <a href="#panduan" class="block text-stone-300 hover:text-baligold py-2 font-medium" onclick="toggleMobileMenu()">Panduan Wisata</a>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section id="beranda" class="relative h-screen flex items-center justify-center overflow-hidden">
+        <!-- Overlay Background dengan Gambar Estetik Desa Bali / Sunset -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1920&q=80" alt="Beautiful Bali Temple Sunset Background" class="w-full h-full object-cover brightness-[0.35]">
+            <div class="absolute inset-0 bg-gradient-to-t from-[#1C1917] via-transparent to-black/50"></div>
+        </div>
+
+        <div class="relative z-10 text-center px-4 max-w-5xl mx-auto mt-20">
+            <span class="inline-block bg-baliterra/30 border border-baligold/50 text-baligold text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full mb-6">
+                <i class="fa-solid fa-map-pin mr-2"></i>Badung, Mengwi, Bali
+            </span>
+            <h1 class="font-serif text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-stone-100 via-stone-200 to-baligold leading-tight mb-6">
+                Desa Wisata Munggu
+            </h1>
+            <p class="text-stone-300 text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed mb-10">
+                Penyatuan agung antara tradisi sakral tolak bala <span class="text-baligold font-semibold">Mekotek</span> dan ketenangan deburan ombak <span class="text-cyan-400 font-semibold">Pantai Munggu</span> yang eksotis.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="#mekotek" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-baliterra to-balired hover:from-baligold hover:to-baliterra text-white font-semibold rounded-lg shadow-xl hover:shadow-baliterra/20 transition-all duration-300 transform hover:-translate-y-1 text-center">
+                    <i class="fa-solid fa-shield-halved mr-2"></i>Jelajahi Tradisi Mekotek
+                </a>
+                <a href="#pantai" class="w-full sm:w-auto px-8 py-4 bg-stone-800/80 hover:bg-stone-700/80 border border-stone-600 hover:border-cyan-500 text-stone-100 hover:text-cyan-300 font-semibold rounded-lg transition-all duration-300 transform hover:-translate-y-1 text-center">
+                    <i class="fa-solid fa-umbrella-beach mr-2"></i>Pesona Pantai Munggu
+                </a>
+            </div>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 text-center animate-bounce">
+            <span class="text-xs text-stone-500 uppercase tracking-widest block mb-2">Gulir Kebawah</span>
+            <i class="fa-solid fa-angle-down text-baligold text-lg"></i>
+        </div>
+    </section>
+
+    <!-- ABOUT SECTION (TENTANG DESA) -->
+    <section id="tentang" class="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+            
+            <!-- Left Info Panel -->
+            <div class="lg:col-span-5 space-y-6">
+                <span class="text-baligold font-semibold tracking-widest text-sm uppercase flex items-center gap-2">
+                    <!-- Balinese Frangipani (Bunga Jepun) SVG Icon -->
+                    <svg viewBox="0 0 24 24" class="w-5 h-5 text-baligold animate-spin-slow" fill="currentColor">
+                        <path d="M12 2C11.5 4 9.5 4.5 8 5C6.5 5.5 5 4.5 4.5 6C4 7.5 5 9 4.5 10.5C4 12 2 12.5 2 14C2 15.5 3.5 16 4.5 17.5C5.5 19 4.5 20.5 6 21C7.5 21.5 9 20.5 10.5 21C12 21.5 12.5 23.5 14 23.5C15.5 23.5 16 22 17.5 21C19 20 20.5 21 21 19.5C21.5 18 20.5 16.5 21 15C21.5 13.5 23.5 13 23.5 11.5C23.5 10 22 9.5 21 8C20 6.5 21 5 19.5 4.5C18 4 16.5 5 15 4.5C13.5 4 13 2 12 2Z" opacity="0.8"/>
+                        <circle cx="12" cy="12" r="3" fill="#D4AF37"/>
+                    </svg>
+                    Tentang Desa Wisata
+                </span>
+                <h2 class="font-serif text-3xl md:text-5xl font-bold text-stone-100 leading-tight">
+                    Harmoni Budaya di Jantung Kecamatan Mengwi
+                </h2>
+                <p class="text-stone-400 leading-relaxed">
+                    Desa Wisata Munggu adalah surga tersembunyi yang menjaga erat keaslian adat istiadat Bali di tengah modernisasi pariwisata. Memiliki luas wilayah agraris berpadu pesisir pantai, desa ini berkomitmen penuh pada pariwisata ramah lingkungan berbasis komunitas.
+                </p>
+                <p class="text-stone-400 leading-relaxed">
+                    Dengan memegang teguh asas <strong>Sapta Pesona</strong> (Aman, Tertib, Bersih, Sejuk, Indah, Ramah, Kenangan), Munggu mengundang petualang budaya dan pencari ketenangan laut untuk menyatu bersama kearifan lokal.
+                </p>
+                
+                <!-- Quick Statistics -->
+                <div class="grid grid-cols-3 gap-6 pt-6 border-t border-stone-800">
+                    <div>
+                        <span class="text-3xl font-bold text-baligold font-serif block">1</span>
+                        <span class="text-xs text-stone-500 uppercase tracking-wider block mt-1">Warisan Budaya Dunia</span>
+                    </div>
+                    <div>
+                        <span class="text-3xl font-bold text-cyan-400 font-serif block">1.2km</span>
+                        <span class="text-xs text-stone-500 uppercase tracking-wider block mt-1">Garis Pantai Hitam Eksotis</span>
+                    </div>
+                    <div>
+                        <span class="text-3xl font-bold text-emerald-400 font-serif block">100%</span>
+                        <span class="text-xs text-stone-500 uppercase tracking-wider block mt-1">Hospitalitas Lokal Asli</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Visual Panel (Interactive Sapta Pesona Cards & Illustrative Map) -->
+            <div class="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- COLUMN 1: Interactive Map Illustration -->
+                <div class="bg-stone-900/40 p-6 rounded-2xl border border-stone-800 hover:border-baligold transition-all duration-300 flex flex-col justify-between">
+                    <div>
+                        <span class="text-baligold font-semibold tracking-widest text-[10px] uppercase block mb-1">
+                            <i class="fa-solid fa-map-location-dot mr-1"></i> Peta Ilustrasi Zonasi
+                        </span>
+                        <h3 class="text-base font-semibold text-stone-200 mb-2">Zonasi Geografis Munggu</h3>
+                        <p class="text-[11px] text-stone-500 leading-relaxed mb-4">Ketuk zona wilayah pada peta interaktif di bawah untuk menjelajahi keistimewaan masing-masing area secara visual.</p>
+                    </div>
+
+                    <!-- Map SVG Illustration -->
+                    <div class="flex items-center justify-center py-2 bg-stone-950/40 rounded-xl border border-stone-800/60 p-2">
+                        <svg viewBox="0 0 300 240" class="w-full max-w-[260px] h-auto drop-shadow-lg">
+                            <!-- Background base map -->
+                            <rect width="300" height="240" rx="16" fill="#171513" stroke="#2E2824" stroke-width="1"/>
+                            
+                            <!-- Area 1: Subak Persawahan (Green Area) -->
+                            <path id="zone-subak" d="M15,15 L285,15 L285,85 L15,85 Z" class="map-zone fill-emerald-950/30 stroke-emerald-500/80 stroke-2 hover:fill-emerald-900/40" onclick="showMapDetail('subak')"/>
+                            <text x="150" y="45" fill="#34D399" font-family="Poppins" font-size="11" font-weight="bold" text-anchor="middle" class="pointer-events-none tracking-wider">ZONA SUBAK HIJAU (UTARA)</text>
+                            <text x="150" y="62" fill="#A7F3D0" font-family="Poppins" font-size="8" text-anchor="middle" class="pointer-events-none">Ekowisata & Irigasi Sawah Abadi</text>
+                            
+                            <!-- Area 2: Adat & Pemukiman (Amber Area) -->
+                            <path id="zone-adat" d="M15,85 L285,85 L285,155 L15,155 Z" class="map-zone fill-amber-950/30 stroke-amber-500/80 stroke-2 hover:fill-amber-900/40" onclick="showMapDetail('adat')"/>
+                            <text x="150" y="115" fill="#FBBF24" font-family="Poppins" font-size="11" font-weight="bold" text-anchor="middle" class="pointer-events-none tracking-wider">ZONA ADAT & MEKOTEK (TENGAH)</text>
+                            <text x="150" y="132" fill="#FDE68A" font-family="Poppins" font-size="8" text-anchor="middle" class="pointer-events-none">Pura Kerajaan & Pusat Tradisi Budaya</text>
+                            
+                            <!-- Area 3: Pantai & Nelayan (Cyan Area) -->
+                            <path id="zone-pantai" d="M15,155 L285,155 L285,225 L15,225 Z" class="map-zone fill-cyan-950/30 stroke-cyan-500/80 stroke-2 hover:fill-cyan-900/40" onclick="showMapDetail('pantai')"/>
+                            <text x="150" y="185" fill="#22D3EE" font-family="Poppins" font-size="11" font-weight="bold" text-anchor="middle" class="pointer-events-none tracking-wider">ZONA PANTAI & NELAYAN (SELATAN)</text>
+                            <text x="150" y="202" fill="#CFFAFE" font-family="Poppins" font-size="8" text-anchor="middle" class="pointer-events-none">Surfing, Kuliner & Pasir Hitam Eksotis</text>
+                        </svg>
+                    </div>
+
+                    <!-- Dynamic map info box -->
+                    <div id="mapInfoBox" class="mt-4 p-3 bg-stone-950 border border-stone-800 rounded-xl text-[11px] text-stone-400 min-h-[64px] flex items-center justify-center text-center transition-all duration-300">
+                        <span><i class="fa-solid fa-circle-info text-baligold mr-1"></i> Ketuk salah satu area zona pada peta ilustrasi di atas untuk menyingkap kearifan lokal kawasannya.</span>
+                    </div>
+                </div>
+
+                <!-- COLUMN 2: Features Cards -->
+                <div class="space-y-6">
+                    <div class="bg-stone-900/60 p-6 rounded-2xl border border-stone-800 hover:border-baliterra transition-all duration-300">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 bg-baliterra/20 rounded-xl flex items-center justify-center text-baliterra text-lg shrink-0">
+                                <i class="fa-solid fa-hands-praying"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-semibold text-stone-200 mb-1">Kelestarian Adat Sakral</h3>
+                                <p class="text-xs text-stone-500 leading-relaxed">Menjaga ritual tolak bala warisan leluhur secara utuh agar tak tergerus gempuran modernitas pariwisata.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-stone-900/60 p-6 rounded-2xl border border-stone-800 hover:border-cyan-500 transition-all duration-300">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 bg-cyan-900/20 rounded-xl flex items-center justify-center text-cyan-400 text-lg shrink-0">
+                                <i class="fa-solid fa-leaf"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-semibold text-stone-200 mb-1">Eko-Wisata Hijau Mandiri</h3>
+                                <p class="text-xs text-stone-500 leading-relaxed">Mengembangkan subak persawahan alami serta mengawal pesisir pantai murni tanpa sampah plastik.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-stone-900/60 p-6 rounded-2xl border border-stone-800 hover:border-emerald-500 transition-all duration-300">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 bg-emerald-950/20 rounded-xl flex items-center justify-center text-emerald-400 text-lg shrink-0">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-semibold text-stone-200 mb-1">Sinergi Komunitas & UMKM</h3>
+                                <p class="text-xs text-stone-500 leading-relaxed">Mendorong ekonomi mandiri melalui pemandu adat setempat, homestay warga, dan warung lokal pesisir.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ILLUSTRATIVE SECTION DIVIDER (BALINESE PATTERN) -->
+    <div class="w-full flex justify-center py-6 opacity-30 select-none">
+        <svg viewBox="0 0 100 20" class="w-28 h-8 text-baligold" fill="currentColor">
+            <!-- Balinese double wave & floral scroll motif -->
+            <path d="M50 10 C45 5, 40 5, 35 10 C30 15, 25 15, 20 10 C15 5, 10 5, 5 10 L5 12 C10 7, 15 7, 20 12 C25 17, 30 17, 35 12 C40 7, 45 7, 50 12 C55 7, 60 7, 65 12 C70 17, 75 17, 80 12 C85 7, 90 7, 95 12 L95 10 C90 5, 85 5, 80 10 C75 15, 70 15, 65 10 C60 5, 55 5, 50 10 Z"/>
+        </svg>
+    </div>
+
+    <!-- MEKOTEK TRADITION SECTION -->
+    <section id="mekotek" class="bg-stone-950/80 py-24 border-y border-stone-900 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-baliterra font-semibold tracking-widest text-sm uppercase block mb-2">Ritual Tolak Bala Sakral</span>
+                <h2 class="font-serif text-4xl md:text-6xl font-bold text-stone-100 mb-6">Ngerebeg Mekotek</h2>
+                <p class="text-stone-400 leading-relaxed">
+                    Digelar setiap Hari Raya Kuningan (10 hari setelah Galungan), tradisi sakral ini mempertemukan ribuan krama (pemuda adat) dengan memanggul tongkat kayu pulet sepanjang 2-3 meter, menyatukannya di udara hingga membentuk formasi kerucut berisik nan megah.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Countdown & Info Panel -->
+                <div class="lg:col-span-5 space-y-8 bg-[#201A15] p-8 rounded-2xl border border-baliterra/20 shadow-xl">
+                    <div class="text-center lg:text-left">
+                        <h3 class="font-serif text-2xl font-semibold text-baligold mb-2">Kuningan & Mekotek 2026</h3>
+                        <p class="text-xs text-stone-400 uppercase tracking-widest">Penghitung Mundur Menuju Prosesi Agung Berikutnya</p>
+                    </div>
+
+                    <!-- Dynamic Countdown Clock -->
+                    <div class="grid grid-cols-4 gap-4 text-center">
+                        <div class="bg-stone-900 p-4 rounded-xl border border-stone-800">
+                            <span id="cd-days" class="text-3xl font-bold text-baligold font-serif block">00</span>
+                            <span class="text-[10px] text-stone-500 uppercase tracking-wider block mt-1">Hari</span>
+                        </div>
+                        <div class="bg-stone-900 p-4 rounded-xl border border-stone-800">
+                            <span id="cd-hours" class="text-3xl font-bold text-baligold font-serif block">00</span>
+                            <span class="text-[10px] text-stone-500 uppercase tracking-wider block mt-1">Jam</span>
+                        </div>
+                        <div class="bg-stone-900 p-4 rounded-xl border border-stone-800">
+                            <span id="cd-mins" class="text-3xl font-bold text-baligold font-serif block">00</span>
+                            <span class="text-[10px] text-stone-500 uppercase tracking-wider block mt-1">Menit</span>
+                        </div>
+                        <div class="bg-stone-900 p-4 rounded-xl border border-stone-800">
+                            <span id="cd-secs" class="text-3xl font-bold text-baligold font-serif block">00</span>
+                            <span class="text-[10px] text-stone-500 uppercase tracking-wider block mt-1">Detik</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 text-sm text-stone-300">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-calendar-day text-baliterra mt-1 text-base"></i>
+                            <div>
+                                <strong class="text-stone-100 block">Waktu Pelaksanaan</strong>
+                                Setiap Sabtu Kliwon Kuningan, dimulai tepat dari tengah hari di Pura Dalem Munggu hingga meluas ke area jalan raya desa.
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-shirt text-baliterra mt-1 text-base"></i>
+                            <div>
+                                <strong class="text-stone-100 block">Aturan Berpakaian (Dress Code)</strong>
+                                Pengunjung luar wajib menggunakan pakaian adat ringan madya (kamen/kain bawahan Bali dan selendang/senteng).
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-info text-baliterra mt-1 text-base"></i>
+                            <div>
+                                <strong class="text-stone-100 block">Asal-Usul Sejarah</strong>
+                                Dimulai sejak tahun 1915 dari Kerajaan Mengwi sebagai perayaan kemenangan prajurit dan tolak bala pengusir wabah penyakit.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Mekotek Simulator -->
+                <div class="lg:col-span-7 bg-[#141210] p-8 rounded-2xl border border-stone-800 shadow-inner">
+                    <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-xl font-semibold text-stone-100">Simulasi Formasi Mekotek</h3>
+                            <p class="text-xs text-stone-500">Klik tombol untuk melihat bagaimana tongkat disatukan</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="startMekotekSim()" class="px-4 py-2 bg-baliterra hover:bg-baligold text-white text-xs font-semibold rounded-lg transition-all duration-300">
+                                <i class="fa-solid fa-play mr-1"></i> Mulai Gabungkan Kayu
+                            </button>
+                            <button onclick="resetMekotekSim()" class="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-semibold rounded-lg transition-all duration-300">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Simulator Screen -->
+                    <div class="relative w-full h-[320px] bg-stone-900 border border-stone-800 rounded-xl overflow-hidden flex items-end justify-center pb-6">
+                        <!-- Temple Gate Silhouette Background -->
+                        <div class="absolute inset-x-0 bottom-0 h-48 opacity-10 flex justify-center items-end">
+                            <svg class="w-72 h-48" viewBox="0 0 100 100" fill="currentColor">
+                                <path d="M10 100 L25 100 L25 40 L35 40 L35 15 L32 15 L32 5 L45 5 L45 0 L55 0 L55 5 L68 5 L68 15 L65 15 L65 40 L75 40 L75 100 L90 100 Z" />
+                            </svg>
+                        </div>
+
+                        <!-- Gamelan Sound Simulator Note Trigger visualizer -->
+                        <div id="gamelanViz" class="absolute inset-x-0 top-4 flex justify-center gap-2 px-6 pointer-events-none opacity-0 transition-opacity duration-300">
+                            <span class="px-3 py-1 bg-baligold/20 border border-baligold/50 text-baligold rounded-full text-xs font-serif italic">🎵 Pling, Plong, Ding, Dong... Gamelan menyala! 🎵</span>
+                        </div>
+
+                        <!-- Crowds and Spears Container -->
+                        <div id="spears-container" class="relative w-full h-full max-w-sm flex items-end justify-center">
+                            <!-- Left Group of Spears -->
+                            <div id="left-spears" class="absolute bottom-0 left-4 w-12 h-48 flex items-end justify-between transition-all duration-1000 ease-out origin-bottom">
+                                <div class="w-1.5 h-44 bg-amber-800/80 rounded shadow transform rotate-[35deg] origin-bottom transition-all duration-1000"></div>
+                                <div class="w-1.5 h-40 bg-amber-900/80 rounded shadow transform rotate-[25deg] origin-bottom transition-all duration-1000"></div>
+                                <div class="w-1.5 h-46 bg-amber-700/80 rounded shadow transform rotate-[15deg] origin-bottom transition-all duration-1000"></div>
+                            </div>
+                            <!-- Right Group of Spears -->
+                            <div id="right-spears" class="absolute bottom-0 right-4 w-12 h-48 flex items-end justify-between transition-all duration-1000 ease-out origin-bottom">
+                                <div class="w-1.5 h-46 bg-amber-700/80 rounded shadow transform -rotate-[15deg] origin-bottom transition-all duration-1000"></div>
+                                <div class="w-1.5 h-40 bg-amber-900/80 rounded shadow transform -rotate-[25deg] origin-bottom transition-all duration-1000"></div>
+                                <div class="w-1.5 h-44 bg-amber-800/80 rounded shadow transform -rotate-[35deg] origin-bottom transition-all duration-1000"></div>
+                            </div>
+
+                            <!-- Spear Peak/Cone indicator -->
+                            <div id="cone-peak" class="absolute bottom-[200px] left-1/2 -translate-x-1/2 opacity-0 scale-50 transition-all duration-1000 ease-out z-20 flex flex-col items-center">
+                                <div class="w-4 h-4 bg-red-600 rounded-full animate-ping mb-2"></div>
+                                <span class="bg-red-600 text-stone-100 text-[10px] font-bold px-2 py-0.5 rounded shadow">PEAK FORMATION!</span>
+                            </div>
+
+                            <!-- Animated People Silhouettes at bottom -->
+                            <div class="absolute bottom-0 inset-x-0 h-10 flex justify-around items-end opacity-70">
+                                <div class="w-4 h-8 bg-stone-700 rounded-t-lg"></div>
+                                <div class="w-5 h-9 bg-stone-600 rounded-t-lg"></div>
+                                <div class="w-4 h-10 bg-stone-800 rounded-t-lg"></div>
+                                <div class="w-5 h-7 bg-stone-700 rounded-t-lg"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulator Details -->
+                    <div class="mt-4 p-4 bg-stone-900 rounded-lg text-xs text-stone-400 space-y-2">
+                        <p><strong class="text-baligold">Bagaimana Cara Kerjanya?</strong> Krama terbagi atas 15 banjar adat di Munggu. Kelompok-kelompok banjar berlari membawa tongkat dari arah berlawanan, bertabrakan secara sengaja, lalu menyatukan pucuk tongkat membentuk struktur piramida.</p>
+                        <p><strong class="text-baligold">Keberanian Ekstrem:</strong> Pemuda paling bernyali lalu menaiki kerucut tongkat tersebut sambil meneriakkan yel-yel penyemangat perang tanding dan menari bebas di puncak tumpukan kayu setinggi 5-7 meter!</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- MUNGGU BEACH (PANTAI MUNGGU) SECTION -->
+    <section id="pantai" class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div class="flex flex-col lg:flex-row items-start lg:items-end justify-between mb-16 gap-4">
+            <div>
+                <span class="text-cyan-400 font-semibold tracking-widest text-sm uppercase block mb-2">Pantai Tersembunyi di Badung Barat</span>
+                <h2 class="font-serif text-4xl md:text-6xl font-bold text-stone-100 leading-tight">Pantai Munggu: Sunset & Ombak Eksotis</h2>
+            </div>
+            <p class="text-stone-400 max-w-md leading-relaxed">
+                Pantai dengan hamparan pasir hitam yang mengkilat dihantam sinar senja, terkenal akan arusnya yang ramah bagi peselancar profesional dan ketenangannya yang cocok untuk melarikan diri dari keramaian wisata masal.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            
+            <!-- Pantai Munggu Highlights & Interactive Activity Selector -->
+            <div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                
+                <!-- Card 1: Surfing Paradise -->
+                <div class="group relative rounded-2xl overflow-hidden bg-stone-900 border border-stone-800 hover:border-cyan-500 transition-all duration-300">
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=600&q=80" alt="Surfer catching waves" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75">
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-cyan-400 text-xs font-semibold tracking-wide uppercase">Daya Tarik Utama</span>
+                            <span class="bg-cyan-900/40 text-cyan-400 text-[10px] px-2 py-0.5 rounded-full">Kondisi Ombak: Sedang - Tinggi</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-stone-100 mb-2">Surfing Kelas Dunia</h3>
+                        <p class="text-sm text-stone-500 leading-relaxed">Ombak di Pantai Munggu sangat digemari oleh peselancar lokal maupun mancanegara yang mencari suasana damai tanpa antrean ombak yang padat.</p>
+                    </div>
+                </div>
+
+                <!-- Card 2: Black Sand Sunsets -->
+                <div class="group relative rounded-2xl overflow-hidden bg-stone-900 border border-stone-800 hover:border-amber-500 transition-all duration-300">
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=600&q=80" alt="Beautiful golden sunset beach" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75">
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-amber-400 text-xs font-semibold tracking-wide uppercase">Pemandangan Alam</span>
+                            <span class="bg-amber-950/40 text-amber-400 text-[10px] px-2 py-0.5 rounded-full">Mulai Jam 17.30 WITA</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-stone-100 mb-2">Golden Sunset di Pasir Hitam</h3>
+                        <p class="text-sm text-stone-500 leading-relaxed">Pantai berpasir hitam yang luas menyerap cahaya matahari senja, menciptakan pantulan cermin air yang menakjubkan bagi penggemar fotografi landscape.</p>
+                    </div>
+                </div>
+
+                <!-- Card 3: Seafood Kuliner Pesisir -->
+                <div class="group relative rounded-2xl overflow-hidden bg-stone-900 border border-stone-800 hover:border-emerald-500 transition-all duration-300">
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=600&q=80" alt="Grilled grilled fish with chili" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75">
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-emerald-400 text-xs font-semibold tracking-wide uppercase">Kuliner Lokal</span>
+                            <span class="bg-emerald-950/40 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full">Tangkapan Nelayan Segar</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-stone-100 mb-2">Kuliner Hasil Laut Autentik</h3>
+                        <p class="text-sm text-stone-500 leading-relaxed">Nikmati ikan bakar berlumur bumbu rempah khas Bali (Base Gede) di warung-warung lokal sepanjang pantai dengan harga yang sangat ramah di kantong.</p>
+                    </div>
+                </div>
+
+                <!-- Card 4: Kite Festival & Local Events -->
+                <div class="group relative rounded-2xl overflow-hidden bg-stone-900 border border-stone-800 hover:border-purple-500 transition-all duration-300">
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1610123598147-f632aa18b275?auto=format&fit=crop&w=600&q=80" alt="Beautiful Balinese kites on sky" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75">
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-purple-400 text-xs font-semibold tracking-wide uppercase">Atraksi Musiman</span>
+                            <span class="bg-purple-950/40 text-purple-400 text-[10px] px-2 py-0.5 rounded-full">Musim Angin: Juni - Agustus</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-stone-100 mb-2">Melayangan (Layang-layang Bali)</h3>
+                        <p class="text-sm text-stone-500 leading-relaxed">Setiap musim berangin, langit di atas Pantai Munggu dipenuhi dengan layang-layang raksasa tradisional Bebean dan Jangan khas Bali.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Tide & Activity Recommender widget -->
+            <div class="lg:col-span-4 bg-[#111A1F] p-8 rounded-2xl border border-cyan-900/30 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-full bg-cyan-900/40 flex items-center justify-center text-cyan-400">
+                            <i class="fa-solid fa-cloud-sun-rain"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-stone-100">Kalkulator Rekomendasi Pantai</h3>
+                            <p class="text-xs text-stone-400">Tentukan aktivitas terbaik sesuai kondisi pasang surut</p>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Slider/Buttons to Toggle Tide state -->
+                    <div class="space-y-4 mb-8">
+                        <label class="text-xs text-stone-400 block font-semibold uppercase tracking-wider">Pilih Kondisi Pasang Surut Laut:</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="setTide('high')" id="tideHighBtn" class="py-3 px-4 rounded-xl border font-semibold text-xs text-center transition-all duration-300 bg-cyan-500 text-stone-900 border-cyan-400 shadow-lg shadow-cyan-500/10">
+                                <i class="fa-solid fa-water-rise mr-2"></i>Pasang (High Tide)
+                            </button>
+                            <button onclick="setTide('low')" id="tideLowBtn" class="py-3 px-4 rounded-xl border font-semibold text-xs text-center transition-all duration-300 bg-stone-900 text-stone-400 border-stone-800 hover:border-cyan-500">
+                                <i class="fa-solid fa-water-lower mr-2"></i>Surut (Low Tide)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Recommendation Box -->
+                    <div class="p-6 bg-stone-950/60 rounded-xl border border-stone-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-stone-500">Rekomendasi Utama:</span>
+                            <span id="recomTag" class="px-2 py-0.5 bg-cyan-900 text-cyan-400 text-[10px] uppercase font-bold rounded-full">Surfing & Watersports</span>
+                        </div>
+                        <p id="recomDesc" class="text-sm text-stone-300 leading-relaxed">
+                            Kondisi pasang sangat ideal bagi para peselancar untuk menaklukkan gulungan ombak Pantai Munggu. Ombak melengkung tinggi di kedalaman terumbu luar menghasilkan sensasi luncuran yang kencang!
+                        </p>
+                        <ul id="recomActivities" class="space-y-2 text-xs text-stone-400 pt-2 border-t border-stone-800">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Surfing pemula hingga expert</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Menyaksikan peselancar di anjungan pantai</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-xmark text-red-500"></i> Tidak disarankan untuk sekadar berenang bebas</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-cyan-900/30 text-xs text-stone-500 text-center flex flex-col items-center gap-2">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-exclamation text-amber-500 animate-pulse"></i> Keselamatan Pengunjung adalah Prioritas Utama</span>
+                    <span>Selalu waspada terhadap rambu bendera merah di area tertentu pantai.</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- INTERACTIVE TRIP PLANNER (ITINERARY GENERATOR) -->
+    <section id="itinerary" class="bg-gradient-to-b from-stone-950/30 to-[#1C1917] py-24 border-t border-stone-900 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-baligold font-semibold tracking-widest text-sm uppercase block mb-2">Fitur Perencana Perjalanan</span>
+                <h2 class="font-serif text-4xl md:text-5xl font-bold text-stone-100 mb-4">Munggu Trip Planner</h2>
+                <p class="text-stone-400 leading-relaxed">Rancang pengalaman liburan Anda secara instan. Pilih aktivitas kegemaran Anda, tentukan jumlah pengunjung, dan buat Rencana Perjalanan (*Itinerary*) kustom pribadi.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                <!-- Customizer Form Panel -->
+                <div class="lg:col-span-5 bg-stone-900 p-8 rounded-2xl border border-stone-800 space-y-6">
+                    <h3 class="text-lg font-semibold text-stone-200 border-b border-stone-800 pb-4">
+                        <i class="fa-solid fa-sliders text-baligold mr-2"></i>Sesuaikan Minat Liburan Anda
+                    </h3>
+                    
+                    <!-- Trip Duration Selection -->
+                    <div class="space-y-2">
+                        <label class="text-xs text-stone-400 block font-semibold uppercase tracking-wider">Durasi Kunjungan:</label>
+                        <select id="tripDuration" class="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-sm text-stone-300 focus:outline-none focus:border-baligold transition-colors">
+                            <option value="1">1 Hari Kunjungan Kilat (Day Trip)</option>
+                            <option value="2">2 Hari 1 Malam (Weekend Getaway)</option>
+                        </select>
+                    </div>
+
+                    <!-- Primary Interest Selection -->
+                    <div class="space-y-2">
+                        <label class="text-xs text-stone-400 block font-semibold uppercase tracking-wider">Fokus Minat Kunjungan:</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="setInterest('culture')" id="interestCulture" class="py-3 px-4 rounded-xl border text-xs text-center font-semibold transition-all duration-300 bg-baliterra text-white border-baliterra shadow-lg shadow-baliterra/10">
+                                <i class="fa-solid fa-gopuran mr-2 text-baligold"></i>Edukasi Budaya
+                            </button>
+                            <button onclick="setInterest('beach')" id="interestBeach" class="py-3 px-4 rounded-xl border text-xs text-center font-semibold transition-all duration-300 bg-stone-950 text-stone-400 border-stone-800 hover:border-cyan-500">
+                                <i class="fa-solid fa-shuttlecock mr-2 text-cyan-400"></i>Pesisir & Pantai
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Headcount Selection -->
+                    <div class="space-y-2">
+                        <label class="text-xs text-stone-400 block font-semibold uppercase tracking-wider">Jumlah Anggota Rombongan:</label>
+                        <div class="flex items-center gap-4 bg-stone-950 border border-stone-800 rounded-xl px-4 py-2">
+                            <button onclick="updateHeadcount(-1)" class="w-8 h-8 rounded-lg bg-stone-800 hover:bg-stone-700 flex items-center justify-center text-stone-200 transition-colors">-</button>
+                            <span id="headcountVal" class="text-sm font-semibold text-stone-200 min-w-8 text-center">2 Orang</span>
+                            <button onclick="updateHeadcount(1)" class="w-8 h-8 rounded-lg bg-stone-800 hover:bg-stone-700 flex items-center justify-center text-stone-200 transition-colors">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Cost Estimate -->
+                    <div class="p-4 bg-stone-950 border border-stone-800 rounded-xl flex justify-between items-center">
+                        <div>
+                            <span class="text-xs text-stone-500 block">Estimasi Kas Kas Desa / Tiket:</span>
+                            <span class="text-[10px] text-stone-500 italic block">(Sumbangan sukarela & parkir)</span>
+                        </div>
+                        <div class="text-right">
+                            <span id="priceVal" class="text-xl font-bold text-emerald-400 font-serif block">Rp 50.000</span>
+                            <span class="text-[10px] text-stone-400">Total estimasi</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Trigger Button -->
+                    <button onclick="generateItinerary()" class="w-full py-4 bg-gradient-to-r from-baligold to-baliterra hover:from-baliterra hover:to-baligold text-stone-900 hover:text-white font-bold rounded-xl shadow-lg hover:shadow-baligold/10 transition-all duration-300 transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Hasilkan Itinerary Saya!
+                    </button>
+                </div>
+
+                <!-- Live Output Panel (Interactive Itinerary Display) -->
+                <div class="lg:col-span-7 bg-stone-900/60 p-8 rounded-2xl border border-stone-800 space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-stone-200">
+                                <i class="fa-solid fa-receipt text-cyan-400 mr-2"></i>Rencana Perjalanan Anda
+                            </h3>
+                            <p class="text-xs text-stone-400">Rencana liburan kustom berdasarkan preferensi pilihan Anda</p>
+                        </div>
+                        <button onclick="copyItinerary()" class="px-4 py-2 bg-stone-800 hover:bg-stone-700 border border-stone-700 hover:border-stone-600 rounded-xl text-xs text-stone-300 hover:text-white flex items-center gap-2 transition-all duration-300">
+                            <i class="fa-solid fa-copy"></i>
+                            <span id="copyBtnText">Salin Jadwal</span>
+                        </button>
+                    </div>
+
+                    <!-- Inner Scrollable Itinerary Flow -->
+                    <div id="itineraryContainer" class="space-y-6 min-h-[350px]">
+                        <!-- Dynamic content will be injected here via javascript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TRAVELER GUIDELINES & SAFETY POLICIES (PANDUAN) -->
+    <section id="panduan" class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div class="bg-gradient-to-r from-[#2B1B17] to-stone-900 border border-baliterra/20 p-8 sm:p-12 rounded-3xl relative overflow-hidden shadow-2xl">
+            <!-- Balinese Motif Background hint -->
+            <div class="absolute right-0 bottom-0 opacity-5 pointer-events-none translate-x-12 translate-y-12">
+                <i class="fa-solid fa-gopuran text-[250px] text-baligold"></i>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+                <div class="lg:col-span-7 space-y-6">
+                    <span class="text-baligold font-semibold tracking-widest text-sm uppercase block">Panduan Wisata Lokal</span>
+                    <h2 class="font-serif text-3xl md:text-5xl font-bold text-stone-100 leading-tight">Mewujudkan Wisata Munggu yang Berkelanjutan</h2>
+                    <p class="text-stone-300 leading-relaxed">
+                        Kami sangat menyukai keindahan alam dan eratnya ikatan sosial adat kami. Untuk menjaga kenyamanan bersama krama Desa Munggu, mohon patuhi beberapa instruksi berikut selama berwisata:
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-sm text-stone-300">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-red-900/30 flex items-center justify-center text-red-400">
+                                <i class="fa-solid fa-trash-arrow-up"></i>
+                            </div>
+                            <span>Bebas Sampah Plastik di Pantai</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-red-900/30 flex items-center justify-center text-red-400">
+                                <i class="fa-solid fa-volume-xmark"></i>
+                            </div>
+                            <span>Jaga Kekhidmatan di Dekat Pura</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-red-900/30 flex items-center justify-center text-red-400">
+                                <i class="fa-solid fa-person-dress"></i>
+                            </div>
+                            <span>Pakaian Sopan saat Ritual Adat</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-red-900/30 flex items-center justify-center text-red-400">
+                                <i class="fa-solid fa-square-parking"></i>
+                            </div>
+                            <span>Parkir Tertib di Kantong Resmi</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Driver Online Desa Wisata Booking Simulator -->
+                <div class="lg:col-span-5 bg-stone-950 p-6 sm:p-8 rounded-2xl border border-stone-800">
+                    <h3 class="text-lg font-semibold text-stone-100 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-taxi text-amber-500"></i>Driver Online Desa Munggu
+                    </h3>
+                    <p class="text-xs text-stone-400 mb-6 leading-relaxed">
+                        Butuh transportasi tepercaya untuk menjangkau spot rahasia di sekitar desa? Hubungi armada lokal resmi bentukan warga Desa Adat Munggu. Ramah, terjangkau, dan langsung terhubung dengan pemandu lokal.
+                    </p>
+                    
+                    <form onsubmit="submitBooking(event)" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="text" id="bookingName" placeholder="Nama Anda" class="bg-stone-900 border border-stone-800 rounded-lg px-3 py-2 text-xs text-stone-300 focus:outline-none focus:border-baligold w-full" required>
+                            <input type="text" id="bookingPhone" placeholder="Nomor WhatsApp" class="bg-stone-900 border border-stone-800 rounded-lg px-3 py-2 text-xs text-stone-300 focus:outline-none focus:border-baligold w-full" required>
+                        </div>
+                        <select id="bookingRoute" class="w-full bg-stone-900 border border-stone-800 rounded-lg px-3 py-2 text-xs text-stone-300 focus:outline-none focus:border-baligold" required>
+                            <option value="airport">Bandara Ngurah Rai ↔ Munggu</option>
+                            <option value="tour">Tour Keliling Desa Munggu (Setengah Hari)</option>
+                            <option value="kuta">Kuta/Canggu ↔ Pantai Munggu</option>
+                        </select>
+                        <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-stone-900 font-bold rounded-lg text-xs transition-colors tracking-wider uppercase">
+                            <i class="fa-brands fa-whatsapp mr-1"></i> Pesan Driver Sekarang
+                        </button>
+                    </form>
+                    
+                    <div id="bookingResult" class="mt-3 text-center text-xs text-emerald-400 hidden animate-pulse">
+                        <i class="fa-solid fa-circle-check mr-1"></i> Permintaan dikirim ke koordinator Armada Lokal!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-stone-950 border-t border-stone-900 pt-16 pb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            
+            <!-- Branding/Info -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-baliterra to-baligold flex items-center justify-center text-white">
+                        <i class="fa-solid fa-gopuran text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-serif text-xl font-bold tracking-wider text-baligold block leading-tight">MUNGGU</span>
+                        <span class="text-xs text-stone-500 uppercase tracking-widest block">Desa Wisata Bali</span>
+                    </div>
+                </div>
+                <p class="text-xs text-stone-500 leading-relaxed">
+                    Pelopor destinasi terpadu berbasis keunikan tradisi luhur dan keindahan pesisir pantai di Kabupaten Badung, Bali.
+                </p>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="space-y-4">
+                <h4 class="text-sm font-semibold text-stone-200 tracking-wider uppercase">Navigasi Utama</h4>
+                <ul class="space-y-2 text-xs text-stone-400">
+                    <li><a href="#beranda" class="hover:text-baligold transition-colors">Beranda</a></li>
+                    <li><a href="#tentang" class="hover:text-baligold transition-colors">Tentang Desa Wisata</a></li>
+                    <li><a href="#mekotek" class="hover:text-baligold transition-colors">Ngerebeg Mekotek</a></li>
+                    <li><a href="#pantai" class="hover:text-baligold transition-colors">Pantai Munggu</a></li>
+                </ul>
+            </div>
+
+            <!-- Adat & Admin Info -->
+            <div class="space-y-4">
+                <h4 class="text-sm font-semibold text-stone-200 tracking-wider uppercase">Kontak & Sekretariat</h4>
+                <p class="text-xs text-stone-500 leading-relaxed">
+                    Kantor Perbekel Desa Munggu<br>
+                    Kecamatan Mengwi, Kabupaten Badung, Bali - 80351
+                </p>
+                <p class="text-xs text-stone-400">
+                    <i class="fa-solid fa-phone mr-2 text-baligold"></i>+62 361 xxxx xxx<br>
+                    <i class="fa-solid fa-envelope mr-2 text-baligold"></i>info@desawisatamunggu.id
+                </p>
+            </div>
+
+            <!-- Social Media & Badges -->
+            <div class="space-y-4">
+                <h4 class="text-sm font-semibold text-stone-200 tracking-wider uppercase">Media Sosial Desa</h4>
+                <div class="flex gap-3">
+                    <a href="#" class="w-8 h-8 rounded-full bg-stone-900 hover:bg-baliterra border border-stone-800 flex items-center justify-center text-stone-400 hover:text-white transition-colors"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-stone-900 hover:bg-baliterra border border-stone-800 flex items-center justify-center text-stone-400 hover:text-white transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-stone-900 hover:bg-baliterra border border-stone-800 flex items-center justify-center text-stone-400 hover:text-white transition-colors"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-stone-900 hover:bg-baliterra border border-stone-800 flex items-center justify-center text-stone-400 hover:text-white transition-colors"><i class="fa-brands fa-tiktok"></i></a>
+                </div>
+                <div class="pt-2">
+                    <span class="inline-flex items-center gap-1 bg-emerald-950 text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-full border border-emerald-900">
+                        <i class="fa-solid fa-shield"></i> Sapta Pesona Standard
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Copyright Disclaimer -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-stone-900 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-600 gap-4">
+            <p>&copy; 2026 Desa Wisata Munggu Badung. Semua hak cipta dilindungi undang-undang.</p>
+            <p>Dirancang khusus dengan melestarikan tradisi Bali.</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // DOM Elements
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        // Mobile menu toggle
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        function toggleMobileMenu() {
+            mobileMenu.classList.add('hidden');
+        }
+
+        // --- WEB AUDIO API BALINESE GAMELAN SIMULATOR ---
+        let audioCtx = null;
+        let ambientPlaying = false;
+        let ambientInterval = null;
+
+        // Custom Pentatonic scale of Bali Gamelan (Selendro / Pelog-like frequencies)
+        const gamelanScale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // Hz frequencies
+
+        function toggleGamelanAmbient() {
+            const btnText = document.getElementById('audioBtnText');
+            
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            if (ambientPlaying) {
+                // Stop Gamelan loop
+                clearInterval(ambientInterval);
+                ambientPlaying = false;
+                btnText.textContent = "Gamelan Ambient";
+                btnText.parentElement.classList.remove('bg-baliterra', 'border-baligold', 'text-white');
+            } else {
+                // Resume audio context if suspended
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                // Start a simple procedurally generated gamelan metallophone pattern
+                ambientPlaying = true;
+                btnText.textContent = "🔊 Memutar Gamelan";
+                btnText.parentElement.classList.add('bg-baliterra', 'border-baligold', 'text-white');
+                playAmbientLoop();
+            }
+        }
+
+        function playGamelanNote(freq, type = 'sine', duration = 0.6) {
+            if (!audioCtx) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.type = type;
+            // Introduce a metallic rich ring using slight frequency modulation or triangle shape
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            // Fast attack, slow natural decay (metallic ring)
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playAmbientLoop() {
+            // Generate periodic notes mimicking gangsa/kendang hits
+            ambientInterval = setInterval(() => {
+                if (!ambientPlaying) return;
+                
+                // Pick a random frequency from our Balinese Pelog/Selendro approximation scale
+                const randomFreq = gamelanScale[Math.floor(Math.random() * gamelanScale.length)];
+                playGamelanNote(randomFreq, 'sine', 0.8);
+                
+                // Occasional high note chime
+                if (Math.random() > 0.6) {
+                    setTimeout(() => {
+                        const chimeFreq = gamelanScale[Math.floor(Math.random() * gamelanScale.length)] * 2;
+                        playGamelanNote(chimeFreq, 'triangle', 0.5);
+                    }, 150);
+                }
+            }, 400);
+        }
+
+        // --- COUNTDOWN RITUAL MEKOTEK ---
+        // Mekotek happens on Hari Raya Kuningan. Next Kuningan is on Saturday, October 31, 2026.
+        const targetDate = new Date("Oct 31, 2026 12:00:00").getTime();
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+
+            // Calculations
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Output to elements
+            document.getElementById("cd-days").innerText = String(days).padStart(2, '0');
+            document.getElementById("cd-hours").innerText = String(hours).padStart(2, '0');
+            document.getElementById("cd-mins").innerText = String(mins).padStart(2, '0');
+            document.getElementById("cd-secs").innerText = String(secs).padStart(2, '0');
+
+            // If countdown is finished, restart to next loop
+            if (distance < 0) {
+                // Approximate another 210 days later for next Kuningan
+                document.getElementById("cd-days").innerText = "---";
+            }
+        }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // --- MEKOTEK SIMULATOR ---
+        function startMekotekSim() {
+            const leftSpears = document.getElementById('left-spears');
+            const rightSpears = document.getElementById('right-spears');
+            const conePeak = document.getElementById('cone-peak');
+            const gamelanViz = document.getElementById('gamelanViz');
+
+            // Transform spears to meet at center
+            leftSpears.classList.remove('left-4');
+            leftSpears.classList.add('left-[35%]', 'scale-y-110');
+            rightSpears.classList.remove('right-4');
+            rightSpears.classList.add('right-[35%]', 'scale-y-110');
+
+            // Trigger visual climax indicator
+            setTimeout(() => {
+                conePeak.classList.remove('opacity-0', 'scale-50');
+                conePeak.classList.add('opacity-100', 'scale-100');
+                
+                // Play procedural sound climax if audio context is active
+                if (audioCtx) {
+                    playGamelanNote(523.25, 'triangle', 1.0); // high ring
+                    playGamelanNote(392.00, 'triangle', 0.8);
+                }
+                
+                // Show game chime trigger status
+                gamelanViz.classList.remove('opacity-0');
+                setTimeout(() => { gamelanViz.classList.add('opacity-0'); }, 2000);
+
+            }, 800);
+        }
+
+        function resetMekotekSim() {
+            const leftSpears = document.getElementById('left-spears');
+            const rightSpears = document.getElementById('right-spears');
+            const conePeak = document.getElementById('cone-peak');
+
+            leftSpears.classList.remove('left-[35%]', 'scale-y-110');
+            leftSpears.classList.add('left-4');
+            rightSpears.classList.remove('right-[35%]', 'scale-y-110');
+            rightSpears.classList.add('right-4');
+
+            conePeak.classList.remove('opacity-100', 'scale-100');
+            conePeak.classList.add('opacity-0', 'scale-50');
+        }
+
+        // --- TIDE AND WEATHER RECOMMENDER ---
+        function setTide(status) {
+            const highBtn = document.getElementById('tideHighBtn');
+            const lowBtn = document.getElementById('tideLowBtn');
+            const recomTag = document.getElementById('recomTag');
+            const recomDesc = document.getElementById('recomDesc');
+            const recomActivities = document.getElementById('recomActivities');
+
+            if (status === 'high') {
+                // UI styles
+                highBtn.className = "py-3 px-4 rounded-xl border font-semibold text-xs text-center transition-all duration-300 bg-cyan-500 text-stone-900 border-cyan-400 shadow-lg shadow-cyan-500/10";
+                lowBtn.className = "py-3 px-4 rounded-xl border font-semibold text-xs text-center transition-all duration-300 bg-stone-900 text-stone-400 border-stone-800 hover:border-cyan-500";
+                
+                // Content
+                recomTag.innerText = "Surfing & Watersports";
+                recomDesc.innerText = "Kondisi air pasang sangat disukai oleh para peselancar untuk menaklukkan deburan ombak luar Pantai Munggu yang kencang. Pasir hitam pantai sebagian tertutup air laut, menyuguhkan pemandangan ombak dramatis.";
+                recomActivities.innerHTML = `
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Surfing tingkat menengah dan profesional</li>
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Memotret ombak di anjungan pantai</li>
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-xmark text-red-500"></i> Dilarang berenang bebas atau snorkeling dekat batu karang</li>
+                `;
+            } else {
+                // UI styles
+                lowBtn.className = "py-3 px-4 rounded-xl border font-semibold text-xs text-center transition-all duration-300 bg-cyan-500 text-stone-900 border-cyan-400 shadow-lg shadow-cyan-500/10";
+                highBtn.className = "py-3 px-4 rounded-xl border font-semibold text-xs text-center transition-all duration-300 bg-stone-900 text-stone-400 border-stone-800 hover:border-cyan-500";
+                
+                // Content
+                recomTag.innerText = "Sunset Stroll & Relax";
+                recomDesc.innerText = "Air laut surut menyisakan bibir pantai berpasir hitam yang lebar, rata, dan memantulkan langit keemasan dengan sempurna bagaikan cermin raksasa. Waktu terbaik untuk jalan santai dan berfoto ria.";
+                recomActivities.innerHTML = `
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Sunset walking & photography</li>
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Bermain air dangkal di pesisir pasir</li>
+                    <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyan-400"></i> Menikmati seafood bakar segar di warung tepi pantai</li>
+                `;
+            }
+        }
+
+        // --- TRIP PLANNER & ITINERARY GENERATOR ---
+        let currentInterest = 'culture';
+        let headcount = 2;
+
+        function setInterest(interest) {
+            currentInterest = interest;
+            const cultBtn = document.getElementById('interestCulture');
+            const beachBtn = document.getElementById('interestBeach');
+
+            if (interest === 'culture') {
+                cultBtn.className = "py-3 px-4 rounded-xl border text-xs text-center font-semibold transition-all duration-300 bg-baliterra text-white border-baliterra shadow-lg shadow-baliterra/10";
+                beachBtn.className = "py-3 px-4 rounded-xl border text-xs text-center font-semibold transition-all duration-300 bg-stone-950 text-stone-400 border-stone-800 hover:border-cyan-500";
+            } else {
+                beachBtn.className = "py-3 px-4 rounded-xl border text-xs text-center font-semibold transition-all duration-300 bg-cyan-600 text-white border-cyan-600 shadow-lg shadow-cyan-600/10";
+                cultBtn.className = "py-3 px-4 rounded-xl border text-xs text-center font-semibold transition-all duration-300 bg-stone-950 text-stone-400 border-stone-800 hover:border-baliterra";
+            }
+            calculateCost();
+        }
+
+        function updateHeadcount(amount) {
+            headcount += amount;
+            if (headcount < 1) headcount = 1;
+            document.getElementById('headcountVal').innerText = `${headcount} Orang`;
+            calculateCost();
+        }
+
+        function calculateCost() {
+            // Standard estimation: 25k per person (parking + donation ticket guide)
+            const price = headcount * 25000;
+            // Format to Indonesian Rupiah
+            const formattedPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(price);
+            document.getElementById('priceVal').innerText = formattedPrice;
+        }
+
+        function generateItinerary() {
+            const duration = document.getElementById('tripDuration').value;
+            const container = document.getElementById('itineraryContainer');
+            
+            let html = '';
+
+            if (currentInterest === 'culture') {
+                if (duration === '1') {
+                    html = `
+                        <div class="space-y-4">
+                            <span class="inline-block px-3 py-1 bg-baliterra/20 text-baligold rounded-full text-xs font-semibold">Fokus: 1 Hari Wisata Adat Munggu</span>
+                            
+                            <div class="relative pl-8 border-l border-stone-800 space-y-6">
+                                <div class="relative">
+                                    <div class="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-baliterra flex items-center justify-center text-[10px] text-white font-bold">1</div>
+                                    <h4 class="text-sm font-semibold text-stone-200">09.00 WITA - Tiba & Sambutan Hangat</h4>
+                                    <p class="text-xs text-stone-400">Berkumpul di Wantilan Pura Dalem Desa Adat Munggu, menikmati jamuan teh sereh dan jajan pasar tradisional Bali bikinan ibu-ibu PKK desa.</p>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-baliterra flex items-center justify-center text-[10px] text-white font-bold">2</div>
+                                    <h4 class="text-sm font-semibold text-stone-200">11.00 WITA - Jelajah Edukasi Mekotek</h4>
+                                    <p class="text-xs text-stone-400">Belajar langsung prosesi pembuatan tongkat kayu pulet dari pepohonan liar di hutan kecil desa dan sejarah heroik tolak bala prajurit Mengwi.</p>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-baliterra flex items-center justify-center text-[10px] text-white font-bold">3</div>
+                                    <h4 class="text-sm font-semibold text-stone-200">13.30 WITA - Makan Siang Kuliner Subak</h4>
+                                    <p class="text-xs text-stone-400">Makan bersama (Megibung) di gubuk tengah sawah yang dikelola kelompok tani subak Munggu.</p>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-baliterra flex items-center justify-center text-[10px] text-white font-bold">4</div>
+                                    <h4 class="text-sm font-semibold text-stone-200">16.30 WITA - Senja Damai Pantai Munggu</h4>
+                                    <p class="text-xs text-stone-400">Penutupan hari dengan bersantai menikmati pemandangan matahari tenggelam di pasir hitam sebelum kembali ke hotel.</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="space-y-6">
+                            <span class="inline-block px-3 py-1 bg-baliterra/20 text-baligold rounded-full text-xs font-semibold">Fokus: 2 Hari 1 Malam Kebudayaan Luhur</span>
+                            
+                            <div class="space-y-4">
+                                <h4 class="text-xs text-baligold uppercase font-bold tracking-widest">HARI 1 - Ritual Adat & Sawah Abadi</h4>
+                                <div class="relative pl-8 border-l border-stone-800 space-y-4">
+                                    <div>
+                                        <h5 class="text-xs font-semibold text-stone-200">10.00 WITA - Workshop Ukir & Aksara Bali</h5>
+                                        <p class="text-[11px] text-stone-400">Sesi menggambar naskah lontar kuno Bali dan mencoba kostum adat madya.</p>
+                                    </div>
+                                    <div>
+                                        <h5 class="text-xs font-semibold text-stone-200">14.00 WITA - Trekking Pematang Sawah Munggu</h5>
+                                        <p class="text-[11px] text-stone-400">Melihat sistem irigasi subak bersejarah dan membantu petani menanam padi lokal.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <h4 class="text-xs text-cyan-400 uppercase font-bold tracking-widest">HARI 2 - Pengalaman Mekotek & Pantai Pasir Hitam</h4>
+                                <div class="relative pl-8 border-l border-stone-800 space-y-4">
+                                    <div>
+                                        <h5 class="text-xs font-semibold text-stone-200">09.00 WITA - Simulasi Atraksi Mekotek</h5>
+                                        <p class="text-[11px] text-stone-400">Mengangkat tongkat bersama pemuda adat Munggu, merasakan keseruan menggotong formasi piramida kayu.</p>
+                                    </div>
+                                    <div>
+                                        <h5 class="text-xs font-semibold text-stone-200">15.30 WITA - Berselancar & Seafood Pantai Munggu</h5>
+                                        <p class="text-[11px] text-stone-400">Latihan selancar dipandu peselancar profesional lokal desa dilanjutkan santap malam ikan bakar segar.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else { // Beach/Coast focused
+                if (duration === '1') {
+                    html = `
+                        <div class="space-y-4">
+                            <span class="inline-block px-3 py-1 bg-cyan-900/40 text-cyan-400 rounded-full text-xs font-semibold">Fokus: 1 Hari Penjelajah Pesisir Munggu</span>
+                            
+                            <div class="relative pl-8 border-l border-stone-800 space-y-6">
+                                <div class="relative">
+                                    <div class="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-cyan-600 flex items-center justify-center text-[10px] text-white font-bold">1</div>
+                                    <h4 class="text-sm font-semibold text-stone-200">07.30 WITA - Morning Beach Jogging & Yoga</h4>
+                                    <p class="text-xs text-stone-400">Menikmati udara murni pagi hari di atas pasir hitam mengkilat dengan ketenangan pesisir yang minim gangguan bising.</p>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-cyan-600 flex items-center justify-center text-[10px] text-white font-bold">2</div>
+                                    <h4 class="text-sm font-semibold text-stone-200">10.00 WITA - Surfing Session Pantai Munggu</h4>
+                                    <p class="text-xs text-stone-400">Sewa papan selancar lokal dan mencoba tantangan ombak kanan-kiri yang menantang adrenalin.</p>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-cyan-600 flex items-center justify-center text-[10px] text-white font-bold">3</div>
+                                    <h4 class="text-sm font-semibold text-stone-200">13.00 WITA - Culinary Catch Warung Nelayan</h4>
+                                    <p class="text-xs text-stone-400">Sajian ikan laut bakar segar yang baru ditangkap langsung oleh para nelayan lokal Desa Adat Munggu.</p>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-cyan-600 flex items-center justify-center text-[10px] text-white font-bold">4</div>
+                                    <h4 class="text-sm font-semibold text-stone-200">17.00 WITA - Sunset Reflection Hunt</h4>
+                                    <p class="text-xs text-stone-400">Sesi foto romantis memanfaatkan efek refleksi pasir hitam basah di bawah lembayung senja Bali yang megah.</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="space-y-6">
+                            <span class="inline-block px-3 py-1 bg-cyan-900/40 text-cyan-400 rounded-full text-xs font-semibold">Fokus: 2 Hari 1 Malam Petualangan Pesisir & Kuliner</span>
+                            
+                            <div class="space-y-4">
+                                <h4 class="text-xs text-cyan-400 uppercase font-bold tracking-widest">HARI 1 - Ombak Biru & Sunset Romantis</h4>
+                                <div class="relative pl-8 border-l border-stone-800 space-y-4">
+                                    <div>
+                                        <h5 class="text-xs font-semibold text-stone-200">09.00 WITA - Surf Lesson & Coral Walk</h5>
+                                        <p class="text-[11px] text-stone-400">Latihan dasar selancar di pesisir pasir yang aman dan ramah.</p>
+                                    </div>
+                                    <div>
+                                        <h5 class="text-xs font-semibold text-stone-200">16.30 WITA - Sunset Beachside Barbecue</h5>
+                                        <p class="text-[11px] text-stone-400">Memanggang udang dan ikan bumbu khas di tepi pantai sambil menanti senja.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <h4 class="text-xs text-baligold uppercase font-bold tracking-widest">HARI 2 - Kearifan Nelayan & Lanskap Sawah</h4>
+                                <div class="relative pl-8 border-l border-stone-800 space-y-4">
+                                    <div>
+                                        <h5 class="text-xs font-semibold text-stone-200">06.00 WITA - Menyaksikan Nelayan Melaut</h5>
+                                        <p class="text-[11px] text-stone-400">Interaksi langsung dengan nelayan Munggu, berkesempatan ikut menarik jala pantai.</p>
+                                    </div>
+                                    <div>
+                                        <h5 class="text-xs font-semibold text-stone-200">14.00 WITA - Bersepeda Susur Desa Wisata</h5>
+                                        <p class="text-[11px] text-stone-400">Bersepeda dari persawahan subak nan sejuk hingga berakhir di muara sungai Pantai Munggu.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Copy itinerary text helper
+        function copyItinerary() {
+            const container = document.getElementById('itineraryContainer');
+            const cleanText = container.innerText;
+            const btnText = document.getElementById('copyBtnText');
+
+            // Creating fallback textarea copying
+            const el = document.createElement('textarea');
+            el.value = "=== DESA WISATA MUNGGU ITINERARY ===\n\n" + cleanText + "\n\nNikmati pesona tradisi Mekotek dan Pantai Munggu!";
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            btnText.innerText = "Berhasil Disalin!";
+            setTimeout(() => {
+                btnText.innerText = "Salin Jadwal";
+            }, 2000);
+        }
+
+        // --- DRIVER ONLINE BOOKING SUBMIT SIMULATION ---
+        function submitBooking(event) {
+            event.preventDefault();
+            const resultBox = document.getElementById('bookingResult');
+            resultBox.classList.remove('hidden');
+            setTimeout(() => {
+                resultBox.classList.add('hidden');
+                document.getElementById('bookingName').value = '';
+                document.getElementById('bookingPhone').value = '';
+            }, 4000);
+        }
+
+        // --- INTERACTIVE MAP DETAIL TRIGGER ---
+        function showMapDetail(zone) {
+            const infoBox = document.getElementById('mapInfoBox');
+            if (zone === 'subak') {
+                infoBox.innerHTML = `
+                    <div class="text-emerald-400 font-bold mb-1 text-xs"><i class="fa-solid fa-leaf mr-1"></i> Zona Subak Hijau (Utara)</div>
+                    <span class="leading-relaxed text-[11px] block text-stone-300">Kawasan hijau dengan sistem pengairan sawah subak tradisional warisan UNESCO. Sangat asri untuk bersepeda pagi, trekking, serta belajar bertani langsung di sawah.</span>
+                `;
+            } else if (zone === 'adat') {
+                infoBox.innerHTML = `
+                    <div class="text-amber-400 font-bold mb-1 text-xs"><i class="fa-solid fa-gopuran mr-1"></i> Zona Adat & Mekotek (Tengah)</div>
+                    <span class="leading-relaxed text-[11px] block text-stone-300">Pusat peninggalan Kerajaan Mengwi, wantilan krama, sanggar seni kriya ukir kayu, dan episentrum upacara sakral Ngerebeg Mekotek penolak bala.</span>
+                `;
+            } else if (zone === 'pantai') {
+                infoBox.innerHTML = `
+                    <div class="text-cyan-400 font-bold mb-1 text-xs"><i class="fa-solid fa-umbrella-beach mr-1"></i> Zona Pesisir Pantai (Selatan)</div>
+                    <span class="leading-relaxed text-[11px] block text-stone-300">Bentangan pesisir pasir hitam sepanjang 1.2 KM. Terkenal sebagai surganya para peselancar mancanegara, warung kuliner ikan laut bakar segar, dan refleksi sunset yang syahdu.</span>
+                `;
+            }
+        }
+
+        // Generate default itinerary on load
+        window.onload = function() {
+            generateItinerary();
+        };
+    </script>
+</body>
 </html>
