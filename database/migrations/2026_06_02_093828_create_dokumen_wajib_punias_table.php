@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('dokumen_wajib_punias', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('wajib_punia_id')->constrained('wajib_punias')->cascadeOnDelete();
+            $table->string('nama_file'); // Contoh: "KTP", "Izin Usaha", "Foto Depan"
+            $table->string('path_file');
             $table->timestamps();
         });
     }

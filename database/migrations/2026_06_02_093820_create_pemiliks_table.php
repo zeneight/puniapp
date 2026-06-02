@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('pemiliks', function (Blueprint $table) {
             $table->id();
+            $table->string('nama_pemilik');
+            $table->string('asal_pemilik')->nullable();
+            $table->string('no_telp')->nullable();
+            $table->string('nik')->unique()->nullable();
             $table->timestamps();
         });
     }
