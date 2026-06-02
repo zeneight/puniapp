@@ -42,11 +42,25 @@ new class extends Component {
 	public bool $previewIsPdf = false;
 
 	public string $search = '';
+	public $filter_jenis_usaha = '';
+    public $filter_banjar = '';
+    public $filter_pemilik = '';
+
+	// Reset pagination jika filter diubah
+    public function updatedFilterJenisUsaha() { $this->resetPage(); }
+    public function updatedFilterBanjar() { $this->resetPage(); }
+    public function updatedFilterPemilik() { $this->resetPage(); }
 
 	public function updatingSearch()
 	{
 		$this->resetPage();
 	}
+
+	public function resetFilter()
+    {
+        $this->reset(['search', 'filter_jenis_usaha', 'filter_banjar', 'filter_pemilik']);
+        $this->resetPage();
+    }
 
 	protected function rules()
 	{
@@ -247,10 +261,20 @@ new class extends Component {
 		return [
 			// Eager loading relasi agar tidak query N+1 di tabel HTML
 			'wajibPunias' => WajibPunia::with(['banjar', 'pemilik', 'jenisUsaha'])
-									   ->where('nama', 'like', '%' . $this->search . '%')
-									   ->orWhere('no_registrasi', 'like', '%' . $this->search . '%')
-									   ->orderBy('nama', 'asc')
-									   ->paginate(10),
+                // 1. Logika Pencarian Teks (Dikelompokkan agar orWhere tidak bocor)
+                ->when($this->search, function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('nama', 'like', '%' . $this->search . '%')
+                          ->orWhere('no_registrasi', 'like', '%' . $this->search . '%');
+                    });
+                })
+                // 2. Logika Filter Dropdown
+                ->when($this->filter_jenis_usaha, fn($q) => $q->where('jenis_usaha_id', $this->filter_jenis_usaha))
+                ->when($this->filter_banjar, fn($q) => $q->where('banjar_id', $this->filter_banjar))
+                ->when($this->filter_pemilik, fn($q) => $q->where('pemilik_id', $this->filter_pemilik))
+                // 3. Sorting & Pagination
+                ->orderBy('nama', 'asc')
+                ->paginate(10),
 			
 			// Mengambil data master untuk dropdown form
 			'daftarBanjar' => Banjar::orderBy('nama_banjar', 'asc')->get(),
@@ -262,19 +286,49 @@ new class extends Component {
 ?>
 
 <div>
-	<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-		<div>
-			<flux:heading size="xl">Master Wajib Punia</flux:heading>
-			<flux:subheading>Kelola data tempat usaha dan profil Wajib Punia.</flux:subheading>
-		</div>
-		
-		<div class="flex w-full md:w-auto items-center gap-2">
-			<flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama atau no reg..." class="w-full md:w-64" />
-			<flux:button variant="primary" icon="plus" x-on:click="$flux.modal('tambah-wp').show()">
-				Tambah Data
-			</flux:button>
-		</div>
-	</div>
+	<div class="flex justify-between items-end gap-4 mb-6">
+        <div>
+            <flux:heading size="xl">Master Wajib Punia</flux:heading>
+            <flux:subheading>Kelola data tempat usaha dan profil Wajib Punia.</flux:subheading>
+        </div>
+        
+        <div>
+            <flux:button variant="primary" icon="plus" x-on:click="$flux.modal('tambah-wp').show()">
+                Tambah Data
+            </flux:button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama atau no reg..." />
+        
+        <flux:select wire:model.live="filter_jenis_usaha" placeholder="Semua Jenis Usaha">
+            <flux:select.option value="">Semua Jenis Usaha</flux:select.option>
+            @foreach($daftarJenisUsaha as $ju)
+                <flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
+            @endforeach
+        </flux:select>
+        
+        <flux:select wire:model.live="filter_banjar" placeholder="Semua Banjar">
+            <flux:select.option value="">Semua Wilayah Banjar</flux:select.option>
+            @foreach($daftarBanjar as $b)
+                <flux:select.option value="{{ $b->id }}">Br. {{ $b->nama_banjar }}</flux:select.option>
+            @endforeach
+        </flux:select>
+
+        <div class="flex gap-2">
+            <flux:select wire:model.live="filter_pemilik" placeholder="Semua Pemilik" class="w-full">
+                <flux:select.option value="">Semua Pemilik / Donatur</flux:select.option>
+                @foreach($daftarPemilik as $p)
+                    <flux:select.option value="{{ $p->id }}">{{ $p->nama_pemilik }}</flux:select.option>
+                @endforeach
+            </flux:select>
+
+            @if($search || $filter_jenis_usaha || $filter_banjar || $filter_pemilik)
+                <flux:button wire:click="resetFilter" variant="subtle" icon="x-mark" class="px-3" title="Bersihkan Filter" />
+            @endif
+        </div>
+    </div>
 
 	<flux:card class="relative">
 		<div wire:loading wire:target="search, gotoPage, nextPage, previousPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">

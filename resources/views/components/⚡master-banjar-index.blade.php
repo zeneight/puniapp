@@ -37,6 +37,7 @@ new class extends Component {
         Banjar::create(['nama_banjar' => $this->nama_banjar]);
         $this->batal(); // Reset form
         $this->js('$flux.modal("tambah-banjar").close()'); 
+        \Flux::toast('Data berhasil ditambahkan.', variant: 'success');
     }
 
     // --- FUNGSI UPDATE ---
@@ -59,6 +60,7 @@ new class extends Component {
         
         $this->batal();
         $this->js('$flux.modal("edit-banjar").close()');
+        \Flux::toast('Data berhasil diperbarui.', variant: 'success');
     }
 
     // --- FUNGSI DELETE ---
@@ -73,6 +75,7 @@ new class extends Component {
         Banjar::findOrFail($this->banjar_id)->delete();
         $this->batal();
         $this->js('$flux.modal("hapus-banjar").close()');
+        \Flux::toast('Data berhasil dihapus.', variant: 'success');
     }
 
     // --- FUNGSI UTILITY ---
