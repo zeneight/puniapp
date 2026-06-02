@@ -11,16 +11,40 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('wajib_punias', function (Blueprint $table) {
-            // kolom baru
-            $table->foreignId('pemilik_id')->nullable()->constrained('pemiliks')->nullOnDelete();
-            $table->foreignId('jenis_usaha_id')->nullable()->constrained('jenis_usahas')->nullOnDelete();
-            $table->date('tgl_registrasi')->nullable();
-            $table->string('no_registrasi')->unique()->nullable();
-            
-            // Hapus kolom jenis_usaha lama (yang masih bertipe string)
-            $table->dropColumn('jenis_usaha');
-        });
+        // 1. Cek & Tambah pemilik_id
+        if (!Schema::hasColumn('wajib_punias', 'pemilik_id')) {
+            Schema::table('wajib_punias', function (Blueprint $table) {
+                $table->foreignId('pemilik_id')->nullable()->constrained('pemiliks')->nullOnDelete();
+            });
+        }
+
+        // 2. Cek & Tambah jenis_usaha_id
+        if (!Schema::hasColumn('wajib_punias', 'jenis_usaha_id')) {
+            Schema::table('wajib_punias', function (Blueprint $table) {
+                $table->foreignId('jenis_usaha_id')->nullable()->constrained('jenis_usahas')->nullOnDelete();
+            });
+        }
+
+        // 3. Cek & Tambah tgl_registrasi
+        if (!Schema::hasColumn('wajib_punias', 'tgl_registrasi')) {
+            Schema::table('wajib_punias', function (Blueprint $table) {
+                $table->date('tgl_registrasi')->nullable();
+            });
+        }
+
+        // 4. Cek & Tambah no_registrasi
+        if (!Schema::hasColumn('wajib_punias', 'no_registrasi')) {
+            Schema::table('wajib_punias', function (Blueprint $table) {
+                $table->string('no_registrasi')->unique()->nullable();
+            });
+        }
+
+        // 5. Cek & Hapus kolom jenis_usaha (yang lama/string)
+        if (Schema::hasColumn('wajib_punias', 'jenis_usaha')) {
+            Schema::table('wajib_punias', function (Blueprint $table) {
+                $table->dropColumn('jenis_usaha');
+            });
+        }
     }
 
     /**
