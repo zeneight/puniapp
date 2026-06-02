@@ -29,6 +29,18 @@
                         <flux:navlist.item icon="map-pin" :href="route('master.banjar')" :current="request()->routeIs('master.banjar')" wire:navigate>
                             {{ __('Master Banjar') }}
                         </flux:navlist.item>
+
+                        <flux:navlist.item icon="map-pin" :href="route('master.jenisusaha')" :current="request()->routeIs('master.jenisusaha')" wire:navigate>
+                            {{ __('Master Jenis Usaha') }}
+                        </flux:navlist.item>
+
+                        <flux:navlist.item icon="map-pin" :href="route('master.pemilik')" :current="request()->routeIs('master.pemilik')" wire:navigate>
+                            {{ __('Master Pemilik') }}
+                        </flux:navlist.item>
+
+                        <flux:navlist.item icon="users" :href="route('master.user')" :current="request()->routeIs('master.user')" wire:navigate>
+                            {{ __('Petugas') }}
+                        </flux:navlist.item>
                     </flux:navlist.group>
                     @endif
                     

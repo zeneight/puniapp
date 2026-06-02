@@ -103,6 +103,10 @@ new class extends Component {
 
     public function destroy($id)
     {
+        if ($id === auth()->id() || $id === 1) {
+            return; 
+        }
+
         User::findOrFail($id)->delete();
         $this->js('$flux.modal("hapus-user").close()');
         \Flux::toast('User berhasil dihapus.', variant: 'success');
@@ -110,6 +114,18 @@ new class extends Component {
 
     public function konfirmasiHapus($id)
     {
+        // 1. Cegah user menghapus dirinya sendiri
+        if ($id === auth()->id()) {
+            \Flux::toast('Anda tidak dapat menghapus akun yang sedang Anda gunakan!', variant: 'danger');
+            return;
+        }
+
+        // 2. Cegah penghapusan akun Root (Asumsi Root adalah User dengan ID 1)
+        if ($id === 1) {
+            \Flux::toast('Akun Root Administrator dilindungi dan tidak dapat dihapus!', variant: 'danger');
+            return;
+        }
+
         $this->user_id = $id;
         $this->js('$flux.modal("hapus-user").show()');
     }
@@ -144,7 +160,7 @@ new class extends Component {
 <div>
     <div class="flex justify-between items-end gap-4 mb-6">
         <div>
-            <flux:heading size="xl">Manajemen User</flux:heading>
+            <flux:heading size="xl">Manajemen User Petugas</flux:heading>
             <flux:subheading>Kelola hak akses dan akun staf aplikasi.</flux:subheading>
         </div>
         
@@ -191,7 +207,12 @@ new class extends Component {
                         
                         <flux:table.cell>
                             <flux:button wire:click="edit({{ $user->id }})" variant="ghost" size="sm" icon="pencil-square" class="text-indigo-600 hover:text-indigo-700" />
-                            <flux:button wire:click="konfirmasiHapus({{ $user->id }})" variant="ghost" size="sm" icon="trash" class="text-red-500 hover:text-red-600" />
+                            
+                            @if($user->id === auth()->id() || $user->id === 1)
+                                <flux:button variant="ghost" size="sm" icon="trash" class="text-zinc-300 dark:text-zinc-700 cursor-not-allowed" title="Akun dilindungi" disabled />
+                            @else
+                                <flux:button wire:click="konfirmasiHapus({{ $user->id }})" variant="ghost" size="sm" icon="trash" class="text-red-500 hover:text-red-600" />
+                            @endif
                         </flux:table.cell>
                     </flux:table.row>
                 @empty
