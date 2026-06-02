@@ -27,6 +27,9 @@ new class extends Component {
 	public ?int $pagu_dudukan = null;
 	public bool $is_active = true;
 	public string $alamat = '';
+
+	public $latitude = null;
+    public $longitude = null;
 	
 	// Variabel Foreign Keys (Relasi)
 	public $pemilik_id = '';
@@ -91,6 +94,8 @@ new class extends Component {
 			'jenis_usaha_id' => $this->jenis_usaha_id,
 			'banjar_id' => $this->banjar_id,
 			'alamat' => $this->alamat,
+			'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
 		]);
 
 		// Panggil mesin kompresi & upload
@@ -116,6 +121,8 @@ new class extends Component {
 		$this->jenis_usaha_id = (string) $wp->jenis_usaha_id;
 		$this->banjar_id = (string) $wp->banjar_id;
 		$this->alamat = $wp->alamat ?? '';
+		$this->latitude = $wp->latitude;
+        $this->longitude = $wp->longitude;
 
 		// Tarik data dokumen lama untuk ditampilkan preview-nya
 		$this->dokumenLama = $wp->dokumens;
@@ -139,6 +146,8 @@ new class extends Component {
 			'jenis_usaha_id' => $this->jenis_usaha_id,
 			'banjar_id' => $this->banjar_id,
 			'alamat' => $this->alamat,
+			'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
 		]);
 
 		// Eksekusi upload jika ada file baru yang ditambahkan saat edit
@@ -170,7 +179,7 @@ new class extends Component {
 		$this->reset([
 			'wajib_punia_id', 'nama', 'no_registrasi', 'tgl_registrasi', 
 			'pagu_dudukan', 'pemilik_id', 'jenis_usaha_id', 'banjar_id', 
-			'alamat', 'dokumens', 'dokumenLama'
+			'alamat', 'dokumens', 'dokumenLama', 'latitude', 'longitude'
 		]);
 
 		$this->pemilik_id = '';
@@ -405,6 +414,72 @@ new class extends Component {
 				<div class="md:col-span-2">
 					<flux:textarea wire:model="alamat" label="Alamat Lengkap Usaha" rows="2" placeholder="Contoh: Jl. Hayam Wuruk No. 123, Br. Kedaton" />
 				</div>
+
+				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800" wire:ignore>
+                    <flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-3">
+                        <flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
+                        <flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
+                    </div>
+                    
+                    <div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
+
+                    <div x-data="{
+                            map: null,
+                            marker: null,
+                            init() {
+                                // 1. DEFAULT ZOOM DITURUNKAN JADI 12 (Lebih Luas)
+                                this.map = L.map($refs.mapContainer).setView([-8.650000, 115.216667], 12);
+                                
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    maxZoom: 19,
+                                    attribution: '© OpenStreetMap'
+                                }).addTo(this.map);
+
+                                // 2. SET UP AWAL SAAT MODE EDIT (Paskan posisi marker lama)
+                                if ($wire.latitude && $wire.longitude) {
+                                    this.updateMarker($wire.latitude, $wire.longitude);
+                                    this.map.setView([$wire.latitude, $wire.longitude], 14); // Zoom 14 pas untuk melihat jalan
+                                }
+
+                                // Deteksi klik di peta
+                                this.map.on('click', (e) => {
+                                    const lat = e.latlng.lat.toFixed(8);
+                                    const lng = e.latlng.lng.toFixed(8);
+                                    this.updateMarker(lat, lng);
+                                    
+                                    // Kirim data ke Livewire
+                                    $wire.set('latitude', lat);
+                                    $wire.set('longitude', lng);
+                                });
+
+                                // Pantau perubahan data Livewire
+                                $watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
+                            },
+                            updateMarker(lat, lng) {
+                                if (this.marker) {
+                                    this.marker.setLatLng([lat, lng]);
+                                } else {
+                                    this.marker = L.marker([lat, lng]).addTo(this.map);
+                                }
+                            },
+                            syncMap(lat, lng) {
+                                if (lat && lng) {
+                                    this.updateMarker(lat, lng);
+                                    // 3. KUNCI ZOOM: Hanya geser posisinya, biarkan level zoom sesuai kemauan user
+                                    this.map.setView([lat, lng], this.map.getZoom());
+                                }
+                                // Mencegah peta abu-abu sebagian saat modal baru terbuka
+                                setTimeout(() => this.map.invalidateSize(), 300);
+                            }
+                         }"
+                         x-on:modal-show.window="setTimeout(() => { if(map) map.invalidateSize() }, 300)"
+                         class="relative z-0">
+                        
+                        <div x-ref="mapContainer" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
+                    </div>
+                </div>
 				
 				<flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
 					@foreach($daftarJenisUsaha as $ju)
@@ -503,6 +578,72 @@ new class extends Component {
 				<div class="md:col-span-2">
 					<flux:textarea wire:model="alamat" label="Alamat Lengkap Usaha" rows="2" placeholder="Contoh: Jl. Hayam Wuruk No. 123, Br. Kedaton" />
 				</div>
+
+				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800" wire:ignore>
+                    <flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-3">
+                        <flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
+                        <flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
+                    </div>
+                    
+                    <div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
+
+                    <div x-data="{
+                            map: null,
+                            marker: null,
+                            init() {
+                                // 1. DEFAULT ZOOM DITURUNKAN JADI 12 (Lebih Luas)
+                                this.map = L.map($refs.mapContainer).setView([-8.650000, 115.216667], 12);
+                                
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    maxZoom: 19,
+                                    attribution: '© OpenStreetMap'
+                                }).addTo(this.map);
+
+                                // 2. SET UP AWAL SAAT MODE EDIT (Paskan posisi marker lama)
+                                if ($wire.latitude && $wire.longitude) {
+                                    this.updateMarker($wire.latitude, $wire.longitude);
+                                    this.map.setView([$wire.latitude, $wire.longitude], 14); // Zoom 14 pas untuk melihat jalan
+                                }
+
+                                // Deteksi klik di peta
+                                this.map.on('click', (e) => {
+                                    const lat = e.latlng.lat.toFixed(8);
+                                    const lng = e.latlng.lng.toFixed(8);
+                                    this.updateMarker(lat, lng);
+                                    
+                                    // Kirim data ke Livewire
+                                    $wire.set('latitude', lat);
+                                    $wire.set('longitude', lng);
+                                });
+
+                                // Pantau perubahan data Livewire
+                                $watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
+                            },
+                            updateMarker(lat, lng) {
+                                if (this.marker) {
+                                    this.marker.setLatLng([lat, lng]);
+                                } else {
+                                    this.marker = L.marker([lat, lng]).addTo(this.map);
+                                }
+                            },
+                            syncMap(lat, lng) {
+                                if (lat && lng) {
+                                    this.updateMarker(lat, lng);
+                                    // 3. KUNCI ZOOM: Hanya geser posisinya, biarkan level zoom sesuai kemauan user
+                                    this.map.setView([lat, lng], this.map.getZoom());
+                                }
+                                // Mencegah peta abu-abu sebagian saat modal baru terbuka
+                                setTimeout(() => this.map.invalidateSize(), 300);
+                            }
+                         }"
+                         x-on:modal-show.window="setTimeout(() => { if(map) map.invalidateSize() }, 300)"
+                         class="relative z-0">
+                        
+                        <div x-ref="mapContainer" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
+                    </div>
+                </div>
 
 				<flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
 					@foreach($daftarJenisUsaha as $ju)
