@@ -80,5 +80,6 @@
         @endpersist
 
         @fluxScripts
+        <flux:toast position="top-right" />
     </body>
 </html>
