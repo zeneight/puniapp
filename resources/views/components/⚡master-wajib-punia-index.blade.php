@@ -3,72 +3,49 @@
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\WithPagination;
-
 use App\Models\WajibPunia;
 use App\Models\Banjar;
-use App\Models\Kategori;
-use App\Models\User;
+use App\Models\Pemilik;
+use App\Models\JenisUsaha;
 
 new class extends Component {
     use WithPagination;
 
     #[Layout('layouts.app')]
 
-    // Variabel Form & State
+    // Variabel Form
     public ?int $wajib_punia_id = null;
     public string $nama = '';
+    public string $no_registrasi = '';
+    public string $tgl_registrasi = '';
+    public ?int $pagu_dudukan = null;
+    public bool $is_active = true;
     public string $alamat = '';
-    public string $banjar_id = '';
-    public string $kategori_id = '';
-    public string $jenis_usaha = '';
-    public int $jumlah_unit = 1;
-    public int $pagu_dudukan = 0;
-    public string $kontak_pengelola = '';
-    public string $user_id = '';
-
-    // untuk Search & Sort
-    public string $search = '';
-    public string $sortBy = 'nama'; // Default urut berdasarkan nama
-    public string $sortDir = 'asc'; // Default A-Z
     
-    public string $filterKategori = '';
-    public string $filterPetugas = '';
+    // Variabel Foreign Keys (Relasi)
+    public $pemilik_id = '';
+    public $jenis_usaha_id = '';
+    public $banjar_id = '';
 
-    // Fungsi reset halaman
-    public function updatingSearch() { $this->resetPage(); }
-    public function updatingFilterKategori() { $this->resetPage(); }
-    public function updatingFilterPetugas() { $this->resetPage(); }
+    public string $search = '';
 
-    // reset
-    public function resetFilter()
+    public function updatingSearch()
     {
-        $this->reset(['search', 'filterKategori', 'filterPetugas', 'sortBy', 'sortDir']);
-        $this->sortBy = 'nama'; // Kembalikan default sort
-        $this->sortDir = 'asc';
         $this->resetPage();
-    }
-
-    // Fungsi untuk membalikkan arah urutan saat header tabel diklik
-    public function setSortBy($kolom)
-    {
-        if ($this->sortBy === $kolom) {
-            $this->sortDir = ($this->sortDir === 'asc') ? 'desc' : 'asc';
-            return;
-        }
-        $this->sortBy = $kolom;
-        $this->sortDir = 'asc';
     }
 
     protected function rules()
     {
         return [
-            'nama' => 'required|min:3',
-            'alamat' => 'required',
-            'banjar_id' => 'required|exists:banjars,id',
-            'kategori_id' => 'required|exists:kategoris,id',
-            'user_id' => 'nullable|exists:users,id',
+            'nama' => 'required|string|min:3|max:150',
+            'no_registrasi' => 'nullable|string|unique:wajib_punias,no_registrasi,' . $this->wajib_punia_id,
+            'tgl_registrasi' => 'nullable|date',
             'pagu_dudukan' => 'required|numeric|min:0',
-            'jumlah_unit' => 'required|numeric|min:1',
+            'is_active' => 'boolean',
+            'pemilik_id' => 'required|exists:pemiliks,id',
+            'jenis_usaha_id' => 'required|exists:jenis_usahas,id',
+            'banjar_id' => 'required|exists:banjars,id',
+            'alamat' => 'nullable|string|max:255',
         ];
     }
 
@@ -76,40 +53,38 @@ new class extends Component {
     public function simpan()
     {
         $this->validate();
-
         WajibPunia::create([
             'nama' => $this->nama,
-            'alamat' => $this->alamat,
-            'banjar_id' => $this->banjar_id,
-            'kategori_id' => $this->kategori_id,
-            'user_id' => $this->user_id ?: Auth::id(), // Set petugas yang input data, default ke user saat ini
-            'jenis_usaha' => $this->jenis_usaha,
-            'jumlah_unit' => $this->jumlah_unit,
+            'no_registrasi' => $this->no_registrasi,
+            'tgl_registrasi' => $this->tgl_registrasi,
             'pagu_dudukan' => $this->pagu_dudukan,
-            'kontak_pengelola' => $this->kontak_pengelola,
+            'is_active' => $this->is_active,
+            'pemilik_id' => $this->pemilik_id,
+            'jenis_usaha_id' => $this->jenis_usaha_id,
+            'banjar_id' => $this->banjar_id,
+            'alamat' => $this->alamat,
         ]);
-
-        $this->resetForm();
+        
+        $this->batal();
         $this->js('$flux.modal("tambah-wp").close()');
     }
 
-    // --- FUNGSI UPDATE (EDIT) ---
+    // --- FUNGSI UPDATE ---
     public function edit($id)
     {
         $wp = WajibPunia::findOrFail($id);
         
         $this->wajib_punia_id = $wp->id;
         $this->nama = $wp->nama;
-        $this->alamat = $wp->alamat;
-        // Konversi ke string agar sinkron dengan flux:select
-        $this->banjar_id = (string) $wp->banjar_id;
-        $this->kategori_id = (string) $wp->kategori_id;
-        $this->user_id = (string) $wp->user_id;
-        $this->jenis_usaha = $wp->jenis_usaha ?? '';
-        $this->jumlah_unit = $wp->jumlah_unit;
+        $this->no_registrasi = $wp->no_registrasi ?? '';
+        $this->tgl_registrasi = $wp->tgl_registrasi ?? '';
         $this->pagu_dudukan = $wp->pagu_dudukan;
-        $this->kontak_pengelola = $wp->kontak_pengelola ?? '';
-
+        $this->is_active = (bool) $wp->is_active;
+        $this->pemilik_id = (string) $wp->pemilik_id;
+        $this->jenis_usaha_id = (string) $wp->jenis_usaha_id;
+        $this->banjar_id = (string) $wp->banjar_id;
+        $this->alamat = $wp->alamat ?? '';
+        
         $this->resetValidation();
         $this->js('$flux.modal("edit-wp").show()');
     }
@@ -117,21 +92,21 @@ new class extends Component {
     public function update()
     {
         $this->validate();
-
+        
         $wp = WajibPunia::findOrFail($this->wajib_punia_id);
         $wp->update([
             'nama' => $this->nama,
-            'alamat' => $this->alamat,
-            'banjar_id' => $this->banjar_id,
-            'kategori_id' => $this->kategori_id,
-            'user_id' => $this->user_id ?: null,
-            'jenis_usaha' => $this->jenis_usaha,
-            'jumlah_unit' => $this->jumlah_unit,
+            'no_registrasi' => $this->no_registrasi,
+            'tgl_registrasi' => $this->tgl_registrasi,
             'pagu_dudukan' => $this->pagu_dudukan,
-            'kontak_pengelola' => $this->kontak_pengelola,
+            'is_active' => $this->is_active,
+            'pemilik_id' => $this->pemilik_id,
+            'jenis_usaha_id' => $this->jenis_usaha_id,
+            'banjar_id' => $this->banjar_id,
+            'alamat' => $this->alamat,
         ]);
-
-        $this->resetForm();
+        
+        $this->batal();
         $this->js('$flux.modal("edit-wp").close()');
     }
 
@@ -145,44 +120,40 @@ new class extends Component {
     public function destroy()
     {
         WajibPunia::findOrFail($this->wajib_punia_id)->delete();
-        $this->resetForm();
+        $this->batal();
         $this->js('$flux.modal("hapus-wp").close()');
     }
 
-    // --- UTILITY ---
-    public function resetForm()
+    // --- FUNGSI UTILITY ---
+    public function batal()
     {
-        $this->reset(['wajib_punia_id', 'nama', 'alamat', 'banjar_id', 'kategori_id', 'jenis_usaha', 'jumlah_unit', 'pagu_dudukan', 'kontak_pengelola']);
+        $this->reset([
+            'wajib_punia_id', 'nama', 'no_registrasi', 'tgl_registrasi', 
+            'pagu_dudukan', 'pemilik_id', 'jenis_usaha_id', 'banjar_id', 'alamat'
+        ]);
+
+        $this->pemilik_id = '';
+        $this->jenis_usaha_id = '';
+        $this->banjar_id = '';
+
+        $this->is_active = true;
         $this->resetValidation();
     }
 
     public function with()
     {
-        $query = WajibPunia::with(['banjar', 'kategori', 'user'])
-            // Filter Search (dibungkus sub-query agar aman)
-            ->when($this->search, function ($q) {
-                $q->where(function ($subQ) {
-                    $subQ->where('nama', 'like', '%' . $this->search . '%')
-                         ->orWhereHas('banjar', function ($qBanjar) {
-                             $qBanjar->where('nama_banjar', 'like', '%' . $this->search . '%');
-                         });
-                });
-            })
-            // Filter Kategori
-            ->when($this->filterKategori, function ($q) {
-                $q->where('kategori_id', $this->filterKategori);
-            })
-            // Filter Petugas
-            ->when($this->filterPetugas, function ($q) {
-                $q->where('user_id', $this->filterPetugas);
-            })
-            ->orderBy($this->sortBy, $this->sortDir);
-
         return [
-            'wajibPunias' => $query->paginate(10),
-            'banjars' => Banjar::all(),
-            'kategoris' => Kategori::all(),
-            'petugas' => User::where('role', 'inputer')->get(),
+            // Eager loading relasi agar tidak query N+1 di tabel HTML
+            'wajibPunias' => WajibPunia::with(['banjar', 'pemilik', 'jenisUsaha'])
+                                       ->where('nama', 'like', '%' . $this->search . '%')
+                                       ->orWhere('no_registrasi', 'like', '%' . $this->search . '%')
+                                       ->orderBy('nama', 'asc')
+                                       ->paginate(10),
+            
+            // Mengambil data master untuk dropdown form
+            'daftarBanjar' => Banjar::orderBy('nama_banjar', 'asc')->get(),
+            'daftarPemilik' => Pemilik::orderBy('nama_pemilik', 'asc')->get(),
+            'daftarJenisUsaha' => JenisUsaha::orderBy('nama_jenis_usaha', 'asc')->get(),
         ];
     }
 };
@@ -191,190 +162,174 @@ new class extends Component {
 <div>
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-            <flux:heading size="xl">Data Master Wajib Punia</flux:heading>
-            <flux:subheading>Daftar seluruh tempat usaha, proyek, atau domisili.</flux:subheading>
+            <flux:heading size="xl">Master Wajib Punia</flux:heading>
+            <flux:subheading>Kelola data tempat usaha dan profil Wajib Punia.</flux:subheading>
         </div>
         
-        <div class="flex flex-col md:flex-row w-full md:w-auto items-center gap-2">
-            
-            <flux:select wire:model.live="filterKategori" class="w-full md:w-40" aria-label="Filter Kategori">
-                <flux:select.option value="">Semua Kategori</flux:select.option>
-                @foreach($kategoris as $kat)
-                    <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
-                @endforeach
-            </flux:select>
-
-            <flux:select wire:model.live="filterPetugas" class="w-full md:w-40" aria-label="Filter Petugas">
-                <flux:select.option value="">Semua Petugas</flux:select.option>
-                @foreach($petugas as $p)
-                    <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
-                @endforeach
-            </flux:select>
-
-            <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama / banjar..." class="w-full md:w-64" />
-            
-            @if($search !== '' || $filterKategori !== '' || $filterPetugas !== '')
-                <flux:button wire:click="resetFilter" variant="danger" icon="x-mark" class="px-3" tooltip="Reset Pencarian">
-                    Reset
-                </flux:button>
-            @endif
-
+        <div class="flex w-full md:w-auto items-center gap-2">
+            <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama atau no reg..." class="w-full md:w-64" />
             <flux:button variant="primary" icon="plus" x-on:click="$flux.modal('tambah-wp').show()">
-                Registrasi
+                Tambah Data
             </flux:button>
         </div>
     </div>
 
     <flux:card class="relative">
-        <div wire:loading class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
-            <div class="flex items-center gap-3 px-5 py-2.5 bg-white dark:bg-zinc-800 shadow-lg rounded-full border border-zinc-200 dark:border-zinc-700">
-                <svg class="w-5 h-5 animate-spin text-zinc-800 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span class="text-sm font-medium text-zinc-700 dark:text-zinc-200">Memuat data...</span>
-            </div>
+        <div wire:loading wire:target="search, gotoPage, nextPage, previousPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
+            <span class="text-xs font-medium">Memuat...</span>
         </div>
 
-        <div wire:loading.class="opacity-50 pointer-events-none transition-opacity duration-200">
+        <div wire:loading.class="opacity-40" wire:target="search, gotoPage, nextPage, previousPage">
             <flux:table>
                 <flux:table.columns>
-                    <flux:table.column sortable :sorted="$sortBy === 'nama'" :direction="$sortDir" wire:click="setSortBy('nama')">Nama / Usaha</flux:table.column>
-                    <flux:table.column>Banjar</flux:table.column>
-                    <flux:table.column>Kategori</flux:table.column>
-                    <flux:table.column sortable :sorted="$sortBy === 'pagu_dudukan'" :direction="$sortDir" wire:click="setSortBy('pagu_dudukan')">Pagu Bulanan</flux:table.column>
-                    <flux:table.column>Petugas</flux:table.column>
+                    <flux:table.column>Nama Usaha / Lokasi</flux:table.column>
+                    <flux:table.column>Info Pemilik</flux:table.column>
+                    <flux:table.column>Pagu Punia</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
                     <flux:table.column>Aksi</flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
-                    @foreach ($wajibPunias as $wp)
+                    @forelse ($wajibPunias as $wp)
                     <flux:table.row>
                         <flux:table.cell>
-                            <div class="font-semibold text-zinc-800 dark:text-white">{{ $wp->nama }}</div>
-                            <div class="text-xs text-zinc-500">{{ $wp->alamat }}</div>
+                            <div class="font-semibold">{{ $wp->nama }}</div>
+                            <div class="text-xs text-zinc-500">
+                                {{ $wp->jenisUsaha->nama_jenis_usaha ?? '-' }} • Br. {{ $wp->banjar->nama_banjar ?? '-' }}
+                            </div>
                         </flux:table.cell>
-                        <flux:table.cell>{{ $wp->banjar->nama_banjar ?? '-' }}</flux:table.cell>
                         <flux:table.cell>
-                            <flux:badge size="sm" inset="top bottom">{{ $wp->kategori->nama_kategori ?? '-' }}</flux:badge>
+                            <div class="font-medium text-sm">{{ $wp->pemilik->nama_pemilik ?? '-' }}</div>
+                            <div class="text-[10px] text-zinc-400">Reg: {{ $wp->no_registrasi ?? '-' }}</div>
                         </flux:table.cell>
-                        <flux:table.cell class="font-mono">Rp {{ number_format($wp->pagu_dudukan, 0, ',', '.') }}</flux:table.cell>
+                        <flux:table.cell class="font-mono text-sm text-emerald-600 font-semibold">
+                            Rp {{ number_format($wp->pagu_dudukan, 0, ',', '.') }}
+                        </flux:table.cell>
                         <flux:table.cell>
-                            <span class="text-sm text-zinc-600 dark:text-zinc-400">{{ $wp->user->name ?? 'Belum Diatur' }}</span>
+                            @if($wp->is_active)
+                                <flux:badge color="success" size="sm" inset="top bottom">Aktif</flux:badge>
+                            @else
+                                <flux:badge color="zinc" size="sm" inset="top bottom">Nonaktif</flux:badge>
+                            @endif
                         </flux:table.cell>
                         <flux:table.cell>
                             <flux:button wire:click="edit({{ $wp->id }})" size="sm" variant="ghost" icon="pencil-square" />
                             <flux:button wire:click="konfirmasiHapus({{ $wp->id }})" size="sm" variant="ghost" color="danger" icon="trash" />
                         </flux:table.cell>
                     </flux:table.row>
-                    @endforeach
+                    @empty
+                    <flux:table.row>
+                        <flux:table.cell colspan="5" class="text-center text-zinc-500 py-4">Data tidak ditemukan.</flux:table.cell>
+                    </flux:table.row>
+                    @endforelse
                 </flux:table.rows>
             </flux:table>
-        </div>
-        
-        <div class="mt-4">
-            {{ $wajibPunias->links() }}
+            
+            <div class="mt-4">
+                {{ $wajibPunias->links() }}
+            </div>
         </div>
     </flux:card>
 
-    <flux:modal name="tambah-wp" class="md:min-w-[600px]" wire:close="resetForm">
-        <form wire:submit="simpan" class="space-y-4">
+    <flux:modal name="tambah-wp" class="md:w-[700px]" wire:close="batal">
+        <form wire:submit="simpan" class="space-y-5">
             <div>
-                <flux:heading size="lg">Registrasi Wajib Punia Baru</flux:heading>
-                <flux:subheading>Lengkapi data sesuai lembar survei lapangan.</flux:subheading>
+                <flux:heading size="lg">Tambah Wajib Punia</flux:heading>
+                <flux:subheading>Isi formulir relasi data berikut.</flux:subheading>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <flux:input wire:model="nama" label="Nama Usaha / Personal" placeholder="Contoh: Mini Mart CG68" />
-                <flux:input wire:model="kontak_pengelola" label="Kontak / No. HP" placeholder="Contoh: 081234567xx" />
-            </div>
-
-            <flux:textarea wire:model="alamat" label="Alamat Lengkap" placeholder="Nama Jalan, patokan, dll." />
-
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <flux:select wire:model="pemilik_id" label="Pemilik / Donatur Utama" placeholder="Pilih Pemilik...">
+                    @foreach($daftarPemilik as $pemilik)
+                        <flux:select.option value="{{ $pemilik->id }}">{{ $pemilik->nama_pemilik }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                
+                <flux:input wire:model="nama" label="Nama Tempat Usaha" placeholder="Contoh: Villa Kahayana" />
+                <div class="md:col-span-2">
+                    <flux:textarea wire:model="alamat" label="Alamat Lengkap Usaha" rows="2" placeholder="Contoh: Jl. Hayam Wuruk No. 123, Br. Kedaton" />
+                </div>
+                
+                <flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
+                    @foreach($daftarJenisUsaha as $ju)
+                        <flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                
                 <flux:select wire:model="banjar_id" label="Wilayah Banjar" placeholder="Pilih Banjar...">
-                    @foreach($banjars as $banjar)
-                        <flux:select.option value="{{ $banjar->id }}">{{ $banjar->nama_banjar }}</flux:select.option>
+                    @foreach($daftarBanjar as $b)
+                        <flux:select.option value="{{ $b->id }}">{{ $b->nama_banjar }}</flux:select.option>
                     @endforeach
                 </flux:select>
 
-                <flux:select wire:model="user_id" label="Petugas Penagih (Opsional)" placeholder="Pilih Petugas...">
-                    @foreach($petugas as $p)
-                        <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-
-                <flux:select wire:model="kategori_id" label="Kategori Pembayaran" placeholder="Pilih Kategori...">
-                    @foreach($kategoris as $kat)
-                        <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
-                    @endforeach
-                </flux:select>
+                <flux:input wire:model="no_registrasi" label="Nomor Registrasi" placeholder="Opsional" />
+                <flux:input wire:model="tgl_registrasi" type="date" label="Tanggal Registrasi" />
+                
+                <flux:input wire:model="pagu_dudukan" type="number" label="Pagu Dudukan (Rp)" placeholder="Nominal tagihan bulanan" />
+                
+                <div class="flex items-center h-full pt-6">
+                    <flux:switch wire:model="is_active" label="Status Aktif" />
+                </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-4">
-                <flux:input wire:model="jenis_usaha" label="Jenis Usaha (Opsional)" placeholder="cth: Toko, Villa" />
-                <flux:input wire:model="jumlah_unit" type="number" label="Jumlah Unit" />
-                <flux:input wire:model="pagu_dudukan" type="number" label="Pagu Nominal (Rp)" placeholder="cth: 200000" />
-            </div>
-
-            <div class="flex justify-end gap-2 mt-6">
+            <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
                 <flux:modal.close><flux:button variant="ghost">Batal</flux:button></flux:modal.close>
-                <flux:button type="submit" variant="primary">Daftarkan</flux:button>
+                <flux:button type="submit" variant="primary">Simpan Data</flux:button>
             </div>
         </form>
     </flux:modal>
 
-    <flux:modal name="edit-wp" class="md:min-w-[600px]" wire:close="resetForm">
-        <form wire:submit="update" class="space-y-4">
+    <flux:modal name="edit-wp" class="md:w-[700px]" wire:close="batal">
+        <form wire:submit="update" class="space-y-5">
             <div>
-                <flux:heading size="lg">Edit Data Wajib Punia</flux:heading>
-                <flux:subheading>Ubah informasi profil atau pagu berkala wajib punia.</flux:subheading>
+                <flux:heading size="lg">Edit Wajib Punia</flux:heading>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <flux:input wire:model="nama" label="Nama Usaha / Personal" />
-                <flux:input wire:model="kontak_pengelola" label="Kontak / No. HP" />
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <flux:select wire:model="pemilik_id" label="Pemilik / Donatur Utama" placeholder="Pilih Pemilik...">
+                    @foreach($daftarPemilik as $pemilik)
+                        <flux:select.option value="{{ $pemilik->id }}">{{ $pemilik->nama_pemilik }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                
+                <flux:input wire:model="nama" label="Nama Tempat Usaha" />
+                <div class="md:col-span-2">
+                    <flux:textarea wire:model="alamat" label="Alamat Lengkap Usaha" rows="2" placeholder="Contoh: Jl. Hayam Wuruk No. 123, Br. Kedaton" />
+                </div>
 
-            <flux:textarea wire:model="alamat" label="Alamat Lengkap" />
-
-            <div class="grid grid-cols-2 gap-4">
-                <flux:select wire:model="banjar_id" label="Wilayah Banjar">
-                    @foreach($banjars as $banjar)
-                        <flux:select.option value="{{ $banjar->id }}">{{ $banjar->nama_banjar }}</flux:select.option>
+                <flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
+                    @foreach($daftarJenisUsaha as $ju)
+                        <flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                
+                <flux:select wire:model="banjar_id" label="Wilayah Banjar" placeholder="Pilih Banjar...">
+                    @foreach($daftarBanjar as $b)
+                        <flux:select.option value="{{ $b->id }}">{{ $b->nama_banjar }}</flux:select.option>
                     @endforeach
                 </flux:select>
 
-                <flux:select wire:model="user_id" label="Petugas Penagih (Opsional)">
-                    @foreach($petugas as $p)
-                        <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-
-                <flux:select wire:model="kategori_id" label="Kategori Pembayaran">
-                    @foreach($kategoris as $kat)
-                        <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
-                    @endforeach
-                </flux:select>
+                <flux:input wire:model="no_registrasi" label="Nomor Registrasi" />
+                <flux:input wire:model="tgl_registrasi" type="date" label="Tanggal Registrasi" />
+                
+                <flux:input wire:model="pagu_dudukan" type="number" label="Pagu Dudukan (Rp)" />
+                
+                <div class="flex items-center h-full pt-6">
+                    <flux:switch wire:model="is_active" label="Status Aktif" />
+                </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-4">
-                <flux:input wire:model="jenis_usaha" label="Jenis Usaha (Opsional)" />
-                <flux:input wire:model="jumlah_unit" type="number" label="Jumlah Unit" />
-                <flux:input wire:model="pagu_dudukan" type="number" label="Pagu Nominal (Rp)" />
-            </div>
-
-            <div class="flex justify-end gap-2 mt-6">
+            <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
                 <flux:modal.close><flux:button variant="ghost">Batal</flux:button></flux:modal.close>
-                <flux:button type="submit" variant="primary">Simpan Perubahan</flux:button>
+                <flux:button type="submit" variant="primary">Update Data</flux:button>
             </div>
         </form>
     </flux:modal>
 
-    <flux:modal name="hapus-wp" class="min-w-[400px]" wire:close="resetForm">
+    <flux:modal name="hapus-wp" class="min-w-[400px]" wire:close="batal">
         <div class="mb-4">
-            <flux:heading size="lg">Hapus Data Wajib Punia?</flux:heading>
-            <flux:subheading>Menghapus data ini akan memutus riwayat pembayaran terkait. Yakin?</flux:subheading>
+            <flux:heading size="lg">Hapus Data?</flux:heading>
+            <flux:subheading>Menghapus data ini juga akan menghapus riwayat dokumen terkait. Tindakan ini tidak dapat dibatalkan.</flux:subheading>
         </div>
         <div class="flex justify-end gap-2 mt-6">
             <flux:modal.close><flux:button variant="ghost">Batal</flux:button></flux:modal.close>
