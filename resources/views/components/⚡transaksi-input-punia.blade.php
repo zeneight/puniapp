@@ -7,9 +7,15 @@ use App\Models\WajibPunia;
 use App\Models\Kategori;
 use Illuminate\Support\Facades\Auth;
 
+use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Storage;
+
 new class extends Component {
+	use WithFileUploads;
+
 	#[Layout('layouts.app')]
 
+	// Variabel Form Input
 	public $wajib_punia_id = '';
 	public $kategori_id = '';
 	public $bulan_awal = ''; 
@@ -18,6 +24,14 @@ new class extends Component {
 	public $tanggal_bayar = '';
 	public $nominal = '';
 	public $keterangan = '';
+	public $bukti_dokumen;
+
+	// Variabel Modal Edit
+    public $edit_transaksi_id;
+    public $edit_nominal;
+    public $edit_keterangan;
+    public $edit_bukti_lama;
+    public $edit_bukti_baru;
 
 	public array $infoTunggakan = [];
 
@@ -90,6 +104,12 @@ new class extends Component {
 			'bulan_akhir.gte' => 'Bulan akhir tidak boleh lebih kecil dari bulan awal.'
 		]);
 
+		// proses upload file
+		$pathBukti = null;
+        if ($this->bukti_transfer) {
+            $pathBukti = $this->bukti_transfer->store('bukti_transaksi', 'public');
+        }
+
 		$jumlahBulan = 0;
 		$bulanDilewati = 0;
 
@@ -113,6 +133,7 @@ new class extends Component {
 					'jenis_pembayaran_id' => $this->kategori_id,
 					'nominal' => $this->nominal, // Dicatat sebagai nominal PER BULAN
 					'keterangan' => $this->keterangan,
+					'bukti_dokumen' => $pathBukti,
 				]);
 				$jumlahBulan++;
 			} else {
@@ -137,7 +158,44 @@ new class extends Component {
 
 	public function editTransaksi($id)
     {
-        \Flux::toast('Fitur edit sedang kita siapkan di tahap selanjutnya!', variant: 'warning');
+        $trx = Transaksi::findOrFail($id);
+        
+        $this->edit_transaksi_id = $trx->id;
+        $this->edit_nominal = $trx->nominal;
+        $this->edit_keterangan = $trx->keterangan;
+        $this->edit_bukti_lama = $trx->bukti_transfer;
+        
+        $this->resetValidation();
+        $this->js('$flux.modal("edit-transaksi").show()');
+    }
+
+	public function updateTransaksi()
+    {
+        $this->validate([
+            'edit_nominal' => 'required|numeric|min:1',
+            'edit_keterangan' => 'nullable|string',
+            'edit_bukti_baru' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
+
+        $trx = Transaksi::findOrFail($this->edit_transaksi_id);
+        
+        // Jika admin mengupload bukti yang baru
+        if ($this->edit_bukti_baru) {
+            // Hapus file fisik yang lama (agar server tidak penuh)
+            if ($trx->bukti_transfer && Storage::disk('public')->exists($trx->bukti_transfer)) {
+                Storage::disk('public')->delete($trx->bukti_transfer);
+            }
+            // Simpan yang baru
+            $trx->bukti_transfer = $this->edit_bukti_baru->store('bukti_transaksi', 'public');
+        }
+
+        $trx->nominal = $this->edit_nominal;
+        $trx->keterangan = $this->edit_keterangan;
+        $trx->save();
+
+        $this->reset(['edit_transaksi_id', 'edit_nominal', 'edit_keterangan', 'edit_bukti_lama', 'edit_bukti_baru']);
+        $this->js('$flux.modal("edit-transaksi").close()');
+        \Flux::toast('Data transaksi berhasil diperbarui!', variant: 'success');
     }
 
 	public function with()
@@ -183,7 +241,7 @@ new class extends Component {
                             @endforeach
                         </flux:select>
 
-                        <flux:select wire:model="kategori_id" label="Jenis Punia / Pungutan" placeholder="Pilih Kategori...">
+                        <flux:select wire:model="kategori_id" label="Jenis Punia / Pungutan" placeholder="Otomatis terisi dari wajib punia atau bisa dipilih...">
                             @foreach ($daftarKategori as $kat)
                                 <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
                             @endforeach
@@ -265,6 +323,12 @@ new class extends Component {
 					</div>
 
                     <flux:textarea wire:model="keterangan" label="Catatan Tambahan (Opsional)" placeholder="Misal: Pembayaran rapel, titipan, dsb." rows="2" />
+					<flux:field>
+                        <flux:label>Bukti Transfer / Kuitansi (Opsional)</flux:label>
+                        <flux:input type="file" wire:model="bukti_dokumen" accept="image/*,.pdf" class="w-full" />
+                        <div wire:loading wire:target="bukti_dokumen" class="text-xs text-indigo-600 mt-1">Mengunggah file...</div>
+                        <flux:error name="bukti_dokumen" />
+                    </flux:field>
 
                     <div class="flex justify-end pt-2">
                         <flux:button type="submit" variant="primary" icon="check-circle" class="w-full sm:w-auto">Simpan Pembayaran</flux:button>
@@ -285,7 +349,12 @@ new class extends Component {
                         <div class="flex justify-between items-center bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg border border-zinc-100 dark:border-zinc-700">
                             <div>
                                 <div class="font-semibold text-sm">{{ $trx->wajibPunia->nama ?? 'Data Terhapus' }}</div>
-                                <div class="text-[11px] text-zinc-500 font-medium">Bulan {{ $trx->periode_bulan }} - {{ $trx->periode_tahun }}</div>
+                                <div class="text-[11px] text-zinc-500 font-medium flex items-center gap-1">
+                                    Bulan {{ $trx->periode_bulan }} - {{ $trx->periode_tahun }}
+                                    @if($trx->bukti_transfer)
+                                        <flux:icon.paper-clip class="w-3 h-3 text-indigo-500" title="Ada Lampiran Bukti" />
+                                    @endif
+                                </div>
                             </div>
                             <div class="text-right flex items-center gap-3">
                                 <div class="font-bold text-green-600">Rp {{ number_format($trx->nominal, 0, ',', '.') }}</div>
@@ -305,6 +374,43 @@ new class extends Component {
                 </flux:button>
             </flux:card>
         </div>
-
     </div>
+
+	<flux:modal name="edit-transaksi" class="md:w-[400px]">
+        <form wire:submit.prevent="updateTransaksi" class="space-y-5">
+            <div class="border-b pb-3 mb-4">
+                <flux:heading size="lg">Edit Transaksi</flux:heading>
+                <div class="text-xs text-zinc-500 mt-1">Admin Mode: Perbarui data jika terjadi kesalahan input.</div>
+            </div>
+            
+            <flux:field>
+                <flux:label>Nominal Pembayaran</flux:label>
+                <flux:input.group>
+                    <flux:input.group.prefix>Rp</flux:input.group.prefix>
+                    <flux:input type="number" wire:model="edit_nominal" required />
+                </flux:input.group>
+            </flux:field>
+            
+            <flux:textarea wire:model="edit_keterangan" label="Keterangan" rows="2" />
+            
+            <flux:field class="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                <flux:label class="mb-2">Perbarui Bukti Dokumen</flux:label>
+                
+                @if($edit_bukti_lama)
+                    <div class="flex items-center gap-2 text-sm mb-3 bg-white dark:bg-zinc-900 p-2 rounded border border-zinc-200 dark:border-zinc-600">
+                        <flux:icon.document-check class="w-4 h-4 text-green-500" />
+                        <a href="{{ url('storage/' . $edit_bukti_lama) }}" target="_blank" class="text-indigo-600 hover:text-indigo-700 underline text-xs font-medium">Lihat Dokumen Saat Ini</a>
+                    </div>
+                @endif
+                
+                <flux:input type="file" wire:model="edit_bukti_baru" accept="image/*,.pdf" class="text-sm" />
+                <div wire:loading wire:target="edit_bukti_baru" class="text-xs text-indigo-600 mt-1">Mengunggah file baru...</div>
+            </flux:field>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <flux:button type="button" x-on:click="$flux.modal('edit-transaksi').close()" variant="ghost">Batal</flux:button>
+                <flux:button type="submit" variant="primary">Simpan Perubahan</flux:button>
+            </div>
+        </form>
+    </flux:modal>
 </div>
