@@ -51,7 +51,7 @@ new class extends Component {
         
         // MODE 2: TAMPILKAN KOMPOSISI PER BANJAR (JIKA BULAN SPESIFIK DIPILIH)
         else {
-            $query = Transaksi::with('wajib_punia.banjar')
+            $query = Transaksi::with('wajibPunia.banjar')
                               ->where('periode_bulan', $this->bulan)
                               ->where('periode_tahun', $this->tahun);
 
@@ -63,8 +63,8 @@ new class extends Component {
 
             // Kelompokkan total nominal berdasarkan nama Banjar
             $komposisi = $transaksis->groupBy(function($item) {
-                return $item->wajib_punia && $item->wajib_punia->banjar 
-                       ? 'Banjar ' . $item->wajib_punia->banjar->nama_banjar 
+                return $item->wajibPunia && $item->wajibPunia->banjar 
+                       ? 'Banjar ' . $item->wajibPunia->banjar->nama_banjar 
                        : 'Wilayah Lainnya';
             })->map(function($group) {
                 return $group->sum('nominal');

@@ -26,7 +26,7 @@ new class extends Component {
 		$modeTahunan = empty($this->filterBulan);
 
 		// 1. Ambil 5 Transaksi Terakhir (Sesuaikan dengan filter)
-		$queryTransaksi = Transaksi::with(['wajib_punia', 'user'])
+		$queryTransaksi = Transaksi::with(['wajibPunia', 'user'])
 								   ->where('periode_tahun', $this->filterTahun)
 								   ->orderBy('created_at', 'desc')
 								   ->limit(5);
@@ -204,8 +204,8 @@ new class extends Component {
 							@forelse ($transaksiTerbaru as $trx)
 							<flux:table.row>
 								<flux:table.cell>
-									<div class="font-semibold line-clamp-1">{{ $trx->wajib_punia->nama ?? 'Terhapus' }}</div>
-									<div class="text-[10px] text-zinc-400">Br. {{ $trx->wajib_punia->banjar->nama_banjar ?? '-' }}</div>
+									<div class="font-semibold line-clamp-1">{{ $trx->wajibPunia->nama ?? 'Terhapus' }}</div>
+									<div class="text-[10px] text-zinc-400">Br. {{ $trx->wajibPunia->banjar->nama_banjar ?? '-' }}</div>
 								</flux:table.cell>
 								<flux:table.cell class="text-xs">Bl {{ $trx->periode_bulan }}/{{ substr($trx->periode_tahun, -2) }}</flux:table.cell>
 								<flux:table.cell>

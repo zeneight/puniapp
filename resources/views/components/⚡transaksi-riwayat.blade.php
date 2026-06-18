@@ -51,14 +51,14 @@ new class extends Component {
 
     public function with()
     {
-        $query = Transaksi::with(['wajib_punia', 'user'])
+        $query = Transaksi::with(['wajibPunia', 'user'])
             // Kunci data jika yang login adalah inputer
             ->when(Auth::user()->role === 'inputer', function ($q) {
                 $q->where('user_id', Auth::id());
             })
             // Filter Search (Mencari nama Wajib Punia)
             ->when($this->search, function ($q) {
-                $q->whereHas('wajib_punia', function ($qWP) {
+                $q->whereHas('wajibPunia', function ($qWP) {
                     $qWP->where('nama', 'like', '%' . $this->search . '%');
                 });
             })
@@ -151,7 +151,7 @@ new class extends Component {
                     <flux:table.row>
                         <flux:table.cell>{{ \Carbon\Carbon::parse($trx->tanggal_bayar)->format('d M Y') }}</flux:table.cell>
                         <flux:table.cell>
-                            <div class="font-semibold text-zinc-800 dark:text-white">{{ $trx->wajib_punia->nama ?? 'Terhapus' }}</div>
+                            <div class="font-semibold text-zinc-800 dark:text-white">{{ $trx->wajibPunia->nama ?? 'Terhapus' }}</div>
                             <div class="text-xs text-zinc-500 line-clamp-1">{{ $trx->keterangan ?? '-' }}</div>
                         </flux:table.cell>
                         <flux:table.cell>Bulan {{ $trx->periode_bulan }} / {{ $trx->periode_tahun }}</flux:table.cell>
