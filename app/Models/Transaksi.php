@@ -11,7 +11,7 @@ class Transaksi extends Model
     protected $guarded = ['id'];
 
     // relasi ke WajibPunia
-    public function wajib_punia()
+    public function wajibPunia()
     {
         return $this->belongsTo(WajibPunia::class, 'wajib_punia_id');
     }
