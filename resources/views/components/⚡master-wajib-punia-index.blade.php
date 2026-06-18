@@ -9,6 +9,7 @@ use App\Models\WajibPunia;
 use App\Models\Banjar;
 use App\Models\Kategori;
 use App\Models\JenisUsaha;
+use App\Models\User as Petugas;
 
 use App\Models\DokumenWajibPunia;
 use Intervention\Image\ImageManager; 
@@ -39,6 +40,7 @@ new class extends Component {
 	// public $pemilik_id = '';
 	public $jenis_usaha_id = '';
 	public $banjar_id = '';
+	public $user_id = '';
 
 	// Variabel Upload Dokumen
 	public $dokumens = []; // Untuk menampung file baru
@@ -85,6 +87,7 @@ new class extends Component {
 			'keterangan' => 'nullable|string|max:255',
 			'kontak_pengelola' => 'nullable|string|max:100',
 			'kategori_id' => 'required|exists:kategoris,id',
+			'user_id' => 'required|exists:users,id',
 		];
 	}
 
@@ -108,6 +111,7 @@ new class extends Component {
 			'kontak_pengelola' => $this->kontak_pengelola,
 			'latitude' => $this->latitude,
 			'longitude' => $this->longitude,
+			'user_id' => $this->user_id,
 		]);
 
 		// Panggil mesin kompresi & upload
@@ -141,6 +145,7 @@ new class extends Component {
 		$this->kategori_id = $wp->kategori_id  ?? '';
 		$this->keterangan = $wp->keterangan ?? '';
 		$this->kontak_pengelola = $wp->kontak_pengelola ?? '';
+		$this->user_id = (string) $wp->user_id ?? '';
 
 		// Tarik data dokumen lama untuk ditampilkan preview-nya
 		$this->dokumenLama = $wp->dokumens;
@@ -170,6 +175,7 @@ new class extends Component {
 			'kontak_pengelola' => $this->kontak_pengelola,
 			'latitude' => $this->latitude,
 			'longitude' => $this->longitude,
+			'user_id' => $this->user_id,
 		]);
 
 		// Eksekusi upload jika ada file baru yang ditambahkan saat edit
@@ -203,13 +209,13 @@ new class extends Component {
 		$this->reset([
 			'wajib_punia_id', 'nama', 'no_registrasi', 'tgl_registrasi', 
 			'pagu_dudukan', 'pemilik_nama', 'jenis_usaha_id', 'banjar_id', 
-			'alamat', 'dokumens', 'dokumenLama', 'latitude', 'longitude', 'kategori_id', 'keterangan', 'kontak_pengelola',
+			'alamat', 'dokumens', 'dokumenLama', 'latitude', 'longitude', 'kategori_id', 'keterangan', 'kontak_pengelola', 'user_id'
 		]);
 
 		// $this->pemilik_id = '';
 		$this->jenis_usaha_id = '';
 		$this->banjar_id = '';
-
+		$this->user_id = '';
 		$this->is_active = true;
 		$this->resetValidation();
 	}
@@ -314,6 +320,7 @@ new class extends Component {
 			// 'daftarPemilik' => Pemilik::orderBy('nama_pemilik', 'asc')->get(),
 			'daftarJenisUsaha' => JenisUsaha::orderBy('nama_jenis_usaha', 'asc')->get(),
 			'daftarKategori' => Kategori::orderBy('nama_kategori', 'asc')->get(),
+			'daftarPetugas' => Petugas::orderBy('name', 'asc')->get(),
 		];
 	}
 };
@@ -588,6 +595,12 @@ new class extends Component {
 					@endforeach
 				</flux:select>
 
+				<flux:select wire:model="user_id" label="Petugas" placeholder="Pilih Petugas...">
+					@foreach($daftarPetugas as $p)
+						<flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
+					@endforeach
+				</flux:select>
+
 				<div class="flex items-center h-full pt-6">
 					<flux:switch wire:model="is_active" label="Status Aktif" />
 				</div>
@@ -817,6 +830,12 @@ new class extends Component {
 				<flux:select wire:model="kategori_id" label="Kategori Dudukan" placeholder="Pilih Kategori Dudukan...">
 					@foreach($daftarKategori as $k)
 						<flux:select.option value="{{ $k->id }}">{{ $k->nama_kategori }}</flux:select.option>
+					@endforeach
+				</flux:select>
+
+				<flux:select wire:model="user_id" label="Petugas" placeholder="Pilih Petugas...">
+					@foreach($daftarPetugas as $p)
+						<flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
 					@endforeach
 				</flux:select>
 

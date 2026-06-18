@@ -38,6 +38,11 @@ class WajibPunia extends Model
         return $this->belongsTo(JenisUsaha::class, 'jenis_usaha_id');
     }
 
+    // Relasi ke Master user (petugas)
+    public function petugas() {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     // Relasi ke Tabel Dokumen Lampiran (Bisa lebih dari 1 file)
     public function dokumens()
     {

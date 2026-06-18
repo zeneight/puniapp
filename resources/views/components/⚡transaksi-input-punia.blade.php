@@ -229,10 +229,48 @@ new class extends Component {
 					</div>
 
 					<!-- Bagian Tahun dan Nominal -->
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<flux:input wire:model="nominal" type="number" label="Nominal Per Bulan (Rp)" description="Terisi otomatis sesuai pagu. Ubah jika ada kurang/lebih bayar." />
+					<div x-data="{
+						raw: @entangle('nominal'),
+						formatted: '',
 						
+						init() {
+							if (this.raw) {
+								this.formatted = new Intl.NumberFormat('id-ID').format(this.raw);
+							}
+
+							$watch('raw', value => {
+								this.formatted = value ? new Intl.NumberFormat('id-ID').format(value) : '';
+							});
+						},
+						
+						formatInput(value) {
+							let angkaBersih = value.replace(/[^0-9]/g, '');
+							this.raw = angkaBersih ? parseInt(angkaBersih) : null;
+							this.formatted = angkaBersih ? new Intl.NumberFormat('id-ID').format(angkaBersih) : '';
+						}
+					}">
+
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<flux:field>
+								<flux:label>Nominal Per Bulan</flux:label>
+								<div class="text-[11px] text-zinc-500 mt-1">
+									Terisi otomatis sesuai pagu. Ubah jika ada kurang/lebih bayar.
+								</div>
+								
+								<flux:input.group>
+									<flux:input.group.prefix>Rp</flux:input.group.prefix>
+									
+									<flux:input 
+										x-model="formatted" 
+										@input="formatInput($event.target.value)" 
+										placeholder="Contoh: 150.000"
+									/>
+								</flux:input.group>
+								
+							</flux:field>
+						</div>
 					</div>
+					<!-- x-data nominal pagu -->
 
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<flux:input wire:model="periode_tahun" type="number" label="Tahun" />
