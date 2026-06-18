@@ -34,8 +34,8 @@
                             {{ __('Master Jenis Usaha') }}
                         </flux:navlist.item>
 
-                        <flux:navlist.item icon="map-pin" :href="route('master.pemilik')" :current="request()->routeIs('master.pemilik')" wire:navigate>
-                            {{ __('Master Pemilik') }}
+                        <flux:navlist.item icon="map-pin" :href="route('master.kategori')" :current="request()->routeIs('master.kategori')" wire:navigate>
+                            {{ __('Master Kategori') }}
                         </flux:navlist.item>
 
                         <flux:navlist.item icon="users" :href="route('master.user')" :current="request()->routeIs('master.user')" wire:navigate>

@@ -14,6 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::livewire('/master/banjar', 'master-banjar-index')->name('master.banjar');
         Route::livewire('/master/wajib-punia', 'master-wajib-punia-index')->name('master.wajibpunia');
         Route::livewire('/master/jenis-usaha', 'master-jenis-usaha-index')->name('master.jenisusaha');
+        Route::livewire('/master/kategori', 'master-kategori-index')->name('master.kategori');
         Route::livewire('/master/pemilik', 'master-pemilik-index')->name('master.pemilik');
         Route::livewire('/master/user', 'manajemen-user-index')->name('master.user');
     });
