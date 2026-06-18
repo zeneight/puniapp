@@ -17,7 +17,7 @@ class WajibPunia extends Model
     // Definisikan relasi balik ke Kategori
     public function kategori(): BelongsTo
     {
-        return $this->belongsTo(Kategori::class);
+        return $this->belongsTo(Kategori::class, 'kategori_id');
     }
 
     // Definisikan relasi balik ke User (petugas)

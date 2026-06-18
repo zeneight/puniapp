@@ -7,7 +7,7 @@ use Livewire\WithFileUploads;
 
 use App\Models\WajibPunia;
 use App\Models\Banjar;
-use App\Models\Pemilik;
+use App\Models\Kategori;
 use App\Models\JenisUsaha;
 
 use App\Models\DokumenWajibPunia;
@@ -28,6 +28,9 @@ new class extends Component {
 	public bool $is_active = true;
 	public string $alamat = '';
 	public string $pemilik_nama = '';
+	public string $keterangan = '';
+	public string $kontak_pengelola = '';
+	public string $kategori_id = '';
 
 	public $latitude = null;
 	public $longitude = null;
@@ -79,6 +82,9 @@ new class extends Component {
 			'jenis_usaha_id' => 'required|exists:jenis_usahas,id',
 			'banjar_id' => 'required|exists:banjars,id',
 			'alamat' => 'nullable|string|max:255',
+			'keterangan' => 'nullable|string|max:255',
+			'kontak_pengelola' => 'nullable|string|max:100',
+			'kategori_id' => 'required|exists:kategoris,id',
 		];
 	}
 
@@ -91,12 +97,15 @@ new class extends Component {
 			'no_registrasi' => $this->no_registrasi,
 			'tgl_registrasi' => $this->tgl_registrasi,
 			'pagu_dudukan' => $this->pagu_dudukan,
+			'kategori_id' => $this->kategori_id,
 			'is_active' => $this->is_active,
 			// 'pemilik_id' => $this->pemilik_id,
 			'pemilik_nama' => $this->pemilik_nama,
 			'jenis_usaha_id' => $this->jenis_usaha_id,
 			'banjar_id' => $this->banjar_id,
 			'alamat' => $this->alamat,
+			'keterangan' => $this->keterangan,
+			'kontak_pengelola' => $this->kontak_pengelola,
 			'latitude' => $this->latitude,
 			'longitude' => $this->longitude,
 		]);
@@ -129,6 +138,9 @@ new class extends Component {
 		$this->alamat = $wp->alamat ?? '';
 		$this->latitude = $wp->latitude;
 		$this->longitude = $wp->longitude;
+		$this->kategori_id = $wp->kategori_id  ?? '';
+		$this->keterangan = $wp->keterangan ?? '';
+		$this->kontak_pengelola = $wp->kontak_pengelola ?? '';
 
 		// Tarik data dokumen lama untuk ditampilkan preview-nya
 		$this->dokumenLama = $wp->dokumens;
@@ -147,12 +159,15 @@ new class extends Component {
 			'no_registrasi' => $this->no_registrasi,
 			'tgl_registrasi' => $this->tgl_registrasi,
 			'pagu_dudukan' => $this->pagu_dudukan,
+			'kategori_id' => $this->kategori_id,
 			'is_active' => $this->is_active,
 			// 'pemilik_id' => $this->pemilik_id,
 			'pemilik_nama' => $this->pemilik_nama,
 			'jenis_usaha_id' => $this->jenis_usaha_id,
 			'banjar_id' => $this->banjar_id,
 			'alamat' => $this->alamat,
+			'keterangan' => $this->keterangan,
+			'kontak_pengelola' => $this->kontak_pengelola,
 			'latitude' => $this->latitude,
 			'longitude' => $this->longitude,
 		]);
@@ -188,7 +203,7 @@ new class extends Component {
 		$this->reset([
 			'wajib_punia_id', 'nama', 'no_registrasi', 'tgl_registrasi', 
 			'pagu_dudukan', 'pemilik_nama', 'jenis_usaha_id', 'banjar_id', 
-			'alamat', 'dokumens', 'dokumenLama', 'latitude', 'longitude'
+			'alamat', 'dokumens', 'dokumenLama', 'latitude', 'longitude', 'kategori_id', 'keterangan', 'kontak_pengelola',
 		]);
 
 		// $this->pemilik_id = '';
@@ -298,6 +313,7 @@ new class extends Component {
 			'daftarBanjar' => Banjar::orderBy('nama_banjar', 'asc')->get(),
 			// 'daftarPemilik' => Pemilik::orderBy('nama_pemilik', 'asc')->get(),
 			'daftarJenisUsaha' => JenisUsaha::orderBy('nama_jenis_usaha', 'asc')->get(),
+			'daftarKategori' => Kategori::orderBy('nama_kategori', 'asc')->get(),
 		];
 	}
 };
@@ -410,6 +426,7 @@ new class extends Component {
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				
 				<flux:input wire:model="pemilik_nama" label="Pemilik / Donatur" placeholder="Contoh: Gede" />
+				<flux:input wire:model="kontak_pengelola" label="Kontak Pengelola" placeholder="Contoh: 08123456xx" />
 
 				<flux:input wire:model="nama" label="Nama Tempat Usaha" placeholder="Contoh: Villa Kahayana" />
 				<div class="md:col-span-2">
@@ -519,11 +536,58 @@ new class extends Component {
 					@endforeach
 				</flux:select>
 
+				
+
 				<flux:input wire:model="no_registrasi" label="Nomor Registrasi" placeholder="Opsional" />
 				<flux:input wire:model="tgl_registrasi" type="date" label="Tanggal Registrasi" />
 				
-				<flux:input wire:model="pagu_dudukan" type="number" label="Pagu Dudukan (Rp)" placeholder="Nominal tagihan bulanan" />
+				<div class="md:col-span-2">
+					<flux:textarea wire:model="keterangan" label="Keterangan (Opsional)" rows="2" placeholder="Tambahan Informasi..." />
+				</div>
 				
+
+				<div x-data="{
+						raw: @entangle('pagu_dudukan'),
+						formatted: '',
+						
+						init() {
+							if (this.raw) {
+								this.formatted = new Intl.NumberFormat('id-ID').format(this.raw);
+							}
+
+							$watch('raw', value => {
+								this.formatted = value ? new Intl.NumberFormat('id-ID').format(value) : '';
+							});
+						},
+						
+						formatInput(value) {
+							let angkaBersih = value.replace(/[^0-9]/g, '');
+							this.raw = angkaBersih ? parseInt(angkaBersih) : null;
+							this.formatted = angkaBersih ? new Intl.NumberFormat('id-ID').format(angkaBersih) : '';
+						}
+					}">
+					
+					<flux:field>
+						<flux:label>Nominal Pagu / Dudukan</flux:label>
+						
+						<flux:input.group>
+							<flux:input.group.prefix>Rp</flux:input.group.prefix>
+							
+							<flux:input 
+								x-model="formatted" 
+								@input="formatInput($event.target.value)" 
+								placeholder="Contoh: 150.000" 
+							/>
+						</flux:input.group>
+					</flux:field>
+				</div>
+				<!-- x-data nominal pagu -->
+				<flux:select wire:model="kategori_id" label="Kategori Dudukan" placeholder="Pilih Kategori Dudukan...">
+					@foreach($daftarKategori as $k)
+						<flux:select.option value="{{ $k->id }}">{{ $k->nama_kategori }}</flux:select.option>
+					@endforeach
+				</flux:select>
+
 				<div class="flex items-center h-full pt-6">
 					<flux:switch wire:model="is_active" label="Status Aktif" />
 				</div>
@@ -596,7 +660,8 @@ new class extends Component {
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				
 				<flux:input wire:model="pemilik_nama" label="Pemilik / Donatur" placeholder="Contoh: Gede" />
-				
+				<flux:input wire:model="kontak_pengelola" label="Kontak Pengelola" placeholder="Contoh: 08123456xx" />
+
 				<flux:input wire:model="nama" label="Nama Tempat Usaha" />
 				<div class="md:col-span-2">
 					<flux:textarea wire:model="alamat" label="Alamat Lengkap Usaha" rows="2" placeholder="Contoh: Jl. Hayam Wuruk No. 123, Br. Kedaton" />
@@ -707,9 +772,54 @@ new class extends Component {
 
 				<flux:input wire:model="no_registrasi" label="Nomor Registrasi" />
 				<flux:input wire:model="tgl_registrasi" type="date" label="Tanggal Registrasi" />
-				
-				<flux:input wire:model="pagu_dudukan" type="number" label="Pagu Dudukan (Rp)" />
-				
+		
+				<div class="md:col-span-2">
+					<flux:textarea wire:model="keterangan" label="Keterangan (Opsional)" rows="2" placeholder="Tambahan Informasi..." />
+				</div>
+
+				<div x-data="{
+						raw: @entangle('pagu_dudukan'),
+						formatted: '',
+						
+						init() {
+							if (this.raw) {
+								this.formatted = new Intl.NumberFormat('id-ID').format(this.raw);
+							}
+
+							$watch('raw', value => {
+								this.formatted = value ? new Intl.NumberFormat('id-ID').format(value) : '';
+							});
+						},
+						
+						formatInput(value) {
+							let angkaBersih = value.replace(/[^0-9]/g, '');
+							this.raw = angkaBersih ? parseInt(angkaBersih) : null;
+							this.formatted = angkaBersih ? new Intl.NumberFormat('id-ID').format(angkaBersih) : '';
+						}
+					}">
+					
+					<flux:field>
+						<flux:label>Nominal Pagu / Dudukan</flux:label>
+						
+						<flux:input.group>
+							<flux:input.group.prefix>Rp</flux:input.group.prefix>
+							
+							<flux:input 
+								x-model="formatted" 
+								@input="formatInput($event.target.value)" 
+								placeholder="Contoh: 150.000" 
+							/>
+						</flux:input.group>
+					</flux:field>
+				</div>
+				<!-- x-data nominal pagu -->
+
+				<flux:select wire:model="kategori_id" label="Kategori Dudukan" placeholder="Pilih Kategori Dudukan...">
+					@foreach($daftarKategori as $k)
+						<flux:select.option value="{{ $k->id }}">{{ $k->nama_kategori }}</flux:select.option>
+					@endforeach
+				</flux:select>
+
 				<div class="flex items-center h-full pt-6">
 					<flux:switch wire:model="is_active" label="Status Aktif" />
 				</div>
