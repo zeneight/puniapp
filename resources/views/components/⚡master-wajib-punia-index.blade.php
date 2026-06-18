@@ -27,12 +27,13 @@ new class extends Component {
 	public ?int $pagu_dudukan = null;
 	public bool $is_active = true;
 	public string $alamat = '';
+	public string $pemilik_nama = '';
 
 	public $latitude = null;
     public $longitude = null;
 	
 	// Variabel Foreign Keys (Relasi)
-	public $pemilik_id = '';
+	// public $pemilik_id = '';
 	public $jenis_usaha_id = '';
 	public $banjar_id = '';
 
@@ -73,7 +74,8 @@ new class extends Component {
 			'tgl_registrasi' => 'required|nullable|date',
 			'pagu_dudukan' => 'required|numeric|min:0',
 			'is_active' => 'boolean',
-			'pemilik_id' => 'required|exists:pemiliks,id',
+			// 'pemilik_id' => 'required|exists:pemiliks,id',
+			'pemilik_nama' => 'required',
 			'jenis_usaha_id' => 'required|exists:jenis_usahas,id',
 			'banjar_id' => 'required|exists:banjars,id',
 			'alamat' => 'nullable|string|max:255',
@@ -90,7 +92,8 @@ new class extends Component {
 			'tgl_registrasi' => $this->tgl_registrasi,
 			'pagu_dudukan' => $this->pagu_dudukan,
 			'is_active' => $this->is_active,
-			'pemilik_id' => $this->pemilik_id,
+			// 'pemilik_id' => $this->pemilik_id,
+			'pemilik_nama' => $this->pemilik_nama,
 			'jenis_usaha_id' => $this->jenis_usaha_id,
 			'banjar_id' => $this->banjar_id,
 			'alamat' => $this->alamat,
@@ -99,7 +102,9 @@ new class extends Component {
 		]);
 
 		// Panggil mesin kompresi & upload
-		$this->prosesUpload($wp->id);
+		if($this->dokumens) {
+			$this->prosesUpload($wp->id);
+		}
 		
 		$this->batal();
 		$this->js('$flux.modal("tambah-wp").close()');
@@ -117,7 +122,8 @@ new class extends Component {
 		$this->tgl_registrasi = $wp->tgl_registrasi ?? '';
 		$this->pagu_dudukan = $wp->pagu_dudukan;
 		$this->is_active = (bool) $wp->is_active;
-		$this->pemilik_id = (string) $wp->pemilik_id;
+		$this->pemilik_nama = (string) $wp->pemilik_nama;
+		// $this->pemilik_id = (string) $wp->pemilik_id;
 		$this->jenis_usaha_id = (string) $wp->jenis_usaha_id;
 		$this->banjar_id = (string) $wp->banjar_id;
 		$this->alamat = $wp->alamat ?? '';
@@ -142,7 +148,8 @@ new class extends Component {
 			'tgl_registrasi' => $this->tgl_registrasi,
 			'pagu_dudukan' => $this->pagu_dudukan,
 			'is_active' => $this->is_active,
-			'pemilik_id' => $this->pemilik_id,
+			// 'pemilik_id' => $this->pemilik_id,
+			'pemilik_nama' => $this->pemilik_nama,
 			'jenis_usaha_id' => $this->jenis_usaha_id,
 			'banjar_id' => $this->banjar_id,
 			'alamat' => $this->alamat,
@@ -151,7 +158,9 @@ new class extends Component {
 		]);
 
 		// Eksekusi upload jika ada file baru yang ditambahkan saat edit
-		$this->prosesUpload($wp->id);
+		if($this->dokumens) {
+			$this->prosesUpload($wp->id);
+		}
 		
 		$this->batal();
 		$this->js('$flux.modal("edit-wp").close()');
@@ -178,11 +187,11 @@ new class extends Component {
 	{
 		$this->reset([
 			'wajib_punia_id', 'nama', 'no_registrasi', 'tgl_registrasi', 
-			'pagu_dudukan', 'pemilik_id', 'jenis_usaha_id', 'banjar_id', 
+			'pagu_dudukan', 'pemilik_nama', 'jenis_usaha_id', 'banjar_id', 
 			'alamat', 'dokumens', 'dokumenLama', 'latitude', 'longitude'
 		]);
 
-		$this->pemilik_id = '';
+		// $this->pemilik_id = '';
 		$this->jenis_usaha_id = '';
 		$this->banjar_id = '';
 
@@ -269,7 +278,7 @@ new class extends Component {
 	{
 		return [
 			// Eager loading relasi agar tidak query N+1 di tabel HTML
-			'wajibPunias' => WajibPunia::with(['banjar', 'pemilik', 'jenisUsaha'])
+			'wajibPunias' => WajibPunia::with(['banjar', 'jenisUsaha'])
                 // 1. Logika Pencarian Teks (Dikelompokkan agar orWhere tidak bocor)
                 ->when($this->search, function ($query) {
                     $query->where(function ($q) {
@@ -280,14 +289,14 @@ new class extends Component {
                 // 2. Logika Filter Dropdown
                 ->when($this->filter_jenis_usaha, fn($q) => $q->where('jenis_usaha_id', $this->filter_jenis_usaha))
                 ->when($this->filter_banjar, fn($q) => $q->where('banjar_id', $this->filter_banjar))
-                ->when($this->filter_pemilik, fn($q) => $q->where('pemilik_id', $this->filter_pemilik))
+                // ->when($this->filter_pemilik, fn($q) => $q->where('pemilik_id', $this->filter_pemilik))
                 // 3. Sorting & Pagination
                 ->orderBy('nama', 'asc')
                 ->paginate(10),
 			
 			// Mengambil data master untuk dropdown form
 			'daftarBanjar' => Banjar::orderBy('nama_banjar', 'asc')->get(),
-			'daftarPemilik' => Pemilik::orderBy('nama_pemilik', 'asc')->get(),
+			// 'daftarPemilik' => Pemilik::orderBy('nama_pemilik', 'asc')->get(),
 			'daftarJenisUsaha' => JenisUsaha::orderBy('nama_jenis_usaha', 'asc')->get(),
 		];
 	}
@@ -326,12 +335,7 @@ new class extends Component {
         </flux:select>
 
         <div class="flex gap-2">
-            <flux:select wire:model.live="filter_pemilik" placeholder="Semua Pemilik" class="w-full">
-                <flux:select.option value="">Semua Pemilik / Donatur</flux:select.option>
-                @foreach($daftarPemilik as $p)
-                    <flux:select.option value="{{ $p->id }}">{{ $p->nama_pemilik }}</flux:select.option>
-                @endforeach
-            </flux:select>
+            
 
             @if($search || $filter_jenis_usaha || $filter_banjar || $filter_pemilik)
                 <flux:button wire:click="resetFilter" variant="subtle" icon="x-mark" class="px-3" title="Bersihkan Filter" />
@@ -364,7 +368,7 @@ new class extends Component {
 							</div>
 						</flux:table.cell>
 						<flux:table.cell>
-							<div class="font-medium text-sm">{{ $wp->pemilik->nama_pemilik ?? '-' }}</div>
+							<div class="font-medium text-sm">{{ $wp->pemilik_nama ?? '-' }}</div>
 							<div class="text-[10px] text-zinc-400">Reg: {{ $wp->no_registrasi ?? '-' }}</div>
 						</flux:table.cell>
 						<flux:table.cell class="font-mono text-sm text-emerald-600 font-semibold">
@@ -404,12 +408,9 @@ new class extends Component {
 			</div>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<flux:select wire:model="pemilik_id" label="Pemilik / Donatur Utama" placeholder="Pilih Pemilik...">
-					@foreach($daftarPemilik as $pemilik)
-						<flux:select.option value="{{ $pemilik->id }}">{{ $pemilik->nama_pemilik }}</flux:select.option>
-					@endforeach
-				</flux:select>
 				
+				<flux:input wire:model="pemilik_nama" label="Pemilik / Donatur" placeholder="Contoh: Gede" />
+
 				<flux:input wire:model="nama" label="Nama Tempat Usaha" placeholder="Contoh: Villa Kahayana" />
 				<div class="md:col-span-2">
 					<flux:textarea wire:model="alamat" label="Alamat Lengkap Usaha" rows="2" placeholder="Contoh: Jl. Hayam Wuruk No. 123, Br. Kedaton" />
@@ -568,11 +569,8 @@ new class extends Component {
 			</div>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<flux:select wire:model="pemilik_id" label="Pemilik / Donatur Utama" placeholder="Pilih Pemilik...">
-					@foreach($daftarPemilik as $pemilik)
-						<flux:select.option value="{{ $pemilik->id }}">{{ $pemilik->nama_pemilik }}</flux:select.option>
-					@endforeach
-				</flux:select>
+				
+				<flux:input wire:model="pemilik_nama" label="Pemilik / Donatur" placeholder="Contoh: Gede" />
 				
 				<flux:input wire:model="nama" label="Nama Tempat Usaha" />
 				<div class="md:col-span-2">

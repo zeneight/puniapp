@@ -27,10 +27,10 @@ class WajibPunia extends Model
     }
 
     // Relasi ke Master Pemilik
-    public function pemilik()
-    {
-        return $this->belongsTo(Pemilik::class);
-    }
+    // public function pemilik()
+    // {
+    //     return $this->belongsTo(Pemilik::class);
+    // }
 
     // Relasi ke Master Jenis Usaha
     public function jenisUsaha()
