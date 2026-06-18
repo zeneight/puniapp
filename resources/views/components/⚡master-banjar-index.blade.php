@@ -66,16 +66,38 @@ new class extends Component {
     // --- FUNGSI DELETE ---
     public function konfirmasiHapus($id)
     {
+        // Hitung jumlah data Wajib Punia yang terhubung ke Banjar ini
+        // (Pastikan relasi 'wajibPunias' sudah ada di model Banjar.php)
+        $banjar = Banjar::withCount('wajibPunias')->findOrFail($id);
+        
+        if ($banjar->wajib_punias_count > 0) {
+            \Flux::toast('Aksi ditolak! Banjar ini masih digunakan oleh ' . $banjar->wajib_punias_count . ' data Wajib Punia.', variant: 'danger');
+            return; // Hentikan proses, modal hapus tidak akan terbuka
+        }
+
         $this->banjar_id = $id;
         $this->js('$flux.modal("hapus-banjar").show()');
     }
 
     public function destroy()
     {
-        Banjar::findOrFail($this->banjar_id)->delete();
-        $this->batal();
-        $this->js('$flux.modal("hapus-banjar").close()');
-        \Flux::toast('Data berhasil dihapus.', variant: 'success');
+        try {
+            Banjar::findOrFail($this->banjar_id)->delete();
+            
+            $this->batal(); // Reset form
+            $this->js('$flux.modal("hapus-banjar").close()');
+            \Flux::toast('Banjar berhasil dihapus.', variant: 'success');
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Jika error code-nya 23000 (Integrity Constraint / Foreign Key Fail)
+            if ($e->getCode() == 23000) {
+                $this->js('$flux.modal("hapus-banjar").close()');
+                \Flux::toast('Gagal menghapus! Data Banjar masih terikat dengan data lain di sistem.', variant: 'danger');
+            } else {
+                // Jika error lain, lempar errornya agar kita tahu
+                throw $e;
+            }
+        }
     }
 
     // --- FUNGSI UTILITY ---
