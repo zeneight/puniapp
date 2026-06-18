@@ -30,7 +30,7 @@ new class extends Component {
 	public string $pemilik_nama = '';
 
 	public $latitude = null;
-    public $longitude = null;
+	public $longitude = null;
 	
 	// Variabel Foreign Keys (Relasi)
 	// public $pemilik_id = '';
@@ -47,13 +47,13 @@ new class extends Component {
 
 	public string $search = '';
 	public $filter_jenis_usaha = '';
-    public $filter_banjar = '';
-    public $filter_pemilik = '';
+	public $filter_banjar = '';
+	public $filter_pemilik = '';
 
 	// Reset pagination jika filter diubah
-    public function updatedFilterJenisUsaha() { $this->resetPage(); }
-    public function updatedFilterBanjar() { $this->resetPage(); }
-    public function updatedFilterPemilik() { $this->resetPage(); }
+	public function updatedFilterJenisUsaha() { $this->resetPage(); }
+	public function updatedFilterBanjar() { $this->resetPage(); }
+	public function updatedFilterPemilik() { $this->resetPage(); }
 
 	public function updatingSearch()
 	{
@@ -61,10 +61,10 @@ new class extends Component {
 	}
 
 	public function resetFilter()
-    {
-        $this->reset(['search', 'filter_jenis_usaha', 'filter_banjar', 'filter_pemilik']);
-        $this->resetPage();
-    }
+	{
+		$this->reset(['search', 'filter_jenis_usaha', 'filter_banjar', 'filter_pemilik']);
+		$this->resetPage();
+	}
 
 	protected function rules()
 	{
@@ -98,7 +98,7 @@ new class extends Component {
 			'banjar_id' => $this->banjar_id,
 			'alamat' => $this->alamat,
 			'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
+			'longitude' => $this->longitude,
 		]);
 
 		// Panggil mesin kompresi & upload
@@ -128,7 +128,7 @@ new class extends Component {
 		$this->banjar_id = (string) $wp->banjar_id;
 		$this->alamat = $wp->alamat ?? '';
 		$this->latitude = $wp->latitude;
-        $this->longitude = $wp->longitude;
+		$this->longitude = $wp->longitude;
 
 		// Tarik data dokumen lama untuk ditampilkan preview-nya
 		$this->dokumenLama = $wp->dokumens;
@@ -154,7 +154,7 @@ new class extends Component {
 			'banjar_id' => $this->banjar_id,
 			'alamat' => $this->alamat,
 			'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
+			'longitude' => $this->longitude,
 		]);
 
 		// Eksekusi upload jika ada file baru yang ditambahkan saat edit
@@ -244,17 +244,17 @@ new class extends Component {
 
 	// --- FUNGSI PREVIEW POPUP ---
 	public function lihatDokumen($id)
-    {
-        // Cari dokumen berdasarkan ID yang diklik
-        $dokumen = \App\Models\DokumenWajibPunia::findOrFail($id);
-        
-        // Racik URL dan tentukan apakah PDF menggunakan PHP
-        $this->previewUrl = asset('storage/' . $dokumen->path_file);
-        $this->previewIsPdf = str_ends_with(strtolower($dokumen->path_file), '.pdf');
-        
-        // Buka modal preview
-        $this->js('$flux.modal("preview-dokumen").show()');
-    }
+	{
+		// Cari dokumen berdasarkan ID yang diklik
+		$dokumen = \App\Models\DokumenWajibPunia::findOrFail($id);
+		
+		// Racik URL dan tentukan apakah PDF menggunakan PHP
+		$this->previewUrl = asset('storage/' . $dokumen->path_file);
+		$this->previewIsPdf = str_ends_with(strtolower($dokumen->path_file), '.pdf');
+		
+		// Buka modal preview
+		$this->js('$flux.modal("preview-dokumen").show()');
+	}
 
 	// --- FUNGSI HAPUS DOKUMEN ---
 	public function hapusDokumen($id)
@@ -279,20 +279,20 @@ new class extends Component {
 		return [
 			// Eager loading relasi agar tidak query N+1 di tabel HTML
 			'wajibPunias' => WajibPunia::with(['banjar', 'jenisUsaha'])
-                // 1. Logika Pencarian Teks (Dikelompokkan agar orWhere tidak bocor)
-                ->when($this->search, function ($query) {
-                    $query->where(function ($q) {
-                        $q->where('nama', 'like', '%' . $this->search . '%')
-                          ->orWhere('no_registrasi', 'like', '%' . $this->search . '%');
-                    });
-                })
-                // 2. Logika Filter Dropdown
-                ->when($this->filter_jenis_usaha, fn($q) => $q->where('jenis_usaha_id', $this->filter_jenis_usaha))
-                ->when($this->filter_banjar, fn($q) => $q->where('banjar_id', $this->filter_banjar))
-                // ->when($this->filter_pemilik, fn($q) => $q->where('pemilik_id', $this->filter_pemilik))
-                // 3. Sorting & Pagination
-                ->orderBy('nama', 'asc')
-                ->paginate(10),
+				// 1. Logika Pencarian Teks (Dikelompokkan agar orWhere tidak bocor)
+				->when($this->search, function ($query) {
+					$query->where(function ($q) {
+						$q->where('nama', 'like', '%' . $this->search . '%')
+						  ->orWhere('no_registrasi', 'like', '%' . $this->search . '%');
+					});
+				})
+				// 2. Logika Filter Dropdown
+				->when($this->filter_jenis_usaha, fn($q) => $q->where('jenis_usaha_id', $this->filter_jenis_usaha))
+				->when($this->filter_banjar, fn($q) => $q->where('banjar_id', $this->filter_banjar))
+				// ->when($this->filter_pemilik, fn($q) => $q->where('pemilik_id', $this->filter_pemilik))
+				// 3. Sorting & Pagination
+				->orderBy('nama', 'asc')
+				->paginate(10),
 			
 			// Mengambil data master untuk dropdown form
 			'daftarBanjar' => Banjar::orderBy('nama_banjar', 'asc')->get(),
@@ -305,43 +305,43 @@ new class extends Component {
 
 <div>
 	<div class="flex justify-between items-end gap-4 mb-6">
-        <div>
-            <flux:heading size="xl">Master Wajib Punia</flux:heading>
-            <flux:subheading>Kelola data tempat usaha dan profil Wajib Punia.</flux:subheading>
-        </div>
-        
-        <div>
-            <flux:button variant="primary" icon="plus" x-on:click="$flux.modal('tambah-wp').show()">
-                Tambah Data
-            </flux:button>
-        </div>
-    </div>
+		<div>
+			<flux:heading size="xl">Master Wajib Punia</flux:heading>
+			<flux:subheading>Kelola data tempat usaha dan profil Wajib Punia.</flux:subheading>
+		</div>
+		
+		<div>
+			<flux:button variant="primary" icon="plus" x-on:click="$flux.modal('tambah-wp').show()">
+				Tambah Data
+			</flux:button>
+		</div>
+	</div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-        <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama atau no reg..." />
-        
-        <flux:select wire:model.live="filter_jenis_usaha" placeholder="Semua Jenis Usaha">
-            <flux:select.option value="">Semua Jenis Usaha</flux:select.option>
-            @foreach($daftarJenisUsaha as $ju)
-                <flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
-            @endforeach
-        </flux:select>
-        
-        <flux:select wire:model.live="filter_banjar" placeholder="Semua Banjar">
-            <flux:select.option value="">Semua Wilayah Banjar</flux:select.option>
-            @foreach($daftarBanjar as $b)
-                <flux:select.option value="{{ $b->id }}">Br. {{ $b->nama_banjar }}</flux:select.option>
-            @endforeach
-        </flux:select>
+	<div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+		<flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama atau no reg..." />
+		
+		<flux:select wire:model.live="filter_jenis_usaha" placeholder="Semua Jenis Usaha">
+			<flux:select.option value="">Semua Jenis Usaha</flux:select.option>
+			@foreach($daftarJenisUsaha as $ju)
+				<flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
+			@endforeach
+		</flux:select>
+		
+		<flux:select wire:model.live="filter_banjar" placeholder="Semua Banjar">
+			<flux:select.option value="">Semua Wilayah Banjar</flux:select.option>
+			@foreach($daftarBanjar as $b)
+				<flux:select.option value="{{ $b->id }}">Br. {{ $b->nama_banjar }}</flux:select.option>
+			@endforeach
+		</flux:select>
 
-        <div class="flex gap-2">
-            
+		<div class="flex gap-2">
+			
 
-            @if($search || $filter_jenis_usaha || $filter_banjar || $filter_pemilik)
-                <flux:button wire:click="resetFilter" variant="subtle" icon="x-mark" class="px-3" title="Bersihkan Filter" />
-            @endif
-        </div>
-    </div>
+			@if($search || $filter_jenis_usaha || $filter_banjar || $filter_pemilik)
+				<flux:button wire:click="resetFilter" variant="subtle" icon="x-mark" class="px-3" title="Bersihkan Filter" />
+			@endif
+		</div>
+	</div>
 
 	<flux:card class="relative">
 		<div wire:loading wire:target="search, gotoPage, nextPage, previousPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
@@ -417,70 +417,95 @@ new class extends Component {
 				</div>
 
 				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800" wire:ignore>
-                    <flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-3">
-                        <flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
-                        <flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
-                    </div>
-                    
-                    <div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
+					<flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
+					
+					<div class="grid grid-cols-2 gap-4 mb-3">
+						<flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
+						<flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
+					</div>
+					
+					<div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
 
-                    <div x-data="{
-                            map: null,
-                            marker: null,
-                            init() {
-                                // 1. DEFAULT ZOOM DITURUNKAN JADI 12 (Lebih Luas)
-                                this.map = L.map($refs.mapContainer).setView([-8.650000, 115.216667], 12);
-                                
-                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                    maxZoom: 19,
-                                    attribution: '© OpenStreetMap'
-                                }).addTo(this.map);
+					<!-- Alpine.js untuk membungkus logika Leaflet -->
+					<div x-data="{
+							map: null,
+							marker: null,
+							init() {
+								// 1. MATIKAN SCROLL ZOOM
+								this.map = L.map($refs.mapContainer, {
+									scrollWheelZoom: false
+								}).setView([-8.650000, 115.216667], 12);
+								
+								L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+									maxZoom: 19,
+									attribution: '© OpenStreetMap'
+								}).addTo(this.map);
 
-                                // 2. SET UP AWAL SAAT MODE EDIT (Paskan posisi marker lama)
-                                if ($wire.latitude && $wire.longitude) {
-                                    this.updateMarker($wire.latitude, $wire.longitude);
-                                    this.map.setView([$wire.latitude, $wire.longitude], 14); // Zoom 14 pas untuk melihat jalan
-                                }
+								// 2. FIX PETA ABU-ABU
+								const resizeObserver = new ResizeObserver(() => {
+									if (this.map) {
+										this.map.invalidateSize();
+									}
+								});
+								resizeObserver.observe(this.$refs.mapContainer);
 
-                                // Deteksi klik di peta
-                                this.map.on('click', (e) => {
-                                    const lat = e.latlng.lat.toFixed(8);
-                                    const lng = e.latlng.lng.toFixed(8);
-                                    this.updateMarker(lat, lng);
-                                    
-                                    // Kirim data ke Livewire
-                                    $wire.set('latitude', lat);
-                                    $wire.set('longitude', lng);
-                                });
+								// 3. SET UP AWAL SAAT MODE EDIT
+								if ($wire.latitude && $wire.longitude) {
+									this.updateMarker($wire.latitude, $wire.longitude);
+									this.map.setView([$wire.latitude, $wire.longitude], 14);
+								}
 
-                                // Pantau perubahan data Livewire
-                                $watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
-                            },
-                            updateMarker(lat, lng) {
-                                if (this.marker) {
-                                    this.marker.setLatLng([lat, lng]);
-                                } else {
-                                    this.marker = L.marker([lat, lng]).addTo(this.map);
-                                }
-                            },
-                            syncMap(lat, lng) {
-                                if (lat && lng) {
-                                    this.updateMarker(lat, lng);
-                                    // 3. KUNCI ZOOM: Hanya geser posisinya, biarkan level zoom sesuai kemauan user
-                                    this.map.setView([lat, lng], this.map.getZoom());
-                                }
-                                // Mencegah peta abu-abu sebagian saat modal baru terbuka
-                                setTimeout(() => this.map.invalidateSize(), 300);
-                            }
-                         }"
-                         x-on:modal-show.window="setTimeout(() => { if(map) map.invalidateSize() }, 300)"
-                         class="relative z-0">
-                        
-                        <div x-ref="mapContainer" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
-                    </div>
-                </div>
+								// 4. Deteksi klik di peta
+								this.map.on('click', (e) => {
+									const lat = e.latlng.lat.toFixed(8);
+									const lng = e.latlng.lng.toFixed(8);
+									this.updateMarker(lat, lng);
+									
+									// Kirim data ke Livewire
+									$wire.set('latitude', lat);
+									$wire.set('longitude', lng);
+								});
+
+								// 5. Pantau perubahan data Livewire (termasuk saat form di-reset)
+								$watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
+							},
+							updateMarker(lat, lng) {
+								if (this.marker) {
+									this.marker.setLatLng([lat, lng]);
+								} else {
+									// BUAT MARKER BISA DI-DRAG
+									this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+									
+									// UPDATE KOORDINAT SAAT DRAG SELESAI
+									this.marker.on('dragend', (e) => {
+										const position = this.marker.getLatLng();
+										$wire.set('latitude', position.lat.toFixed(8));
+										$wire.set('longitude', position.lng.toFixed(8));
+									});
+								}
+							},
+							syncMap(lat, lng) {
+								if (lat && lng) {
+									// Jika ada koordinat (Mode Edit / Peta Diklik)
+									this.updateMarker(lat, lng);
+									this.map.setView([lat, lng], this.map.getZoom());
+								} else {
+									// JIKA KOORDINAT KOSONG (Mode Tambah Data Baru / Form Di-reset)
+									if (this.marker) {
+										this.map.removeLayer(this.marker); // Hapus pin dari peta
+										this.marker = null; // Kosongkan data pin
+									}
+									// Kembalikan ke posisi default (Zoom out ke Denpasar)
+									this.map.setView([-8.650000, 115.216667], 12);
+								}
+							}
+						 }"
+						 class="relative z-0">
+						
+						<div x-ref="mapContainer" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
+					</div>
+					<!-- div x-data -->
+				</div>
 				
 				<flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
 					@foreach($daftarJenisUsaha as $ju)
@@ -504,55 +529,55 @@ new class extends Component {
 				</div>
 
 				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                    <flux:input wire:model="dokumens" type="file" label="Lampiran Dokumen (Opsional)" multiple accept="image/*,application/pdf" />
-                    <div class="text-[11px] text-zinc-500 mt-1">Bisa pilih file Gambar (otomatis dikompres) atau Dokumen PDF.</div>
-                    
-                    <div wire:loading wire:target="dokumens" class="mt-3">
-                        <div class="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 rounded-lg inline-flex">
-                            <flux:icon.arrow-path class="w-4 h-4 animate-spin" /> Sedang memproses file ke memori...
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-wrap gap-3 mt-3">
-                        @if (!empty($dokumenLama))
-                            @foreach ($dokumenLama as $lama)
-                                @php $isPdf = str_ends_with(strtolower($lama->path_file), '.pdf'); @endphp
-                                
-                                <div wire:key="dokumen-{{ $lama->id }}" class="relative group w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50">
-                                    
-                                    <div wire:loading wire:target="lihatDokumen({{ $lama->id }})" class="absolute inset-0 bg-white/80 dark:bg-zinc-800/80 flex items-center justify-center z-20 backdrop-blur-sm">
-                                        <flux:icon.arrow-path class="w-5 h-5 animate-spin text-indigo-600" />
-                                    </div>
+					<flux:input wire:model="dokumens" type="file" label="Lampiran Dokumen (Opsional)" multiple accept="image/*,application/pdf" />
+					<div class="text-[11px] text-zinc-500 mt-1">Bisa pilih file Gambar (otomatis dikompres) atau Dokumen PDF.</div>
+					
+					<div wire:loading wire:target="dokumens" class="mt-3">
+						<div class="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 rounded-lg inline-flex">
+							<flux:icon.arrow-path class="w-4 h-4 animate-spin" /> Sedang memproses file ke memori...
+						</div>
+					</div>
+					
+					<div class="flex flex-wrap gap-3 mt-3">
+						@if (!empty($dokumenLama))
+							@foreach ($dokumenLama as $lama)
+								@php $isPdf = str_ends_with(strtolower($lama->path_file), '.pdf'); @endphp
+								
+								<div wire:key="dokumen-{{ $lama->id }}" class="relative group w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50">
+									
+									<div wire:loading wire:target="lihatDokumen({{ $lama->id }})" class="absolute inset-0 bg-white/80 dark:bg-zinc-800/80 flex items-center justify-center z-20 backdrop-blur-sm">
+										<flux:icon.arrow-path class="w-5 h-5 animate-spin text-indigo-600" />
+									</div>
 
-                                    <button type="button" wire:click.prevent="hapusDokumen({{ $lama->id }})" wire:confirm="Yakin ingin menghapus dokumen ini?" class="absolute top-0 right-0 bg-red-500 text-white rounded-bl-md p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600">
-                                        <flux:icon.x-mark class="w-3 h-3" stroke-width="3" />
-                                    </button>
+									<button type="button" wire:click.prevent="hapusDokumen({{ $lama->id }})" wire:confirm="Yakin ingin menghapus dokumen ini?" class="absolute top-0 right-0 bg-red-500 text-white rounded-bl-md p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600">
+										<flux:icon.x-mark class="w-3 h-3" stroke-width="3" />
+									</button>
 
-                                    <div wire:click.stop="lihatDokumen({{ $lama->id }})" class="w-full h-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity cursor-pointer" title="Lihat: {{ $lama->nama_file }}">
-                                        @if($isPdf)
-                                            <flux:icon.document-text class="w-8 h-8 text-red-500" />
-                                        @else
-                                            <img src="{{ asset('storage/' . $lama->path_file) }}" class="object-cover w-full h-full" alt="Dokumen">
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        @endif
+									<div wire:click.stop="lihatDokumen({{ $lama->id }})" class="w-full h-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity cursor-pointer" title="Lihat: {{ $lama->nama_file }}">
+										@if($isPdf)
+											<flux:icon.document-text class="w-8 h-8 text-red-500" />
+										@else
+											<img src="{{ asset('storage/' . $lama->path_file) }}" class="object-cover w-full h-full" alt="Dokumen">
+										@endif
+									</div>
+								</div>
+							@endforeach
+						@endif
 
-                        @if ($dokumens)
-                            @foreach ($dokumens as $dok)
-                                <div class="relative w-16 h-16 rounded-md overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-200 bg-indigo-50 flex items-center justify-center cursor-help" title="Belum tersimpan: {{ $dok->getClientOriginalName() }}">
-                                    @if(in_array(strtolower($dok->getClientOriginalExtension()), ['pdf']))
-                                        <flux:icon.document-text class="w-8 h-8 text-red-500" />
-                                    @else
-                                        <img src="{{ $dok->temporaryUrl() }}" class="object-cover w-full h-full" alt="Preview">
-                                    @endif
-                                    <div class="absolute inset-0 bg-indigo-500/10 border-2 border-indigo-500 border-dashed rounded-md"></div>
-                                </div>
-                            @endforeach
-                        @endif
-                    </div>
-                </div>
+						@if ($dokumens)
+							@foreach ($dokumens as $dok)
+								<div class="relative w-16 h-16 rounded-md overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-200 bg-indigo-50 flex items-center justify-center cursor-help" title="Belum tersimpan: {{ $dok->getClientOriginalName() }}">
+									@if(in_array(strtolower($dok->getClientOriginalExtension()), ['pdf']))
+										<flux:icon.document-text class="w-8 h-8 text-red-500" />
+									@else
+										<img src="{{ $dok->temporaryUrl() }}" class="object-cover w-full h-full" alt="Preview">
+									@endif
+									<div class="absolute inset-0 bg-indigo-500/10 border-2 border-indigo-500 border-dashed rounded-md"></div>
+								</div>
+							@endforeach
+						@endif
+					</div>
+				</div>
 			</div>
 
 			<div class="flex justify-end gap-2 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
@@ -578,70 +603,95 @@ new class extends Component {
 				</div>
 
 				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800" wire:ignore>
-                    <flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-3">
-                        <flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
-                        <flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
-                    </div>
-                    
-                    <div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
+					<flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
+					
+					<div class="grid grid-cols-2 gap-4 mb-3">
+						<flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
+						<flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
+					</div>
+					
+					<div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
 
-                    <div x-data="{
-                            map: null,
-                            marker: null,
-                            init() {
-                                // 1. DEFAULT ZOOM DITURUNKAN JADI 12 (Lebih Luas)
-                                this.map = L.map($refs.mapContainer).setView([-8.650000, 115.216667], 12);
-                                
-                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                    maxZoom: 19,
-                                    attribution: '© OpenStreetMap'
-                                }).addTo(this.map);
+					<!-- Alpine.js untuk membungkus logika Leaflet -->
+					<div x-data="{
+							map: null,
+							marker: null,
+							init() {
+								// 1. MATIKAN SCROLL ZOOM
+								this.map = L.map($refs.mapContainer, {
+									scrollWheelZoom: false
+								}).setView([-8.650000, 115.216667], 12);
+								
+								L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+									maxZoom: 19,
+									attribution: '© OpenStreetMap'
+								}).addTo(this.map);
 
-                                // 2. SET UP AWAL SAAT MODE EDIT (Paskan posisi marker lama)
-                                if ($wire.latitude && $wire.longitude) {
-                                    this.updateMarker($wire.latitude, $wire.longitude);
-                                    this.map.setView([$wire.latitude, $wire.longitude], 14); // Zoom 14 pas untuk melihat jalan
-                                }
+								// 2. FIX PETA ABU-ABU
+								const resizeObserver = new ResizeObserver(() => {
+									if (this.map) {
+										this.map.invalidateSize();
+									}
+								});
+								resizeObserver.observe(this.$refs.mapContainer);
 
-                                // Deteksi klik di peta
-                                this.map.on('click', (e) => {
-                                    const lat = e.latlng.lat.toFixed(8);
-                                    const lng = e.latlng.lng.toFixed(8);
-                                    this.updateMarker(lat, lng);
-                                    
-                                    // Kirim data ke Livewire
-                                    $wire.set('latitude', lat);
-                                    $wire.set('longitude', lng);
-                                });
+								// 3. SET UP AWAL SAAT MODE EDIT
+								if ($wire.latitude && $wire.longitude) {
+									this.updateMarker($wire.latitude, $wire.longitude);
+									this.map.setView([$wire.latitude, $wire.longitude], 14);
+								}
 
-                                // Pantau perubahan data Livewire
-                                $watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
-                            },
-                            updateMarker(lat, lng) {
-                                if (this.marker) {
-                                    this.marker.setLatLng([lat, lng]);
-                                } else {
-                                    this.marker = L.marker([lat, lng]).addTo(this.map);
-                                }
-                            },
-                            syncMap(lat, lng) {
-                                if (lat && lng) {
-                                    this.updateMarker(lat, lng);
-                                    // 3. KUNCI ZOOM: Hanya geser posisinya, biarkan level zoom sesuai kemauan user
-                                    this.map.setView([lat, lng], this.map.getZoom());
-                                }
-                                // Mencegah peta abu-abu sebagian saat modal baru terbuka
-                                setTimeout(() => this.map.invalidateSize(), 300);
-                            }
-                         }"
-                         x-on:modal-show.window="setTimeout(() => { if(map) map.invalidateSize() }, 300)"
-                         class="relative z-0">
-                        
-                        <div x-ref="mapContainer" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
-                    </div>
-                </div>
+								// 4. Deteksi klik di peta
+								this.map.on('click', (e) => {
+									const lat = e.latlng.lat.toFixed(8);
+									const lng = e.latlng.lng.toFixed(8);
+									this.updateMarker(lat, lng);
+									
+									// Kirim data ke Livewire
+									$wire.set('latitude', lat);
+									$wire.set('longitude', lng);
+								});
+
+								// 5. Pantau perubahan data Livewire (termasuk saat form di-reset)
+								$watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
+							},
+							updateMarker(lat, lng) {
+								if (this.marker) {
+									this.marker.setLatLng([lat, lng]);
+								} else {
+									// BUAT MARKER BISA DI-DRAG
+									this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+									
+									// UPDATE KOORDINAT SAAT DRAG SELESAI
+									this.marker.on('dragend', (e) => {
+										const position = this.marker.getLatLng();
+										$wire.set('latitude', position.lat.toFixed(8));
+										$wire.set('longitude', position.lng.toFixed(8));
+									});
+								}
+							},
+							syncMap(lat, lng) {
+								if (lat && lng) {
+									// Jika ada koordinat (Mode Edit / Peta Diklik)
+									this.updateMarker(lat, lng);
+									this.map.setView([lat, lng], this.map.getZoom());
+								} else {
+									// JIKA KOORDINAT KOSONG (Mode Tambah Data Baru / Form Di-reset)
+									if (this.marker) {
+										this.map.removeLayer(this.marker); // Hapus pin dari peta
+										this.marker = null; // Kosongkan data pin
+									}
+									// Kembalikan ke posisi default (Zoom out ke Denpasar)
+									this.map.setView([-8.650000, 115.216667], 12);
+								}
+							}
+						 }"
+						 class="relative z-0">
+						
+						<div x-ref="mapContainer" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
+					</div>
+					<!-- div x-data -->
+				</div>
 
 				<flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
 					@foreach($daftarJenisUsaha as $ju)
@@ -665,55 +715,55 @@ new class extends Component {
 				</div>
 
 				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                    <flux:input wire:model="dokumens" type="file" label="Lampiran Dokumen (Opsional)" multiple accept="image/*,application/pdf" />
-                    <div class="text-[11px] text-zinc-500 mt-1">Bisa pilih file Gambar (otomatis dikompres) atau Dokumen PDF.</div>
-                    
-                    <div wire:loading wire:target="dokumens" class="mt-3">
-                        <div class="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 rounded-lg inline-flex">
-                            <flux:icon.arrow-path class="w-4 h-4 animate-spin" /> Sedang memproses file ke memori...
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-wrap gap-3 mt-3">
-                        @if (!empty($dokumenLama))
-                            @foreach ($dokumenLama as $lama)
-                                @php $isPdf = str_ends_with(strtolower($lama->path_file), '.pdf'); @endphp
-                                
-                                <div wire:key="dokumen-{{ $lama->id }}" class="relative group w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50">
-                                    
-                                    <div wire:loading wire:target="lihatDokumen({{ $lama->id }})" class="absolute inset-0 bg-white/80 dark:bg-zinc-800/80 flex items-center justify-center z-20 backdrop-blur-sm">
-                                        <flux:icon.arrow-path class="w-5 h-5 animate-spin text-indigo-600" />
-                                    </div>
+					<flux:input wire:model="dokumens" type="file" label="Lampiran Dokumen (Opsional)" multiple accept="image/*,application/pdf" />
+					<div class="text-[11px] text-zinc-500 mt-1">Bisa pilih file Gambar (otomatis dikompres) atau Dokumen PDF.</div>
+					
+					<div wire:loading wire:target="dokumens" class="mt-3">
+						<div class="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 rounded-lg inline-flex">
+							<flux:icon.arrow-path class="w-4 h-4 animate-spin" /> Sedang memproses file ke memori...
+						</div>
+					</div>
+					
+					<div class="flex flex-wrap gap-3 mt-3">
+						@if (!empty($dokumenLama))
+							@foreach ($dokumenLama as $lama)
+								@php $isPdf = str_ends_with(strtolower($lama->path_file), '.pdf'); @endphp
+								
+								<div wire:key="dokumen-{{ $lama->id }}" class="relative group w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50">
+									
+									<div wire:loading wire:target="lihatDokumen({{ $lama->id }})" class="absolute inset-0 bg-white/80 dark:bg-zinc-800/80 flex items-center justify-center z-20 backdrop-blur-sm">
+										<flux:icon.arrow-path class="w-5 h-5 animate-spin text-indigo-600" />
+									</div>
 
-                                    <button type="button" wire:click.prevent="hapusDokumen({{ $lama->id }})" wire:confirm="Yakin ingin menghapus dokumen ini?" class="absolute top-0 right-0 bg-red-500 text-white rounded-bl-md p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600">
-                                        <flux:icon.x-mark class="w-3 h-3" stroke-width="3" />
-                                    </button>
+									<button type="button" wire:click.prevent="hapusDokumen({{ $lama->id }})" wire:confirm="Yakin ingin menghapus dokumen ini?" class="absolute top-0 right-0 bg-red-500 text-white rounded-bl-md p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600">
+										<flux:icon.x-mark class="w-3 h-3" stroke-width="3" />
+									</button>
 
-                                    <div wire:click.stop="lihatDokumen({{ $lama->id }})" class="w-full h-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity cursor-pointer" title="Lihat: {{ $lama->nama_file }}">
-                                        @if($isPdf)
-                                            <flux:icon.document-text class="w-8 h-8 text-red-500" />
-                                        @else
-                                            <img src="{{ asset('storage/' . $lama->path_file) }}" class="object-cover w-full h-full" alt="Dokumen">
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        @endif
+									<div wire:click.stop="lihatDokumen({{ $lama->id }})" class="w-full h-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity cursor-pointer" title="Lihat: {{ $lama->nama_file }}">
+										@if($isPdf)
+											<flux:icon.document-text class="w-8 h-8 text-red-500" />
+										@else
+											<img src="{{ asset('storage/' . $lama->path_file) }}" class="object-cover w-full h-full" alt="Dokumen">
+										@endif
+									</div>
+								</div>
+							@endforeach
+						@endif
 
-                        @if ($dokumens)
-                            @foreach ($dokumens as $dok)
-                                <div class="relative w-16 h-16 rounded-md overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-200 bg-indigo-50 flex items-center justify-center cursor-help" title="Belum tersimpan: {{ $dok->getClientOriginalName() }}">
-                                    @if(in_array(strtolower($dok->getClientOriginalExtension()), ['pdf']))
-                                        <flux:icon.document-text class="w-8 h-8 text-red-500" />
-                                    @else
-                                        <img src="{{ $dok->temporaryUrl() }}" class="object-cover w-full h-full" alt="Preview">
-                                    @endif
-                                    <div class="absolute inset-0 bg-indigo-500/10 border-2 border-indigo-500 border-dashed rounded-md"></div>
-                                </div>
-                            @endforeach
-                        @endif
-                    </div>
-                </div>
+						@if ($dokumens)
+							@foreach ($dokumens as $dok)
+								<div class="relative w-16 h-16 rounded-md overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-200 bg-indigo-50 flex items-center justify-center cursor-help" title="Belum tersimpan: {{ $dok->getClientOriginalName() }}">
+									@if(in_array(strtolower($dok->getClientOriginalExtension()), ['pdf']))
+										<flux:icon.document-text class="w-8 h-8 text-red-500" />
+									@else
+										<img src="{{ $dok->temporaryUrl() }}" class="object-cover w-full h-full" alt="Preview">
+									@endif
+									<div class="absolute inset-0 bg-indigo-500/10 border-2 border-indigo-500 border-dashed rounded-md"></div>
+								</div>
+							@endforeach
+						@endif
+					</div>
+				</div>
 			</div>
 
 			<div class="flex justify-end gap-2 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
@@ -735,32 +785,32 @@ new class extends Component {
 	</flux:modal>
 
 	<flux:modal name="preview-dokumen" class="md:w-[800px] h-[85vh] flex flex-col p-0 overflow-hidden">
-        
-        <div class="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 pr-12">
-            <flux:heading size="lg">Detail Dokumen</flux:heading>
-        </div>
-        
-        <div class="flex-1 bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center overflow-auto p-4 relative">
-            
-            <div wire:loading wire:target="lihatDokumen" class="absolute inset-0 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm flex items-center justify-center z-10">
-                <div class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 rounded-full shadow-md">
-                    <flux:icon.arrow-path class="w-5 h-5 animate-spin text-indigo-500" />
-                    <span class="text-sm font-medium">Memuat dokumen...</span>
-                </div>
-            </div>
+		
+		<div class="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 pr-12">
+			<flux:heading size="lg">Detail Dokumen</flux:heading>
+		</div>
+		
+		<div class="flex-1 bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center overflow-auto p-4 relative">
+			
+			<div wire:loading wire:target="lihatDokumen" class="absolute inset-0 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm flex items-center justify-center z-10">
+				<div class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 rounded-full shadow-md">
+					<flux:icon.arrow-path class="w-5 h-5 animate-spin text-indigo-500" />
+					<span class="text-sm font-medium">Memuat dokumen...</span>
+				</div>
+			</div>
 
-            @if($previewUrl)
-                @if($previewIsPdf)
-                    <iframe src="{{ $previewUrl }}" class="w-full h-full border-0 shadow-lg bg-white rounded-md relative z-0"></iframe>
-                @else
-                    <img 
-                        src="{{ $previewUrl }}" 
-                        onerror="this.onerror=null; this.src='https://placehold.co/600x400/ef4444/ffffff?text=File+Fisik+Hilang/Tidak+Ditemukan';" 
-                        class="max-w-full max-h-full object-contain shadow-lg rounded-md relative z-0" 
-                        alt="Preview Resolusi Penuh" 
-                    />
-                @endif
-            @endif
-        </div>
-    </flux:modal>
+			@if($previewUrl)
+				@if($previewIsPdf)
+					<iframe src="{{ $previewUrl }}" class="w-full h-full border-0 shadow-lg bg-white rounded-md relative z-0"></iframe>
+				@else
+					<img 
+						src="{{ $previewUrl }}" 
+						onerror="this.onerror=null; this.src='https://placehold.co/600x400/ef4444/ffffff?text=File+Fisik+Hilang/Tidak+Ditemukan';" 
+						class="max-w-full max-h-full object-contain shadow-lg rounded-md relative z-0" 
+						alt="Preview Resolusi Penuh" 
+					/>
+				@endif
+			@endif
+		</div>
+	</flux:modal>
 </div>
