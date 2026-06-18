@@ -34,6 +34,7 @@ new class extends Component {
     public $edit_bukti_baru;
 
 	public array $infoTunggakan = [];
+	public bool $isLunas = false;
 
 	public function mount()
 	{
@@ -55,6 +56,7 @@ new class extends Component {
 				// 1. Isi nominal otomatis
 				$this->nominal = $wp->pagu_dudukan;
 				$this->kategori_id = $wp->kategori_id;
+				$this->cekTunggakan();
 				
 				// 2. Cek tunggakan untuk tahun berjalan
 				$tahunIni = (int) $this->periode_tahun;
@@ -90,6 +92,57 @@ new class extends Component {
 		}
 	}
 
+	// Fungsi trigger saat Tahun Periode diubah
+    public function updatedPeriodeTahun()
+    {
+        if ($this->wajib_punia_id) {
+            $this->cekTunggakan();
+        }
+    }
+
+    // Fungsi khusus untuk mengecek tunggakan & status lunas
+    public function cekTunggakan()
+    {
+        $this->infoTunggakan = [];
+        $this->isLunas = false;
+
+        if (!$this->wajib_punia_id || !$this->periode_tahun) return;
+
+        $tahunIni = (int) $this->periode_tahun;
+        $tahunSekarang = (int) date('Y');
+        
+        // Jika cek tahun lalu, batasnya bulan 12. Jika tahun ini, batasnya bulan berjalan.
+        $bulanBatas = ($tahunIni === $tahunSekarang) ? (int) date('n') : (($tahunIni < $tahunSekarang) ? 12 : 0);
+
+        $bulanTerbayar = Transaksi::where('wajib_punia_id', $this->wajib_punia_id)
+                                  ->where('periode_tahun', $tahunIni)
+                                  ->pluck('periode_bulan')
+                                  ->toArray();
+
+        $menunggak = [];
+        for ($i = 1; $i <= $bulanBatas; $i++) {
+            if (!in_array($i, $bulanTerbayar)) {
+                $menunggak[] = $i;
+            }
+        }
+
+        if (count($menunggak) > 0) {
+            $this->infoTunggakan = $menunggak;
+            $this->bulan_awal = (string) min($menunggak);
+            $this->bulan_akhir = (string) min($menunggak);
+        } else {
+            // Jika tidak ada tunggakan, tandai LUNAS
+            $this->isLunas = true;
+            
+            // Arahkan otomatis ke bulan pertama yang belum dibayar di tahun tersebut
+            $bulanTerakhirDibayar = max($bulanTerbayar ?: [0]);
+            if ($bulanTerakhirDibayar < 12) {
+                $this->bulan_awal = (string) ($bulanTerakhirDibayar + 1);
+                $this->bulan_akhir = (string) ($bulanTerakhirDibayar + 1);
+            }
+        }
+    }
+
 	public function simpan()
 	{
 		$this->validate([
@@ -100,14 +153,15 @@ new class extends Component {
 			'periode_tahun' => 'required|numeric',
 			'tanggal_bayar' => 'required|date',
 			'nominal' => 'required|numeric|min:1',
+			'tanggal_bayar' => 'required|date'
 		], [
 			'bulan_akhir.gte' => 'Bulan akhir tidak boleh lebih kecil dari bulan awal.'
 		]);
 
 		// proses upload file
 		$pathBukti = null;
-        if ($this->bukti_transfer) {
-            $pathBukti = $this->bukti_transfer->store('bukti_transaksi', 'public');
+        if ($this->bukti_dokumen) {
+            $pathBukti = $this->bukti_dokumen->store('bukti_transaksi', 'public');
         }
 
 		$jumlahBulan = 0;
@@ -163,7 +217,7 @@ new class extends Component {
         $this->edit_transaksi_id = $trx->id;
         $this->edit_nominal = $trx->nominal;
         $this->edit_keterangan = $trx->keterangan;
-        $this->edit_bukti_lama = $trx->bukti_transfer;
+        $this->edit_bukti_lama = $trx->bukti_dokumen;
         
         $this->resetValidation();
         $this->js('$flux.modal("edit-transaksi").show()');
@@ -182,11 +236,11 @@ new class extends Component {
         // Jika admin mengupload bukti yang baru
         if ($this->edit_bukti_baru) {
             // Hapus file fisik yang lama (agar server tidak penuh)
-            if ($trx->bukti_transfer && Storage::disk('public')->exists($trx->bukti_transfer)) {
-                Storage::disk('public')->delete($trx->bukti_transfer);
+            if ($trx->bukti_dokumen && Storage::disk('public')->exists($trx->bukti_dokumen)) {
+                Storage::disk('public')->delete($trx->bukti_dokumen);
             }
             // Simpan yang baru
-            $trx->bukti_transfer = $this->edit_bukti_baru->store('bukti_transaksi', 'public');
+            $trx->bukti_dokumen = $this->edit_bukti_baru->store('bukti_transaksi', 'public');
         }
 
         $trx->nominal = $this->edit_nominal;
@@ -232,105 +286,141 @@ new class extends Component {
         
         <div class="col-span-2">
             <flux:card>
-                <form wire:submit="simpan" class="space-y-6">
+                <form wire:submit="simpan" class="space-y-8">
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <flux:select wire:model.live="wajib_punia_id" label="Wajib Punia" placeholder="Pilih Wajib Punia..." searchable>
-                            @foreach ($daftarWajibPunia as $wp)
-                                <flux:select.option value="{{ $wp->id }}">{{ $wp->nama }} (Br. {{ $wp->banjar->nama_banjar ?? '-' }})</flux:select.option>
-                            @endforeach
-                        </flux:select>
-
-                        <flux:select wire:model="kategori_id" label="Jenis Punia / Pungutan" placeholder="Otomatis terisi dari wajib punia atau bisa dipilih...">
-                            @foreach ($daftarKategori as $kat)
-                                <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
-                            @endforeach
-                        </flux:select>
-                    </div>
-
-                    <div wire:loading wire:target="wajib_punia_id" class="mt-2 flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 font-medium animate-pulse">
-                        <svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Mengecek riwayat pembayaran...
-                    </div>
-
-                    <div wire:loading.remove wire:target="wajib_punia_id">
-                        @if(count($infoTunggakan) > 0)
-                            <div class="mt-2 p-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md flex gap-3 items-start animate-pulse-once">
-                                <flux:icon.exclamation-triangle class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-                                <div>
-                                    <div class="text-sm font-bold text-amber-800 dark:text-amber-300">
-                                        Terdeteksi {{ count($infoTunggakan) }} Bulan Tunggakan (Tahun {{ $periode_tahun }})
-                                    </div>
-                                    <div class="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                                        Belum lunas pada bulan ke: <strong>{{ implode(', ', $infoTunggakan) }}</strong>.<br>
-                                        Bulan awal telah disesuaikan otomatis.
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <flux:select wire:model="bulan_awal" label="Mulai Bulan">
-                            @for($i=1; $i<=12; $i++)
-                                <flux:select.option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 1)) }}</flux:select.option>
-                            @endfor
-                        </flux:select>
-
-                        <flux:select wire:model="bulan_akhir" label="Sampai Bulan (Rapel)">
-                            @for($i=1; $i<=12; $i++)
-                                <flux:select.option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 1)) }}</flux:select.option>
-                            @endfor
-                        </flux:select>
-                    </div>
-
-                    <div x-data="{
-                        raw: @entangle('nominal'),
-                        formatted: '',
-                        
-                        init() {
-                            if (this.raw) {
-                                this.formatted = new Intl.NumberFormat('id-ID').format(this.raw);
-                            }
-                            $watch('raw', value => {
-                                this.formatted = value ? new Intl.NumberFormat('id-ID').format(value) : '';
-                            });
-                        },
-                        formatInput(value) {
-                            let angkaBersih = value.replace(/[^0-9]/g, '');
-                            this.raw = angkaBersih ? parseInt(angkaBersih) : null;
-                            this.formatted = angkaBersih ? new Intl.NumberFormat('id-ID').format(angkaBersih) : '';
-                        }
-                    }">
+                    <div>
+                        <div class="mb-4 pb-2 border-b border-zinc-200 dark:border-zinc-700">
+                            <h3 class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">1. Data Wajib Punia</h3>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <flux:field>
-                                <flux:label>Nominal Bayar</flux:label>
-                                <div class="text-[11px] text-zinc-500 mt-1 mb-2">Terisi otomatis sesuai pagu. Ubah jika ada penyesuaian.</div>
-                                <flux:input.group>
-                                    <flux:input.group.prefix>Rp</flux:input.group.prefix>
-                                    <flux:input x-model="formatted" @input="formatInput($event.target.value)" placeholder="Contoh: 150.000" />
-                                </flux:input.group>
+                                <flux:label>Tanggal Pembayaran Transaksi</flux:label>
+                                <flux:input type="date" wire:model="tanggal_bayar" required />
                             </flux:field>
+
+                            <div class="hidden md:block"></div>
+
+                            <flux:select wire:model.live="wajib_punia_id" label="Wajib Punia" placeholder="Pilih Wajib Punia..." searchable description="Pilih nama wajib punia yang akan dibayarkan.">
+                                @foreach ($daftarWajibPunia as $wp)
+                                    <flux:select.option value="{{ $wp->id }}">{{ $wp->nama }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+
+                            <flux:select wire:model="kategori_id" label="Jenis Punia / Pungutan" placeholder="Pilih Kategori..." description="Kategori Punia otomatis terisi.">
+                                @foreach ($daftarKategori as $kat)
+                                    <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
                         </div>
                     </div>
 
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<flux:input wire:model="tanggal_bayar" type="date" label="Tanggal Pembayaran" />
-						<flux:input wire:model="periode_tahun" type="number" label="Tahun Periode" />
-					</div>
+                    <div>
+                        <div class="mb-4 pb-2 border-b border-zinc-200 dark:border-zinc-700">
+                            <h3 class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">2. Periode Tagihan</h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <flux:input wire:model.live.debounce.500ms="periode_tahun" type="number" label="Tahun Periode" />
+                            
+                            <flux:select wire:model="bulan_awal" label="Mulai Bulan">
+                                @for($i=1; $i<=12; $i++)
+                                    <flux:select.option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 1)) }}</flux:select.option>
+                                @endfor
+                            </flux:select>
 
-                    <flux:textarea wire:model="keterangan" label="Catatan Tambahan (Opsional)" placeholder="Misal: Pembayaran rapel, titipan, dsb." rows="2" />
-					<flux:field>
-                        <flux:label>Bukti Transfer / Kuitansi (Opsional)</flux:label>
-                        <flux:input type="file" wire:model="bukti_dokumen" accept="image/*,.pdf" class="w-full" />
-                        <div wire:loading wire:target="bukti_dokumen" class="text-xs text-indigo-600 mt-1">Mengunggah file...</div>
-                        <flux:error name="bukti_dokumen" />
-                    </flux:field>
+                            <flux:select wire:model="bulan_akhir" label="Sampai Bulan (Rapel)">
+                                @for($i=1; $i<=12; $i++)
+                                    <flux:select.option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 1)) }}</flux:select.option>
+                                @endfor
+                            </flux:select>
+                        </div>
 
-                    <div class="flex justify-end pt-2">
+                        <div wire:loading wire:target="wajib_punia_id, periode_tahun" class="mb-2 flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 font-medium animate-pulse">
+                            <svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Mengecek riwayat pembayaran...
+                        </div>
+
+                        <div wire:loading.remove wire:target="wajib_punia_id, periode_tahun">
+                            @if(count($infoTunggakan) > 0)
+                                <div class="p-3 bg-amber-50 border border-amber-200 rounded-md flex gap-3 items-start animate-pulse-once">
+                                    <flux:icon.exclamation-triangle class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                                    <div>
+                                        <div class="text-sm font-bold text-amber-800">
+                                            Terdeteksi {{ count($infoTunggakan) }} Bulan Tunggakan (Tahun {{ $periode_tahun }})
+                                        </div>
+                                        <div class="text-xs text-amber-700 mt-1">
+                                            Belum lunas pada bulan ke: <strong>{{ implode(', ', $infoTunggakan) }}</strong>.<br>
+                                            Pilihan "Mulai Bulan" telah disesuaikan otomatis.
+                                        </div>
+                                    </div>
+                                </div>
+                            @elseif($isLunas)
+                                <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-md flex gap-3 items-start">
+                                    <flux:icon.check-circle class="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+                                    <div>
+                                        <div class="text-sm font-bold text-emerald-800">
+                                            Wajib Punia Telah Lunas (Tahun {{ $periode_tahun }})
+                                        </div>
+                                        <div class="text-xs text-emerald-700 mt-1">
+                                            Semua tagihan hingga batas bulan di tahun ini sudah terbayar. Anda bisa menginput untuk pembayaran ke depan (Mata Uang/Titipan).
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="mb-4 pb-2 border-b border-zinc-200 dark:border-zinc-700">
+                            <h3 class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">3. Rincian & Bukti Pembayaran</h3>
+                        </div>
+
+                        <div x-data="{
+                            raw: @entangle('nominal'),
+                            formatted: '',
+                            
+                            init() {
+                                if (this.raw) {
+                                    this.formatted = new Intl.NumberFormat('id-ID').format(this.raw);
+                                }
+                                $watch('raw', value => {
+                                    this.formatted = value ? new Intl.NumberFormat('id-ID').format(value) : '';
+                                });
+                            },
+                            
+                            formatInput(value) {
+                                let angkaBersih = value.replace(/[^0-9]/g, '');
+                                this.raw = angkaBersih ? parseInt(angkaBersih) : null;
+                                this.formatted = angkaBersih ? new Intl.NumberFormat('id-ID').format(angkaBersih) : '';
+                            }
+                        }">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <flux:field>
+                                    <flux:label>Nominal Per Bulan</flux:label>
+                                    <div class="text-[11px] text-zinc-500 mt-1 mb-2">Terisi otomatis sesuai pagu. Ubah jika ada penyesuaian.</div>
+                                    <flux:input.group>
+                                        <flux:input.group.prefix>Rp</flux:input.group.prefix>
+                                        <flux:input x-model="formatted" @input="formatInput($event.target.value)" required placeholder="Contoh: 150.000" />
+                                    </flux:input.group>
+                                </flux:field>
+
+                                <flux:field>
+                                    <flux:label>Bukti Transfer / Kuitansi (Opsional)</flux:label>
+                                    <div class="text-[11px] text-zinc-500 mt-1 mb-2">Format: JPG, PNG, PDF. Maksimal 2MB.</div>
+                                    <flux:input type="file" wire:model="bukti_dokumen" accept="image/*,.pdf" class="w-full" />
+                                    <div wire:loading wire:target="bukti_dokumen" class="text-xs text-indigo-600 mt-1">Mengunggah file...</div>
+                                    <flux:error name="bukti_dokumen" />
+                                </flux:field>
+                            </div>
+                        </div>
+
+                        <flux:textarea wire:model="keterangan" label="Catatan Tambahan (Opsional)" placeholder="Misal: Pembayaran rapel, titipan, dsb." rows="2" />
+                    </div>
+
+                    <div class="flex justify-end pt-4 border-t border-zinc-200 dark:border-zinc-700">
                         <flux:button type="submit" variant="primary" icon="check-circle" class="w-full sm:w-auto">Simpan Pembayaran</flux:button>
                     </div>
                 </form>
@@ -351,7 +441,7 @@ new class extends Component {
                                 <div class="font-semibold text-sm">{{ $trx->wajibPunia->nama ?? 'Data Terhapus' }}</div>
                                 <div class="text-[11px] text-zinc-500 font-medium flex items-center gap-1">
                                     Bulan {{ $trx->periode_bulan }} - {{ $trx->periode_tahun }}
-                                    @if($trx->bukti_transfer)
+                                    @if($trx->bukti_dokumen)
                                         <flux:icon.paper-clip class="w-3 h-3 text-indigo-500" title="Ada Lampiran Bukti" />
                                     @endif
                                 </div>
