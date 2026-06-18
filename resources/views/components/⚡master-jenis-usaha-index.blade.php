@@ -60,15 +60,38 @@ new class extends Component {
     // --- FUNGSI DELETE ---
     public function konfirmasiHapus($id)
     {
+        // Hitung jumlah data Wajib Punia yang terhubung ke Jenis Usaha ini
+        // (Pastikan relasi 'wajibPunias' sudah ada di model JenisUsaha.php)
+        $jenis_usaha = JenisUsaha::withCount('wajibPunias')->findOrFail($id);
+        
+        if ($jenis_usaha->wajib_punias_count > 0) {
+            \Flux::toast('Aksi ditolak! Jenis Usaha ini masih digunakan oleh ' . $jenis_usaha->wajib_punias_count . ' data Wajib Punia.', variant: 'danger');
+            return; // Hentikan proses, modal hapus tidak akan terbuka
+        }
+
         $this->jenis_usaha_id = $id;
         $this->js('$flux.modal("hapus-jenis-usaha").show()');
     }
 
     public function destroy()
     {
-        JenisUsaha::findOrFail($this->jenis_usaha_id)->delete();
-        $this->batal();
-        $this->js('$flux.modal("hapus-jenis-usaha").close()');
+        try {
+            JenisUsaha::findOrFail($this->jenis_usaha_id)->delete();
+            
+            $this->batal(); // Reset form
+            $this->js('$flux.modal("hapus-jenis-usaha").close()');
+            \Flux::toast('Jenis Usaha berhasil dihapus.', variant: 'success');
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Jika error code-nya 23000 (Integrity Constraint / Foreign Key Fail)
+            if ($e->getCode() == 23000) {
+                $this->js('$flux.modal("hapus-jenis-usaha").close()');
+                \Flux::toast('Gagal menghapus! Data Jenis Usaha masih terikat dengan data lain di sistem.', variant: 'danger');
+            } else {
+                // Jika error lain, lempar errornya agar kita tahu
+                throw $e;
+            }
+        }
     }
 
     // --- FUNGSI UTILITY ---

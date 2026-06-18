@@ -71,16 +71,38 @@ new class extends Component {
     // --- FUNGSI DELETE ---
     public function konfirmasiHapus($id)
     {
+        // Hitung jumlah data Wajib Punia yang terhubung ke Kategori ini
+        // (Pastikan relasi 'wajibPunias' sudah ada di model Kategori.php)
+        $kategori = Kategori::withCount('wajibPunias')->findOrFail($id);
+        
+        if ($kategori->wajib_punias_count > 0) {
+            \Flux::toast('Aksi ditolak! Kategori ini masih digunakan oleh ' . $kategori->wajib_punias_count . ' data Wajib Punia.', variant: 'danger');
+            return; // Hentikan proses, modal hapus tidak akan terbuka
+        }
+
         $this->kategori_id = $id;
         $this->js('$flux.modal("hapus-kategori").show()');
     }
 
     public function destroy()
     {
-        Kategori::findOrFail($this->kategori_id)->delete();
-        $this->batal();
-        $this->js('$flux.modal("hapus-kategori").close()');
-        \Flux::toast('Data berhasil dihapus.', variant: 'success');
+        try {
+            Kategori::findOrFail($this->kategori_id)->delete();
+            
+            $this->batal(); // Reset form
+            $this->js('$flux.modal("hapus-kategori").close()');
+            \Flux::toast('Kategori berhasil dihapus.', variant: 'success');
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Jika error code-nya 23000 (Integrity Constraint / Foreign Key Fail)
+            if ($e->getCode() == 23000) {
+                $this->js('$flux.modal("hapus-kategori").close()');
+                \Flux::toast('Gagal menghapus! Data Kategori masih terikat dengan data lain di sistem.', variant: 'danger');
+            } else {
+                // Jika error lain, lempar errornya agar kita tahu
+                throw $e;
+            }
+        }
     }
 
     // --- FUNGSI UTILITY ---
