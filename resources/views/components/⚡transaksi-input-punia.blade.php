@@ -33,6 +33,11 @@ new class extends Component {
     public $edit_bukti_lama;
     public $edit_bukti_baru;
 
+	public $edit_nama_wp;
+    public $edit_periode;
+    public $edit_tanggal_bayar;
+	public $edit_jenis_pembayaran;
+
 	public array $infoTunggakan = [];
 	public bool $isLunas = false;
 
@@ -206,18 +211,25 @@ new class extends Component {
 			\Flux::toast('Gagal! Semua bulan dalam rentang tersebut sudah lunas sebelumnya.', variant: 'danger');
 		}
 
-		$this->reset(['wajib_punia_id', 'nominal', 'keterangan']);
+		$this->reset(['wajib_punia_id', 'nominal', 'keterangan', 'bukti_dokumen']);
 		$this->mount(); // Kembalikan form ke kondisi default
 	}
 
 	public function editTransaksi($id)
     {
-        $trx = Transaksi::findOrFail($id);
+        // 
+        $trx = Transaksi::with(['wajibPunia', 'jenisPembayaran'])->findOrFail($id);
         
         $this->edit_transaksi_id = $trx->id;
         $this->edit_nominal = $trx->nominal;
         $this->edit_keterangan = $trx->keterangan;
         $this->edit_bukti_lama = $trx->bukti_dokumen;
+
+		// Isi variabel info read-only
+        $this->edit_nama_wp = $trx->wajibPunia->nama ?? 'Data Terhapus';
+        $this->edit_periode = 'Bulan ' . $trx->periode_bulan . ' - ' . $trx->periode_tahun;
+        $this->edit_tanggal_bayar = $trx->tanggal_bayar;
+		$this->edit_jenis_pembayaran = $trx->jenisPembayaran->nama_kategori ?? 'Umum';
         
         $this->resetValidation();
         $this->js('$flux.modal("edit-transaksi").show()');
@@ -247,7 +259,7 @@ new class extends Component {
         $trx->keterangan = $this->edit_keterangan;
         $trx->save();
 
-        $this->reset(['edit_transaksi_id', 'edit_nominal', 'edit_keterangan', 'edit_bukti_lama', 'edit_bukti_baru']);
+        $this->reset(['edit_transaksi_id', 'edit_nominal', 'edit_keterangan', 'edit_bukti_lama', 'edit_bukti_baru', 'edit_jenis_pembayaran', 'edit_nama_wp', 'edit_periode', 'edit_tanggal_bayar']);
         $this->js('$flux.modal("edit-transaksi").close()');
         \Flux::toast('Data transaksi berhasil diperbarui!', variant: 'success');
     }
@@ -259,10 +271,10 @@ new class extends Component {
 			$queryWP->where('user_id', Auth::id());
 		}
 
-		$queryRiwayat = Transaksi::with(['wajibPunia', 'user']) // Pastikan nama relasi sesuai Model
+		$queryRiwayat = Transaksi::with(['wajibPunia', 'user', 'jenisPembayaran']) 
                                  ->whereDate('tanggal_bayar', date('Y-m-d'))
                                  ->orderBy('created_at', 'desc')
-                                 ->limit(8);
+                                 ->limit(15);
 								 
 		if (Auth::user()->role === 'inputer') {
 			$queryRiwayat->where('user_id', Auth::id());
@@ -306,7 +318,7 @@ new class extends Component {
                                 @endforeach
                             </flux:select>
 
-                            <flux:select wire:model="kategori_id" label="Jenis Punia / Pungutan" placeholder="Pilih Kategori..." description="Kategori Punia otomatis terisi.">
+                            <flux:select wire:model="kategori_id" label="Kategori Punia" placeholder="Pilih Kategori..." description="Otomatis terisi sesuai WP.">
                                 @foreach ($daftarKategori as $kat)
                                     <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
                                 @endforeach
@@ -430,8 +442,8 @@ new class extends Component {
         <div class="col-span-1">
             <flux:card>
                 <div class="mb-4 pb-2 border-b">
-                    <flux:heading size="lg">Riwayat Input Anda Hari Ini</flux:heading>
-                    <div class="text-xs text-zinc-500 mt-1">15 Transaksi terakhir</div>
+                    <flux:heading size="lg">Riwayat Input Anda</flux:heading>
+                    <div class="text-xs text-zinc-500 mt-1">10 Transaksi terakhir</div>
                 </div>
                 
                 <div class="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
@@ -439,13 +451,24 @@ new class extends Component {
                         <div class="flex justify-between items-center bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg border border-zinc-100 dark:border-zinc-700">
                             <div>
                                 <div class="font-semibold text-sm">{{ $trx->wajibPunia->nama ?? 'Data Terhapus' }}</div>
-                                <div class="text-[11px] text-zinc-500 font-medium flex items-center gap-1">
-                                    Bulan {{ $trx->periode_bulan }} - {{ $trx->periode_tahun }}
-                                    @if($trx->bukti_dokumen)
-                                        <flux:icon.paper-clip class="w-3 h-3 text-indigo-500" title="Ada Lampiran Bukti" />
+                                
+                                <div class="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium flex items-center gap-1.5 mt-0.5">
+                                    <span class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                        {{ $trx->jenisPembayaran->nama_kategori ?? 'Umum' }}
+                                    </span>
+                                    
+                                    <span>• Bln {{ $trx->periode_bulan }} - {{ $trx->periode_tahun }}</span>
+                                    
+                                    @if($trx->bukti_transfer)
+                                        <flux:icon.paper-clip class="w-3 h-3 text-zinc-400" title="Ada Lampiran Bukti" />
                                     @endif
                                 </div>
+
+                                <div class="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                                    Tgl Bayar: {{ \Carbon\Carbon::parse($trx->tanggal_bayar)->format('d/m/Y') }}
+                                </div>
                             </div>
+
                             <div class="text-right flex items-center gap-3">
                                 <div class="font-bold text-green-600">Rp {{ number_format($trx->nominal, 0, ',', '.') }}</div>
                                 
@@ -466,11 +489,38 @@ new class extends Component {
         </div>
     </div>
 
-	<flux:modal name="edit-transaksi" class="md:w-[400px]">
+	<flux:modal name="edit-transaksi" class="md:w-[450px]">
         <form wire:submit.prevent="updateTransaksi" class="space-y-5">
-            <div class="border-b pb-3 mb-4">
+            <div class="border-b pb-3">
                 <flux:heading size="lg">Edit Transaksi</flux:heading>
                 <div class="text-xs text-zinc-500 mt-1">Admin Mode: Perbarui data jika terjadi kesalahan input.</div>
+            </div>
+            
+            <div class="bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 dark:text-zinc-400">Wajib Punia</span>
+                    <span class="font-semibold text-zinc-900 dark:text-zinc-100">{{ $edit_nama_wp }}</span>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 dark:text-zinc-400">Jenis Punia</span>
+                    <span class="font-medium text-zinc-900 dark:text-zinc-100">
+                        <span class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                            {{ $edit_jenis_pembayaran }}
+                        </span>
+                    </span>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 dark:text-zinc-400">Periode Tagihan</span>
+                    <span class="font-medium text-zinc-900 dark:text-zinc-100">{{ $edit_periode }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 dark:text-zinc-400">Tanggal Bayar</span>
+                    <span class="font-medium text-zinc-900 dark:text-zinc-100">
+                        {{ $edit_tanggal_bayar ? \Carbon\Carbon::parse($edit_tanggal_bayar)->translatedFormat('d F Y') : '-' }}
+                    </span>
+                </div>
             </div>
             
             <flux:field>
