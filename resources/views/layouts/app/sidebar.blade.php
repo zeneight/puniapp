@@ -20,12 +20,12 @@
                         {{ __('Input Pembayaran') }}
                     </flux:navlist.item>
 
+                    <flux:navlist.item icon="users" :href="route('master.wajibpunia')" :current="request()->routeIs('master.wajibpunia')" wire:navigate>
+                        {{ __('Wajib Punia') }}
+                    </flux:navlist.item>
+
                     @if(Auth::user()->role === 'admin')
                     <flux:navlist.group expandable heading="Master Data" class="mt-2">
-                        <flux:navlist.item icon="users" :href="route('master.wajibpunia')" :current="request()->routeIs('master.wajibpunia')" wire:navigate>
-                            {{ __('Wajib Punia') }}
-                        </flux:navlist.item>
-                        
                         <flux:navlist.item icon="map-pin" :href="route('master.banjar')" :current="request()->routeIs('master.banjar')" wire:navigate>
                             {{ __('Master Banjar') }}
                         </flux:navlist.item>

@@ -32,6 +32,7 @@ new class extends Component {
 	public string $keterangan = '';
 	public string $kontak_pengelola = '';
 	public string $kategori_id = '';
+	public $filter_petugas = '';
 
 	public $latitude = null;
 	public $longitude = null;
@@ -67,7 +68,7 @@ new class extends Component {
 
 	public function resetFilter()
 	{
-		$this->reset(['search', 'filter_jenis_usaha', 'filter_banjar', 'filter_pemilik']);
+		$this->reset(['search', 'filter_jenis_usaha', 'filter_banjar', 'filter_petugas']);
 		$this->resetPage();
 	}
 
@@ -297,31 +298,75 @@ new class extends Component {
 
 	public function with()
 	{
-		return [
-			// Eager loading relasi agar tidak query N+1 di tabel HTML
-			'wajibPunias' => WajibPunia::with(['banjar', 'jenisUsaha'])
-				// 1. Logika Pencarian Teks (Dikelompokkan agar orWhere tidak bocor)
-				->when($this->search, function ($query) {
-					$query->where(function ($q) {
-						$q->where('nama', 'like', '%' . $this->search . '%')
-						  ->orWhere('no_registrasi', 'like', '%' . $this->search . '%');
-					});
-				})
-				// 2. Logika Filter Dropdown
-				->when($this->filter_jenis_usaha, fn($q) => $q->where('jenis_usaha_id', $this->filter_jenis_usaha))
-				->when($this->filter_banjar, fn($q) => $q->where('banjar_id', $this->filter_banjar))
-				// ->when($this->filter_pemilik, fn($q) => $q->where('pemilik_id', $this->filter_pemilik))
-				// 3. Sorting & Pagination
-				->orderBy('nama', 'asc')
-				->paginate(10),
+		// 1. Mulai Query Utama
+        $query = \App\Models\WajibPunia::query()->with(['jenisUsaha', 'banjar', 'petugas']);
+
+        // 2. PEMBATASAN HAK AKSES BERDASARKAN ROLE
+        if (Auth::user()->role === 'inputer') {
+            // Petugas HANYA bisa melihat datanya sendiri
+            $query->where('user_id', Auth::id());
+			$daftarPetugas = \App\Models\User::where('id', Auth::id())->orderBy('name');
+		} else {
+			// Admin bisa melihat semua data, tapi jika sedang mencari, tampilkan opsi filter petugas
+			$daftarPetugas = \App\Models\User::where('role', 'inputer')->orderBy('name');
+		}
+
+        // 3. Terapkan Filter Pencarian (Berlaku untuk Admin maupun Petugas)
+        if ($this->search) {
+            $query->where(function($q) {
+                $q->where('nama', 'like', '%'.$this->search.'%')
+                  ->orWhere('no_registrasi', 'like', '%'.$this->search.'%')
+                  ->orWhere('pemilik_nama', 'like', '%'.$this->search.'%');
+            });
+        }
+        if ($this->filter_jenis_usaha) {
+            $query->where('jenis_usaha_id', $this->filter_jenis_usaha);
+        }
+        if ($this->filter_banjar) {
+            $query->where('banjar_id', $this->filter_banjar);
+        }
+        
+        // 4. Terapkan Filter Petugas (Hanya berlaku untuk Admin yang sedang mencari)
+        if ($this->filter_petugas && Auth::user()->role === 'admin') {
+            $query->where('user_id', $this->filter_petugas);
+        }
+
+        return [
+            'wajibPunias' => $query->orderBy('nama', 'asc')->paginate(10),
+            // Data master untuk dropdown
+            'daftarJenisUsaha' => \App\Models\JenisUsaha::orderBy('nama_jenis_usaha')->get(),
+            'daftarBanjar' => \App\Models\Banjar::orderBy('nama_banjar')->get(),
+            'daftarPetugas' => $daftarPetugas->get(),
+            'daftarKategori' => \App\Models\Kategori::orderBy('nama_kategori')->get(),
+        ];
+
+		// -----------------
+
+		// return [
+		// 	// Eager loading relasi agar tidak query N+1 di tabel HTML
+		// 	'wajibPunias' => WajibPunia::with(['banjar', 'jenisUsaha'])
+		// 		// 1. Logika Pencarian Teks (Dikelompokkan agar orWhere tidak bocor)
+		// 		->when($this->search, function ($query) {
+		// 			$query->where(function ($q) {
+		// 				$q->where('nama', 'like', '%' . $this->search . '%')
+		// 				  ->orWhere('no_registrasi', 'like', '%' . $this->search . '%');
+		// 			});
+		// 		})
+		// 		// 2. Logika Filter Dropdown
+		// 		->when($this->filter_jenis_usaha, fn($q) => $q->where('jenis_usaha_id', $this->filter_jenis_usaha))
+		// 		->when($this->filter_banjar, fn($q) => $q->where('banjar_id', $this->filter_banjar))
+		// 		// ->when($this->filter_pemilik, fn($q) => $q->where('pemilik_id', $this->filter_pemilik))
+		// 		// 3. Sorting & Pagination
+		// 		->orderBy('nama', 'asc')
+		// 		->paginate(10),
 			
-			// Mengambil data master untuk dropdown form
-			'daftarBanjar' => Banjar::orderBy('nama_banjar', 'asc')->get(),
-			// 'daftarPemilik' => Pemilik::orderBy('nama_pemilik', 'asc')->get(),
-			'daftarJenisUsaha' => JenisUsaha::orderBy('nama_jenis_usaha', 'asc')->get(),
-			'daftarKategori' => Kategori::orderBy('nama_kategori', 'asc')->get(),
-			'daftarPetugas' => Petugas::orderBy('name', 'asc')->get(),
-		];
+		// 	// Mengambil data master untuk dropdown form
+		// 	'daftarBanjar' => Banjar::orderBy('nama_banjar', 'asc')->get(),
+		// 	// 'daftarPemilik' => Pemilik::orderBy('nama_pemilik', 'asc')->get(),
+		// 	'daftarJenisUsaha' => JenisUsaha::orderBy('nama_jenis_usaha', 'asc')->get(),
+		// 	'daftarKategori' => Kategori::orderBy('nama_kategori', 'asc')->get(),
+		// 	'daftarPetugas' => Petugas::orderBy('name', 'asc')->get(),
+		// ];
 	}
 };
 ?>
@@ -340,31 +385,38 @@ new class extends Component {
 		</div>
 	</div>
 
-	<div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-		<flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama atau no reg..." />
-		
-		<flux:select wire:model.live="filter_jenis_usaha" placeholder="Semua Jenis Usaha">
-			<flux:select.option value="">Semua Jenis Usaha</flux:select.option>
-			@foreach($daftarJenisUsaha as $ju)
-				<flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
-			@endforeach
-		</flux:select>
-		
-		<flux:select wire:model.live="filter_banjar" placeholder="Semua Banjar">
-			<flux:select.option value="">Semua Wilayah Banjar</flux:select.option>
-			@foreach($daftarBanjar as $b)
-				<flux:select.option value="{{ $b->id }}">Br. {{ $b->nama_banjar }}</flux:select.option>
-			@endforeach
-		</flux:select>
+	<div class="grid grid-cols-1 md:grid-cols-{{ Auth::user()->role === 'admin' ? '5' : '4' }} gap-3 mb-4">
+        <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama, reg, pemilik..." />
+        
+        <flux:select wire:model.live="filter_jenis_usaha" placeholder="Semua Jenis Usaha">
+            <flux:select.option value="">Semua Jenis Usaha</flux:select.option>
+            @foreach($daftarJenisUsaha as $ju)
+                <flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
+            @endforeach
+        </flux:select>
+        
+        <flux:select wire:model.live="filter_banjar" placeholder="Semua Banjar">
+            <flux:select.option value="">Semua Wilayah Banjar</flux:select.option>
+            @foreach($daftarBanjar as $b)
+                <flux:select.option value="{{ $b->id }}">Br. {{ $b->nama_banjar }}</flux:select.option>
+            @endforeach
+        </flux:select>
 
-		<div class="flex gap-2">
-			
+        @if(Auth::user()->role === 'admin')
+        <flux:select wire:model.live="filter_petugas" placeholder="Semua Petugas">
+            <flux:select.option value="">Semua Petugas</flux:select.option>
+            @foreach($daftarPetugas as $p)
+                <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
+            @endforeach
+        </flux:select>
+        @endif
 
-			@if($search || $filter_jenis_usaha || $filter_banjar || $filter_pemilik)
-				<flux:button wire:click="resetFilter" variant="subtle" icon="x-mark" class="px-3" title="Bersihkan Filter" />
-			@endif
-		</div>
-	</div>
+        <div class="flex gap-2">
+            @if($search || $filter_jenis_usaha || $filter_banjar || $filter_petugas)
+                <flux:button wire:click="resetFilter" variant="subtle" icon="x-mark" class="px-3 w-full md:w-auto" title="Bersihkan Filter" />
+            @endif
+        </div>
+    </div>
 
 	<flux:card class="relative">
 		<div wire:loading wire:target="search, gotoPage, nextPage, previousPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
@@ -385,11 +437,18 @@ new class extends Component {
 					@forelse ($wajibPunias as $wp)
 					<flux:table.row>
 						<flux:table.cell>
-							<div class="font-semibold">{{ $wp->nama }}</div>
-							<div class="text-xs text-zinc-500">
-								{{ $wp->jenisUsaha->nama_jenis_usaha ?? '-' }} • Br. {{ $wp->banjar->nama_banjar ?? '-' }}
-							</div>
-						</flux:table.cell>
+                            <div class="font-semibold">{{ $wp->nama }}</div>
+                            <div class="text-xs text-zinc-500">
+                                {{ $wp->jenisUsaha->nama_jenis_usaha ?? '-' }} • Br. {{ $wp->banjar->nama_banjar ?? '-' }}
+                            </div>
+                            
+                            @if(Auth::user()->role === 'admin')
+                            <div class="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium mt-1 flex items-center gap-1">
+                                <flux:icon.user class="w-3 h-3" />
+                                Penanggung Jawab: {{ $wp->petugas->name ?? 'Belum Ditentukan' }}
+                            </div>
+                            @endif
+                        </flux:table.cell>
 						<flux:table.cell>
 							<div class="font-medium text-sm">{{ $wp->pemilik_nama ?? '-' }}</div>
 							<div class="text-[10px] text-zinc-400">Reg: {{ $wp->no_registrasi ?? '-' }}</div>
