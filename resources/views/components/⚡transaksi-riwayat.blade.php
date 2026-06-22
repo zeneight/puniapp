@@ -104,7 +104,7 @@ new class extends Component { // Sesuaikan nama class jika berbeda
         $this->edit_transaksi_id = $trx->id;
         $this->edit_nominal = $trx->nominal;
         $this->edit_keterangan = $trx->keterangan;
-        $this->edit_bukti_lama = $trx->bukti_transfer;
+        $this->edit_bukti_lama = $trx->bukti_dokumen;
         
         $this->edit_nama_wp = $trx->wajibPunia->nama ?? 'Data Terhapus';
         $this->edit_periode = 'Bulan ' . $trx->periode_bulan . ' - ' . $trx->periode_tahun;
@@ -126,10 +126,10 @@ new class extends Component { // Sesuaikan nama class jika berbeda
         $trx = Transaksi::findOrFail($this->edit_transaksi_id);
         
         if ($this->edit_bukti_baru) {
-            if ($trx->bukti_transfer && Storage::disk('public')->exists($trx->bukti_transfer)) {
-                Storage::disk('public')->delete($trx->bukti_transfer);
+            if ($trx->bukti_dokumen && Storage::disk('public')->exists($trx->bukti_dokumen)) {
+                Storage::disk('public')->delete($trx->bukti_dokumen);
             }
-            $trx->bukti_transfer = $this->edit_bukti_baru->store('bukti_transaksi', 'public');
+            $trx->bukti_dokumen = $this->edit_bukti_baru->store('bukti_transaksi', 'public');
         }
 
         $trx->nominal = $this->edit_nominal;
@@ -279,7 +279,7 @@ new class extends Component { // Sesuaikan nama class jika berbeda
                                     {{ $trx->jenisPembayaran->nama_kategori ?? 'Umum' }}
                                 </span>
                                 
-                                @if($trx->bukti_transfer)
+                                @if($trx->bukti_dokumen)
                                     <flux:icon.paper-clip class="w-3 h-3 text-zinc-400" title="Ada Lampiran Bukti" />
                                 @endif
                             </div>
