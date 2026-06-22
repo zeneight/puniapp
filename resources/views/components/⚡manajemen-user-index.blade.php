@@ -239,6 +239,7 @@ new class extends Component {
             <flux:input wire:model="password" type="password" label="Password (Minimal 6 karakter)" placeholder="••••••••" viewable />
             
             <flux:select wire:model="role" label="Hak Akses">
+                <flux:select.option value="">-</flux:select.option>
                 <flux:select.option value="inputer">Petugas Lapangan</flux:select.option>
                 <flux:select.option value="admin">Administrator</flux:select.option>
             </flux:select>
@@ -262,6 +263,7 @@ new class extends Component {
             <flux:input wire:model="password" type="password" label="Password Baru" description="Kosongkan jika tidak ingin mengubah password." placeholder="••••••••" viewable />
             
             <flux:select wire:model="role" label="Hak Akses">
+                <flux:select.option value="">-</flux:select.option>
                 <flux:select.option value="inputer">Petugas Lapangan</flux:select.option>
                 <flux:select.option value="admin">Administrator</flux:select.option>
             </flux:select>
