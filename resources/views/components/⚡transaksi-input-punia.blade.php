@@ -74,6 +74,13 @@ new class extends Component {
         $wp = WajibPunia::find($value);
         
         if ($wp) {
+            // cek user
+            if (Auth::user()->role !== 'admin' && $wp->user_id !== Auth::id()) {
+                
+                // Tolak akses dan munculkan halaman error 403 (Forbidden)
+                abort(403, 'Akses Ditolak! Wajib Punia ini bukan wilayah tanggung jawab Anda.');
+            }
+
             $this->wajib_punia_id = $wp->id;
             $this->kategori_id = $wp->kategori_id; // Otomatis pilih kategori di dropdown
             $this->nominal = $wp->pagu_dudukan;    // Otomatis isi nominal sesuai pagu
@@ -349,6 +356,7 @@ new class extends Component {
                             </flux:select>
 
                             <flux:select wire:model="kategori_id" label="Kategori Punia" placeholder="Pilih Kategori..." description="Otomatis terisi sesuai WP.">
+                                <flux:select.option value="">-</flux:select.option>
                                 @foreach ($daftarKategori as $kat)
                                     <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
                                 @endforeach
