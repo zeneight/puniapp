@@ -19,6 +19,8 @@ new class extends Component { // Sesuaikan nama class jika berbeda
     public string $search = '';
     public string $sortBy = 'tanggal_bayar'; 
     public string $sortDir = 'desc'; 
+
+    public string $filterKategori = '';
     
     public string $filterBulan = '';
     public string $filterTahun = '';
@@ -51,7 +53,7 @@ new class extends Component { // Sesuaikan nama class jika berbeda
 
     public function resetFilter()
     {
-        $this->reset(['search', 'sortBy', 'sortDir', 'filterPetugas']);
+        $this->reset(['search', 'sortBy', 'sortDir', 'filterPetugas', 'filterKategori']);
         $this->filterBulan = (string) date('n');
         $this->filterTahun = (string) date('Y');
         $this->sortBy = 'tanggal_bayar';
@@ -162,6 +164,9 @@ new class extends Component { // Sesuaikan nama class jika berbeda
             ->when($this->filterPetugas && Auth::user()->role === 'admin', function ($q) {
                 $q->where('user_id', $this->filterPetugas);
             })
+            ->when($this->filterKategori, function ($q) {
+                $q->where('jenis_pembayaran_id', $this->filterKategori);
+            })
             ->orderBy($this->sortBy, $this->sortDir);
     }
 
@@ -177,6 +182,7 @@ new class extends Component { // Sesuaikan nama class jika berbeda
             'totalNominal' => $totalNominal,
             // Kirim daftar petugas ke view khusus untuk Admin
             'daftarPetugas' => Auth::user()->role === 'admin' ? User::where('role', 'inputer')->orderBy('name')->get() : [],
+            'daftarKategori' => \App\Models\Kategori::orderBy('nama_kategori')->get(),
         ];
     }
 }
@@ -196,42 +202,49 @@ new class extends Component { // Sesuaikan nama class jika berbeda
         </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2 mb-4">
-        
-        <flux:select wire:model.live="filterBulan" class="w-full md:w-36" aria-label="Filter Bulan">
-            <flux:select.option value="">Semua Bulan</flux:select.option>
-            <flux:select.option value="1">Januari</flux:select.option>
-            <flux:select.option value="2">Februari</flux:select.option>
-            <flux:select.option value="3">Maret</flux:select.option>
-            <flux:select.option value="4">April</flux:select.option>
-            <flux:select.option value="5">Mei</flux:select.option>
-            <flux:select.option value="6">Juni</flux:select.option>
-            <flux:select.option value="7">Juli</flux:select.option>
-            <flux:select.option value="8">Agustus</flux:select.option>
-            <flux:select.option value="9">September</flux:select.option>
-            <flux:select.option value="10">Oktober</flux:select.option>
-            <flux:select.option value="11">November</flux:select.option>
-            <flux:select.option value="12">Desember</flux:select.option>
-        </flux:select>
+    <div x-data="{ showFilters: false }" class="mb-5 space-y-3">
+        <div class="flex flex-col md:flex-row gap-2">
+            <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama donatur..." class="w-full" />
+            
+            <div class="flex gap-2 w-full md:w-auto shrink-0">
+                <flux:button x-on:click="showFilters = !showFilters" variant="subtle" icon="funnel" class="w-full md:w-auto">
+                    Filter <span x-show="!showFilters" class="ml-1 text-xs text-zinc-500">▼</span><span x-show="showFilters" class="ml-1 text-xs text-zinc-500" x-cloak>▲</span>
+                </flux:button>
+                
+                @if($search !== '' || $filterBulan !== (string) date('n') || $filterTahun !== (string) date('Y') || $filterPetugas !== '' || $filterKategori !== '')
+                    <flux:button wire:click="resetFilter" variant="danger" icon="x-mark" class="px-3" tooltip="Reset Semua">Reset</flux:button>
+                @endif
+            </div>
+        </div>
 
-        <flux:input wire:model.live.debounce.500ms="filterTahun" type="number" placeholder="Tahun..." class="w-full md:w-28" />
+        <div x-show="showFilters" x-collapse x-cloak>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 p-4 bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                <flux:select wire:model.live="filterBulan" label="Bulan">
+                    <flux:select.option value="">Semua Bulan</flux:select.option>
+                    @for($i=1; $i<=12; $i++)
+                        <flux:select.option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 1)) }}</flux:select.option>
+                    @endfor
+                </flux:select>
 
-        @if(Auth::user()->role === 'admin')
-            <flux:select wire:model.live="filterPetugas" class="w-full md:w-44" placeholder="Semua Petugas">
-                <flux:select.option value="">Semua Petugas</flux:select.option>
-                @foreach($daftarPetugas as $p)
-                    <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
-                @endforeach
-            </flux:select>
-        @endif
+                <flux:input wire:model.live.debounce.500ms="filterTahun" type="number" label="Tahun" />
 
-        <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari donatur..." class="w-full md:w-56 flex-1" />
-        
-        @if($search !== '' || $filterBulan !== (string) date('n') || $filterTahun !== (string) date('Y') || $filterPetugas !== '')
-            <flux:button wire:click="resetFilter" variant="danger" icon="x-mark" class="px-3" tooltip="Reset Filter">
-                Reset
-            </flux:button>
-        @endif
+                <flux:select wire:model.live="filterKategori" label="Kategori Punia">
+                    <flux:select.option value="">Semua Kategori</flux:select.option>
+                    @foreach($daftarKategori as $kat)
+                        <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                @if(Auth::user()->role === 'admin')
+                    <flux:select wire:model.live="filterPetugas" label="Petugas">
+                        <flux:select.option value="">Semua Petugas</flux:select.option>
+                        @foreach($daftarPetugas as $p)
+                            <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                @endif
+            </div>
+        </div>
     </div>
 
     <div class="mb-4 p-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-center justify-between shadow-sm">
@@ -241,7 +254,7 @@ new class extends Component { // Sesuaikan nama class jika berbeda
 
     <flux:card class="relative">
         
-        <div wire:loading wire:target="search, filterBulan, filterTahun, filterPetugas, setSortBy, gotoPage, nextPage, previousPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
+        <div wire:loading wire:target="search, filterBulan, filterTahun, filterPetugas, filterKategori, setSortBy, gotoPage, nextPage, previousPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
             <div class="flex items-center gap-3 px-5 py-2.5 bg-white dark:bg-zinc-800 shadow-lg rounded-full border border-zinc-200 dark:border-zinc-700">
                 <flux:icon.arrow-path class="w-5 h-5 animate-spin text-zinc-800 dark:text-white" />
                 <span class="text-sm font-medium text-zinc-700 dark:text-zinc-200">Memproses data...</span>

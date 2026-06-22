@@ -34,6 +34,8 @@ new class extends Component {
 	public string $kategori_id = '';
 	public $filter_petugas = '';
 
+	public $filter_kategori = '';
+
 	public $latitude = null;
 	public $longitude = null;
 	
@@ -68,7 +70,7 @@ new class extends Component {
 
 	public function resetFilter()
 	{
-		$this->reset(['search', 'filter_jenis_usaha', 'filter_banjar', 'filter_petugas']);
+		$this->reset(['search', 'filter_jenis_usaha', 'filter_banjar', 'filter_petugas', 'filter_kategori']);
 		$this->resetPage();
 	}
 
@@ -325,6 +327,9 @@ new class extends Component {
         if ($this->filter_banjar) {
             $query->where('banjar_id', $this->filter_banjar);
         }
+		if ($this->filter_kategori) {
+            $query->where('kategori_id', $this->filter_kategori);
+        }
         
         // 4. Terapkan Filter Petugas (Hanya berlaku untuk Admin yang sedang mencari)
         if ($this->filter_petugas && Auth::user()->role === 'admin') {
@@ -385,45 +390,65 @@ new class extends Component {
 		</div>
 	</div>
 
-	<div class="grid grid-cols-1 md:grid-cols-{{ Auth::user()->role === 'admin' ? '5' : '4' }} gap-3 mb-4">
-        <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama, reg, pemilik..." />
-        
-        <flux:select wire:model.live="filter_jenis_usaha" placeholder="Semua Jenis Usaha">
-            <flux:select.option value="">Semua Jenis Usaha</flux:select.option>
-            @foreach($daftarJenisUsaha as $ju)
-                <flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
-            @endforeach
-        </flux:select>
-        
-        <flux:select wire:model.live="filter_banjar" placeholder="Semua Banjar">
-            <flux:select.option value="">Semua Wilayah Banjar</flux:select.option>
-            @foreach($daftarBanjar as $b)
-                <flux:select.option value="{{ $b->id }}">Br. {{ $b->nama_banjar }}</flux:select.option>
-            @endforeach
-        </flux:select>
+	<div x-data="{ showFilters: false }" class="mb-5 space-y-3">
+        <div class="flex flex-col md:flex-row gap-2">
+            <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama usaha, reg, atau pemilik..." class="w-full" />
+            
+            <div class="flex gap-2 w-full md:w-auto shrink-0">
+                <flux:button x-on:click="showFilters = !showFilters" variant="subtle" icon="funnel" class="w-full md:w-auto">
+                    Filter Data <span x-show="!showFilters" class="ml-1 text-xs text-zinc-500">▼</span><span x-show="showFilters" class="ml-1 text-xs text-zinc-500" x-cloak>▲</span>
+                </flux:button>
+                
+                @if($search || $filter_jenis_usaha || $filter_banjar || $filter_petugas || $filter_kategori)
+                    <flux:button wire:click="resetFilter" variant="danger" icon="x-mark" class="px-3" tooltip="Bersihkan Filter" />
+                @endif
+            </div>
+        </div>
 
-        @if(Auth::user()->role === 'admin')
-        <flux:select wire:model.live="filter_petugas" placeholder="Semua Petugas">
-            <flux:select.option value="">Semua Petugas</flux:select.option>
-            @foreach($daftarPetugas as $p)
-                <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
-            @endforeach
-        </flux:select>
-        @endif
+        <div x-show="showFilters" x-collapse x-cloak>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                <flux:select wire:model.live="filter_kategori" label="Jenis Kategori Punia">
+                    <flux:select.option value="">Semua Kategori</flux:select.option>
+                    @foreach($daftarKategori as $kat)
+                        <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
+                    @endforeach
+                </flux:select>
 
-        <div class="flex gap-2">
-            @if($search || $filter_jenis_usaha || $filter_banjar || $filter_petugas)
-                <flux:button wire:click="resetFilter" variant="subtle" icon="x-mark" class="px-3 w-full md:w-auto" title="Bersihkan Filter" />
-            @endif
+                <flux:select wire:model.live="filter_jenis_usaha" label="Jenis Usaha">
+                    <flux:select.option value="">Semua Jenis Usaha</flux:select.option>
+                    @foreach($daftarJenisUsaha as $ju)
+                        <flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                
+                <flux:select wire:model.live="filter_banjar" label="Wilayah Banjar">
+                    <flux:select.option value="">Semua Wilayah Banjar</flux:select.option>
+                    @foreach($daftarBanjar as $b)
+                        <flux:select.option value="{{ $b->id }}">Br. {{ $b->nama_banjar }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                @if(Auth::user()->role === 'admin')
+                <flux:select wire:model.live="filter_petugas" label="Petugas Penanggung Jawab">
+                    <flux:select.option value="">Semua Petugas</flux:select.option>
+                    @foreach($daftarPetugas as $p)
+                        <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                @endif
+            </div>
         </div>
     </div>
 
 	<flux:card class="relative">
-		<div wire:loading wire:target="search, gotoPage, nextPage, previousPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
-			<span class="text-xs font-medium">Memuat...</span>
-		</div>
+		<div wire:loading wire:target="search, filter_petugas, filter_kategori, filter_banjar, filter_tahun, filter_jenis_usaha, setSortBy, gotoPage, nextPage, previousPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
+            <div class="flex items-center gap-3 px-5 py-2.5 bg-white dark:bg-zinc-800 shadow-lg rounded-full border border-zinc-200 dark:border-zinc-700">
+                <flux:icon.arrow-path class="w-5 h-5 animate-spin text-zinc-800 dark:text-white" />
+                <span class="text-sm font-medium text-zinc-700 dark:text-zinc-200">Memproses data...</span>
+            </div>
+        </div>
 
-		<div wire:loading.class="opacity-40" wire:target="search, gotoPage, nextPage, previousPage">
+        <div wire:loading.class="opacity-40 pointer-events-none transition-opacity duration-200" wire:target="search, filter_petugas, filter_kategori, filter_banjar, filter_tahun, filter_jenis_usaha, setSortBy, gotoPage, nextPage, previousPage">
 			<flux:table>
 				<flux:table.columns>
 					<flux:table.column>Nama Usaha / Lokasi</flux:table.column>
