@@ -24,6 +24,10 @@
                         {{ __('Wajib Punia') }}
                     </flux:navlist.item>
 
+                    <flux:navlist.item icon="map" :href="route('buku-tamu')" :current="request()->routeIs('buku-tamu')" wire:navigate>
+                        {{ __('Buku Tamu') }}
+                    </flux:navlist.item>
+
                     @if(Auth::user()->role === 'admin')
                     <flux:navlist.group expandable heading="Master Data" class="mt-2">
                         <flux:navlist.item icon="map-pin" :href="route('master.banjar')" :current="request()->routeIs('master.banjar')" wire:navigate>
