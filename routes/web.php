@@ -24,6 +24,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // transaksi
     Route::livewire('/transaksi/input', 'transaksi-input-punia')->name('transaksi.input');
     Route::livewire('/transaksi/riwayat', 'transaksi-riwayat')->name('transaksi.riwayat');
+
+    // buku tamu
+    Route::livewire('/buku-tamu', 'buku-tamu-index')->name('buku-tamu');
 });
 
 require __DIR__.'/settings.php';

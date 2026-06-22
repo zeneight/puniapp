@@ -9,8 +9,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('transaksis', function (Blueprint $table) {
-            $table->foreignId('jenis_pembayaran_id')->nullable()->after('wajib_punia_id')->constrained('kategoris')->restrictOnDelete();
+            // Cek dulu apakah kolom jenis_pembayaran_id sudah ada
+            if (!Schema::hasColumn('transaksis', 'jenis_pembayaran_id')) {
+                $table->foreignId('jenis_pembayaran_id')->nullable()->after('wajib_punia_id')->constrained('kategoris')->restrictOnDelete();
+            }
             
+            // Cek dulu apakah kolom tanggal_bayar sudah ada
+            if (!Schema::hasColumn('transaksis', 'tanggal_bayar')) {
+                $table->date('tanggal_bayar')->nullable()->after('periode_tahun');
+            }
         });
     }
 
