@@ -5,9 +5,13 @@ use Livewire\Attributes\Layout;
 use App\Models\Transaksi;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Url;
 
 new class extends Component {
 	#[Layout('layouts.app')]
+
+	#[Url(as: 'wp_id')]
+    public $wajib_punia_id = '';
 
 	// Variabel Filter Global
 	public string $filterBulan = '';
@@ -18,6 +22,16 @@ new class extends Component {
 		// Default ke waktu sekarang
 		$this->filterBulan = (string) date('n');
 		$this->filterTahun = (string) date('Y');
+
+		$this->bulan_awal = (string) date('n');
+        $this->bulan_akhir = (string) date('n'); 
+        $this->periode_tahun = (string) date('Y');
+        $this->tanggal_bayar = date('Y-m-d');
+        
+        // JIKA ADA PARAMETER DARI DASHBOARD, LANGSUNG JALANKAN PENGECEKAN
+        if ($this->wajib_punia_id) {
+            $this->updatedWajibPuniaId($this->wajib_punia_id);
+        }
 	}
 
 	public function with()
