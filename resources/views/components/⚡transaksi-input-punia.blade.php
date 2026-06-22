@@ -7,11 +7,15 @@ use App\Models\WajibPunia;
 use App\Models\Kategori;
 use Illuminate\Support\Facades\Auth;
 
+use Livewire\Attributes\Url;
+
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
 	use WithFileUploads;
+
+    #[Url(as: 'wp_id')]
 
 	#[Layout('layouts.app')]
 
@@ -43,6 +47,10 @@ new class extends Component {
 
 	public function mount()
 	{
+        if ($this->wajib_punia_id) {
+            $this->tarikDataWajibPunia($this->wajib_punia_id);
+        }
+
 		$this->bulan_awal = (string) date('n');
 		$this->bulan_akhir = (string) date('n'); // Default sama dengan bulan awal
 		$this->periode_tahun = (string) date('Y');
@@ -52,50 +60,70 @@ new class extends Component {
 	// Fungsi otomatis mengisi nominal saat Wajib Punia dipilih dan fungsi tunggakan
 	public function updatedWajibPuniaId($value)
 	{
-		$this->infoTunggakan = []; // Reset info setiap kali ganti orang
-		$this->kategori_id = '';
-		
-		if ($value) {
-			$wp = WajibPunia::find($value);
-			if ($wp) {
-				// 1. Isi nominal otomatis
-				$this->nominal = $wp->pagu_dudukan;
-				$this->kategori_id = $wp->kategori_id;
-				$this->cekTunggakan();
-				
-				// 2. Cek tunggakan untuk tahun berjalan
-				$tahunIni = (int) $this->periode_tahun;
-				$bulanSekarang = (int) date('n'); // Bulan 6 (Juni 2026)
-
-				// Cari bulan apa saja yang sudah dibayar di tahun ini
-				$bulanTerbayar = Transaksi::where('wajib_punia_id', $value)
-										  ->where('periode_tahun', $tahunIni)
-										  ->pluck('periode_bulan')
-										  ->toArray();
-
-				// Deteksi tunggakan: Bandingkan dari bulan 1 sampai bulan sekarang
-				$menunggak = [];
-				for ($i = 1; $i <= $bulanSekarang; $i++) {
-					if (!in_array($i, $bulanTerbayar)) {
-						$menunggak[] = $i;
-					}
-				}
-
-				// Jika ada tunggakan, simpan ke state array
-				if (count($menunggak) > 0) {
-					$this->infoTunggakan = $menunggak;
-					
-					// (Opsional) Auto-set bulan_awal ke bulan tunggakan pertama
-					$this->bulan_awal = (string) min($menunggak);
-				} else {
-					// Jika lunas semua, arahkan ke bulan depan
-					$this->bulan_awal = (string) ($bulanSekarang + 1);
-				}
-			}
-		} else {
-			$this->nominal = '';
-		}
+		$this->tarikDataWajibPunia($value);
 	}
+
+    // Fungsi khusus untuk mengisi form Kategori dan Nominal
+    private function tarikDataWajibPunia($value)
+    {
+        if (!$value) {
+            $this->reset(['kategori_id', 'nominal']); // Kosongkan jika tidak ada ID
+            return;
+        }
+
+        $wp = WajibPunia::find($value);
+        
+        if ($wp) {
+            $this->wajib_punia_id = $wp->id;
+            $this->kategori_id = $wp->kategori_id; // Otomatis pilih kategori di dropdown
+            $this->nominal = $wp->pagu_dudukan;    // Otomatis isi nominal sesuai pagu
+            
+            // Tambahkan variabel lain di sini jika ada yang perlu diisi otomatis
+            $this->infoTunggakan = []; // Reset info setiap kali ganti orang
+            $this->kategori_id = '';
+            
+            if ($value) {
+                $wp = WajibPunia::find($value);
+                if ($wp) {
+                    // 1. Isi nominal otomatis
+                    $this->nominal = $wp->pagu_dudukan;
+                    $this->kategori_id = $wp->kategori_id;
+                    $this->cekTunggakan();
+                    
+                    // 2. Cek tunggakan untuk tahun berjalan
+                    $tahunIni = (int) $this->periode_tahun;
+                    $bulanSekarang = (int) date('n'); // Bulan 6 (Juni 2026)
+
+                    // Cari bulan apa saja yang sudah dibayar di tahun ini
+                    $bulanTerbayar = Transaksi::where('wajib_punia_id', $value)
+                                            ->where('periode_tahun', $tahunIni)
+                                            ->pluck('periode_bulan')
+                                            ->toArray();
+
+                    // Deteksi tunggakan: Bandingkan dari bulan 1 sampai bulan sekarang
+                    $menunggak = [];
+                    for ($i = 1; $i <= $bulanSekarang; $i++) {
+                        if (!in_array($i, $bulanTerbayar)) {
+                            $menunggak[] = $i;
+                        }
+                    }
+
+                    // Jika ada tunggakan, simpan ke state array
+                    if (count($menunggak) > 0) {
+                        $this->infoTunggakan = $menunggak;
+                        
+                        // (Opsional) Auto-set bulan_awal ke bulan tunggakan pertama
+                        $this->bulan_awal = (string) min($menunggak);
+                    } else {
+                        // Jika lunas semua, arahkan ke bulan depan
+                        $this->bulan_awal = (string) ($bulanSekarang + 1);
+                    }
+                }
+            } else {
+                $this->nominal = '';
+            }
+        }
+    }
 
 	// Fungsi trigger saat Tahun Periode diubah
     public function updatedPeriodeTahun()
