@@ -332,13 +332,15 @@ new class extends Component {
                         <div class="mb-4 pb-2 border-b border-zinc-200 dark:border-zinc-700">
                             <h3 class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">1. Data Wajib Punia</h3>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <flux:field>
                                 <flux:label>Tanggal Pembayaran Transaksi</flux:label>
                                 <flux:input type="date" wire:model="tanggal_bayar" required />
                             </flux:field>
 
                             <div class="hidden md:block"></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             <flux:select wire:model.live="wajib_punia_id" label="Wajib Punia" placeholder="Pilih Wajib Punia..." searchable description="Pilih nama wajib punia yang akan dibayarkan.">
                                 @foreach ($daftarWajibPunia as $wp)
