@@ -66,69 +66,58 @@ new class extends Component {
     // Fungsi khusus untuk mengisi form Kategori dan Nominal
     private function tarikDataWajibPunia($value)
     {
+        // 1. Jika tidak ada ID, kosongkan form dan hentikan proses
         if (!$value) {
-            $this->reset(['kategori_id', 'nominal']); // Kosongkan jika tidak ada ID
+            $this->reset(['kategori_id', 'nominal', 'wajib_punia_id', 'infoTunggakan', 'bulan_awal']);
             return;
         }
 
+        // 2. Ambil data dari database (cukup 1 kali saja)
         $wp = WajibPunia::find($value);
         
         if ($wp) {
-            // cek user
-            if (Auth::user()->role !== 'admin' && $wp->user_id !== Auth::id()) {
-                
-                // Tolak akses dan munculkan halaman error 403 (Forbidden)
+            // 3. Cek Otorisasi (Gunakan != untuk menghindari masalah tipe data integer vs string)
+            if (Auth::user()->role !== 'admin' && $wp->user_id != Auth::id()) {
                 abort(403, 'Akses Ditolak! Wajib Punia ini bukan wilayah tanggung jawab Anda.');
             }
 
+            // 4. Isi variabel otomatis
             $this->wajib_punia_id = $wp->id;
-            $this->kategori_id = $wp->kategori_id; // Otomatis pilih kategori di dropdown
-            $this->nominal = $wp->pagu_dudukan;    // Otomatis isi nominal sesuai pagu
+            $this->kategori_id = $wp->kategori_id;
+            $this->nominal = $wp->pagu_dudukan;
+            $this->infoTunggakan = []; // Reset info tunggakan
             
-            // Tambahkan variabel lain di sini jika ada yang perlu diisi otomatis
-            $this->infoTunggakan = []; // Reset info setiap kali ganti orang
-            $this->kategori_id = '';
-            
-            if ($value) {
-                $wp = WajibPunia::find($value);
-                if ($wp) {
-                    // 1. Isi nominal otomatis
-                    $this->nominal = $wp->pagu_dudukan;
-                    $this->kategori_id = $wp->kategori_id;
-                    $this->cekTunggakan();
-                    
-                    // 2. Cek tunggakan untuk tahun berjalan
-                    $tahunIni = (int) $this->periode_tahun;
-                    $bulanSekarang = (int) date('n'); // Bulan 6 (Juni 2026)
+            // Panggil fungsi cek tunggakan lain jika ada
+            $this->cekTunggakan(); 
 
-                    // Cari bulan apa saja yang sudah dibayar di tahun ini
-                    $bulanTerbayar = Transaksi::where('wajib_punia_id', $value)
-                                            ->where('periode_tahun', $tahunIni)
-                                            ->pluck('periode_bulan')
-                                            ->toArray();
+            // 5. Cek tunggakan untuk tahun berjalan
+            $tahunIni = (int) $this->periode_tahun;
+            $bulanSekarang = (int) date('n');
 
-                    // Deteksi tunggakan: Bandingkan dari bulan 1 sampai bulan sekarang
-                    $menunggak = [];
-                    for ($i = 1; $i <= $bulanSekarang; $i++) {
-                        if (!in_array($i, $bulanTerbayar)) {
-                            $menunggak[] = $i;
-                        }
-                    }
+            // Cari bulan apa saja yang sudah dibayar
+            $bulanTerbayar = Transaksi::where('wajib_punia_id', $wp->id)
+                                    ->where('periode_tahun', $tahunIni)
+                                    ->pluck('periode_bulan')
+                                    ->toArray();
 
-                    // Jika ada tunggakan, simpan ke state array
-                    if (count($menunggak) > 0) {
-                        $this->infoTunggakan = $menunggak;
-                        
-                        // (Opsional) Auto-set bulan_awal ke bulan tunggakan pertama
-                        $this->bulan_awal = (string) min($menunggak);
-                    } else {
-                        // Jika lunas semua, arahkan ke bulan depan
-                        $this->bulan_awal = (string) ($bulanSekarang + 1);
-                    }
+            // Deteksi tunggakan dari bulan 1 sampai bulan sekarang
+            $menunggak = [];
+            for ($i = 1; $i <= $bulanSekarang; $i++) {
+                if (!in_array($i, $bulanTerbayar)) {
+                    $menunggak[] = $i;
                 }
-            } else {
-                $this->nominal = '';
             }
+
+            // 6. Tentukan state berdasarkan tunggakan
+            if (count($menunggak) > 0) {
+                $this->infoTunggakan = $menunggak;
+                $this->bulan_awal = (string) min($menunggak);
+            } else {
+                $this->bulan_awal = (string) ($bulanSekarang + 1);
+            }
+        } else {
+            // Jika value ada tapi data tidak ditemukan di DB (untuk jaga-jaga)
+            $this->reset(['kategori_id', 'nominal']);
         }
     }
 
