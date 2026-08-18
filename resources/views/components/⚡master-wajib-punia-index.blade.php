@@ -300,50 +300,59 @@ new class extends Component {
 
 	public function with()
 	{
-		// 1. Mulai Query Utama
-        $query = \App\Models\WajibPunia::query()->with(['jenisUsaha', 'banjar', 'petugas']);
+		// Ambil bulan dan tahun saat ini (misal: Agustus 2026)
+		$bulanIni = (int) date('n'); 
+		$tahunIni = (int) date('Y');
 
-        // 2. PEMBATASAN HAK AKSES BERDASARKAN ROLE
-        if (Auth::user()->role === 'inputer') {
-            // Petugas HANYA bisa melihat datanya sendiri
-            $query->where('user_id', Auth::id());
+		// 1. Mulai Query Utama dan tambahkan withExists
+		$query = \App\Models\WajibPunia::query()
+			->with(['jenisUsaha', 'banjar', 'petugas'])
+			->withExists(['transaksi as sudah_bayar_bulan_ini' => function($q) use ($bulanIni, $tahunIni) {
+				$q->where('periode_bulan', $bulanIni)
+				->where('periode_tahun', $tahunIni);
+			}]);
+
+		// 2. PEMBATASAN HAK AKSES BERDASARKAN ROLE
+		if (Auth::user()->role === 'inputer') {
+			// Petugas HANYA bisa melihat datanya sendiri
+			$query->where('user_id', Auth::id());
 			$daftarPetugas = \App\Models\User::where('id', Auth::id())->orderBy('name');
 		} else {
 			// Admin bisa melihat semua data, tapi jika sedang mencari, tampilkan opsi filter petugas
 			$daftarPetugas = \App\Models\User::where('role', 'inputer')->orderBy('name');
 		}
 
-        // 3. Terapkan Filter Pencarian (Berlaku untuk Admin maupun Petugas)
-        if ($this->search) {
-            $query->where(function($q) {
-                $q->where('nama', 'like', '%'.$this->search.'%')
-                  ->orWhere('no_registrasi', 'like', '%'.$this->search.'%')
-                  ->orWhere('pemilik_nama', 'like', '%'.$this->search.'%');
-            });
-        }
-        if ($this->filter_jenis_usaha) {
-            $query->where('jenis_usaha_id', $this->filter_jenis_usaha);
-        }
-        if ($this->filter_banjar) {
-            $query->where('banjar_id', $this->filter_banjar);
-        }
+		// 3. Terapkan Filter Pencarian (Berlaku untuk Admin maupun Petugas)
+		if ($this->search) {
+			$query->where(function($q) {
+				$q->where('nama', 'like', '%'.$this->search.'%')
+				->orWhere('no_registrasi', 'like', '%'.$this->search.'%')
+				->orWhere('pemilik_nama', 'like', '%'.$this->search.'%');
+			});
+		}
+		if ($this->filter_jenis_usaha) {
+			$query->where('jenis_usaha_id', $this->filter_jenis_usaha);
+		}
+		if ($this->filter_banjar) {
+			$query->where('banjar_id', $this->filter_banjar);
+		}
 		if ($this->filter_kategori) {
-            $query->where('kategori_id', $this->filter_kategori);
-        }
-        
-        // 4. Terapkan Filter Petugas (Hanya berlaku untuk Admin yang sedang mencari)
-        if ($this->filter_petugas && Auth::user()->role === 'admin') {
-            $query->where('user_id', $this->filter_petugas);
-        }
+			$query->where('kategori_id', $this->filter_kategori);
+		}
+		
+		// 4. Terapkan Filter Petugas (Hanya berlaku untuk Admin yang sedang mencari)
+		if ($this->filter_petugas && Auth::user()->role === 'admin') {
+			$query->where('user_id', $this->filter_petugas);
+		}
 
-        return [
-            'wajibPunias' => $query->orderBy('nama', 'asc')->paginate(10),
-            // Data master untuk dropdown
-            'daftarJenisUsaha' => \App\Models\JenisUsaha::orderBy('nama_jenis_usaha')->get(),
-            'daftarBanjar' => \App\Models\Banjar::orderBy('nama_banjar')->get(),
-            'daftarPetugas' => $daftarPetugas->get(),
-            'daftarKategori' => \App\Models\Kategori::orderBy('nama_kategori')->get(),
-        ];
+		return [
+			'wajibPunias' => $query->orderBy('nama', 'asc')->paginate(10),
+			// Data master untuk dropdown
+			'daftarJenisUsaha' => \App\Models\JenisUsaha::orderBy('nama_jenis_usaha')->get(),
+			'daftarBanjar' => \App\Models\Banjar::orderBy('nama_banjar')->get(),
+			'daftarPetugas' => $daftarPetugas->get(),
+			'daftarKategori' => \App\Models\Kategori::orderBy('nama_kategori')->get(),
+		];
 
 		// -----------------
 
@@ -451,10 +460,11 @@ new class extends Component {
         <div wire:loading.class="opacity-40 pointer-events-none transition-opacity duration-200" wire:target="search, filter_petugas, filter_kategori, filter_banjar, filter_tahun, filter_jenis_usaha, setSortBy, gotoPage, nextPage, previousPage">
 			<flux:table>
 				<flux:table.columns>
+					<flux:table.column>No.</flux:table.column>
 					<flux:table.column>Nama Usaha / Lokasi</flux:table.column>
-					<flux:table.column>Info Pemilik</flux:table.column>
+					<flux:table.column>Kontak</flux:table.column>
 					<flux:table.column>Pagu Punia</flux:table.column>
-					<flux:table.column>Status</flux:table.column>
+					<flux:table.column>Status Pembayaran</flux:table.column>
 					<flux:table.column>Aksi</flux:table.column>
 				</flux:table.columns>
 
@@ -462,9 +472,14 @@ new class extends Component {
 					@forelse ($wajibPunias as $wp)
 					<flux:table.row>
 						<flux:table.cell>
+							<div class="text-sm text-zinc-500">{{ $loop->iteration + ($wajibPunias->currentPage() - 1) * $wajibPunias->perPage() }}</div>
+						</flux:table.cell>
+						<flux:table.cell>
                             <div class="font-semibold">{{ $wp->nama }}</div>
                             <div class="text-xs text-zinc-500">
                                 {{ $wp->jenisUsaha->nama_jenis_usaha ?? '-' }} • Br. {{ $wp->banjar->nama_banjar ?? '-' }}
+								<br>
+								{{ $wp->alamat ?? '-' }}
                             </div>
                             
                             @if(Auth::user()->role === 'admin')
@@ -476,16 +491,21 @@ new class extends Component {
                         </flux:table.cell>
 						<flux:table.cell>
 							<div class="font-medium text-sm">{{ $wp->pemilik_nama ?? '-' }}</div>
-							<div class="text-[10px] text-zinc-400">Reg: {{ $wp->no_registrasi ?? '-' }}</div>
+							<div class="text-[10px] text-zinc-400">Telp: {{ $wp->kontak_pengelola ?? '-' }}</div>
 						</flux:table.cell>
 						<flux:table.cell class="font-mono text-sm text-emerald-600 font-semibold">
 							Rp {{ number_format($wp->pagu_dudukan, 0, ',', '.') }}
 						</flux:table.cell>
 						<flux:table.cell>
-							@if($wp->is_active)
-								<flux:badge color="green" size="sm" inset="top bottom">Aktif</flux:badge>
+							<!-- Pengecekan pembayaran bulan berjalan -->
+							@if($wp->sudah_bayar_bulan_ini)
+								<flux:badge color="green" size="sm" icon="check-circle">
+									Lunas ({{ \Carbon\Carbon::now()->translatedFormat('M') }})
+								</flux:badge>
 							@else
-								<flux:badge color="zinc" size="sm" inset="top bottom">Nonaktif</flux:badge>
+								<flux:badge color="red" size="sm" icon="x-circle">
+									Belum Bayar
+								</flux:badge>
 							@endif
 						</flux:table.cell>
 						<flux:table.cell>
