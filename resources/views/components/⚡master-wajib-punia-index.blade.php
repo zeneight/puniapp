@@ -500,7 +500,7 @@ new class extends Component {
 							<!-- Pengecekan pembayaran bulan berjalan -->
 							@if($wp->sudah_bayar_bulan_ini)
 								<flux:badge color="green" size="sm" icon="check-circle">
-									Lunas ({{ \Carbon\Carbon::now()->translatedFormat('M') }})
+									Lunas ({{ \Carbon\Carbon::now()->locale('id')->isoFormat('MMM') }})
 								</flux:badge>
 							@else
 								<flux:badge color="red" size="sm" icon="x-circle">
