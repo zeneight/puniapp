@@ -12,6 +12,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // wajib punia
     Route::livewire('/master/wajib-punia', 'master-wajib-punia-index')->name('master.wajibpunia');
+    Route::livewire('/master/wajib-punia/{id}/detail', 'detail-wajib-punia')->name('master.wajibpunia.detail');
 
     // master data
     Route::middleware(['role:admin'])->group(function () {

@@ -48,4 +48,10 @@ class WajibPunia extends Model
     {
         return $this->hasMany(DokumenWajibPunia::class);
     }
+
+    // Relasi ke Tabel Transaksi
+    public function transaksi()
+    {
+        return $this->hasMany(Transaksi::class);
+    }
 }

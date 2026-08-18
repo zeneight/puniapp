@@ -489,6 +489,7 @@ new class extends Component {
 							@endif
 						</flux:table.cell>
 						<flux:table.cell>
+							<flux:button href="{{ route('master.wajibpunia.detail', $wp->id) }}" wire:navigate size="sm" variant="ghost" icon="eye" />
 							<flux:button wire:click="edit({{ $wp->id }})" size="sm" variant="ghost" icon="pencil-square" />
 							<flux:button wire:click="konfirmasiHapus({{ $wp->id }})" size="sm" variant="ghost" color="danger" icon="trash" />
 						</flux:table.cell>
