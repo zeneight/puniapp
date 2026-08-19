@@ -18,6 +18,8 @@ new class extends Component
 	// Variabel Filter & Pencarian
 	public $search = '';
 	public $filter_tanggal = '';
+    public $filter_status = '';
+    public $filter_prioritas = '';
 
 	// Variabel Form Tambah/Edit
 	public $edit_id;
@@ -28,6 +30,9 @@ new class extends Component
 	public $pekerjaan_status;
 	public $alasan_kunjungan;
 	public $tindak_lanjut;
+
+	public $status = 'Tamu masuk';
+    public $prioritas = 'Prioritas 3';
 
 	// Variabel Hapus
 	public $hapus_id;
@@ -42,7 +47,7 @@ new class extends Component
 
 	public function resetFilter()
 	{
-		$this->reset(['search', 'filter_tanggal']);
+		$this->reset(['search', 'filter_tanggal', 'filter_status', 'filter_prioritas']);
 		$this->resetPage();
 	}
 
@@ -107,6 +112,8 @@ new class extends Component
 		$this->pekerjaan_status = $tamu->pekerjaan_status;
 		$this->alasan_kunjungan = $tamu->alasan_kunjungan;
 		$this->tindak_lanjut = $tamu->tindak_lanjut;
+		$this->status = $tamu->status;
+		$this->prioritas = $tamu->prioritas;
 
 		$this->resetValidation();
 		$this->js('$flux.modal("edit-tamu").show()');
@@ -122,6 +129,8 @@ new class extends Component
 			'pekerjaan_status' => 'nullable|string|max:255',
 			'alasan_kunjungan' => 'required|string',
 			'tindak_lanjut' => 'nullable|string',
+			'status' => 'required|in:Tamu masuk,Proses,Selesai',
+			'prioritas' => 'required|in:Prioritas 1,Prioritas 2,Prioritas 3',
 		]);
 
 		$tamu = BukuTamu::findOrFail($this->edit_id);
@@ -133,6 +142,8 @@ new class extends Component
 			'pekerjaan_status' => $this->pekerjaan_status,
 			'alasan_kunjungan' => $this->alasan_kunjungan,
 			'tindak_lanjut' => $this->tindak_lanjut,
+			'status' => $this->status,
+			'prioritas' => $this->prioritas,
 		]);
 
 		$this->js('$flux.modal("edit-tamu").close()');
@@ -156,6 +167,9 @@ new class extends Component
 
 	public function with()
 	{
+		// 1. Hitung total data keseluruhan (sebelum difilter)
+        $totalKeseluruhan = \App\Models\BukuTamu::count();
+
 		$query = BukuTamu::with('user')
 			->when($this->search, function ($q) {
 				$q->where(function ($sub) {
@@ -168,9 +182,23 @@ new class extends Component
 				$q->whereDate('tanggal_kunjungan', $this->filter_tanggal);
 			})
 			->orderBy('created_at', 'desc');
+        
+        if ($this->filter_status) {
+            $query->where('status', $this->filter_status);
+        }
+        
+        if ($this->filter_prioritas) {
+            $query->where('prioritas', $this->filter_prioritas);
+        }
+
+        // 3. Hitung total data setelah difilter (untuk Counting Info)
+        $totalDifilter = $query->count();
 
 		return [
-			'daftarTamu' => $query->paginate(15),
+			// 'daftarTamu' => $query->paginate(15),
+			'dataBukuTamu' => $query->orderBy('created_at', 'desc')->paginate(10),
+            'totalKeseluruhan' => $totalKeseluruhan,
+            'totalDifilter' => $totalDifilter,
 		];
 	}
 }
@@ -193,7 +221,25 @@ new class extends Component
 		
 		<flux:input wire:model.live="filter_tanggal" type="date" class="w-full md:w-48" />
 
-		@if($search || $filter_tanggal)
+		<div class="w-full sm:w-48">
+			<flux:select wire:model.live="filter_status" placeholder="Semua Status">
+				<option value="">Semua Status</option>
+				<option value="Tamu masuk">Tamu masuk</option>
+				<option value="Proses">Proses</option>
+				<option value="Selesai">Selesai</option>
+			</flux:select>
+		</div>
+		
+		<div class="w-full sm:w-48">
+			<flux:select wire:model.live="filter_prioritas" placeholder="Semua Prioritas">
+				<option value="">Semua Prioritas</option>
+				<option value="Prioritas 1">Prioritas 1</option>
+				<option value="Prioritas 2">Prioritas 2</option>
+				<option value="Prioritas 3">Prioritas 3</option>
+			</flux:select>
+		</div>
+
+		@if($search || $filter_tanggal || $filter_status || $filter_prioritas)
 			<flux:button wire:click="resetFilter" variant="subtle" icon="x-mark" class="px-3">Reset</flux:button>
 		@endif
 	</div>
@@ -204,83 +250,98 @@ new class extends Component
 		</div>
 
 		<div wire:loading.class="opacity-40" wire:target="search, filter_tanggal, gotoPage">
+			<!-- BAGIAN 1: STATISTIK & FILTER -->
+			<div class="mb-6 space-y-4">
+				<!-- Informasi Counting Data -->
+				<div class="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 w-fit">
+					<flux:icon.chart-bar class="w-4 h-4" />
+					<span>
+						Menampilkan <strong class="text-zinc-900 dark:text-zinc-100">{{ $totalDifilter }}</strong> data
+						@if($search || $filter_status || $filter_prioritas)
+							(dari total {{ $totalKeseluruhan }} data)
+						@endif
+					</span>
+				</div>
+
+			</div>
+
+			<!-- BAGIAN 2: TABEL DENGAN NOMOR URUT -->
 			<flux:table>
 				<flux:table.columns>
+					<flux:table.column>No.</flux:table.column>
 					<flux:table.column>Tanggal</flux:table.column>
-					<flux:table.column>Identitas Pengunjung</flux:table.column>
+					<flux:table.column>Info Tamu</flux:table.column>
 					<flux:table.column>Keterangan & Keperluan</flux:table.column>
-					<flux:table.column>Tindak Lanjut</flux:table.column>
+					<flux:table.column>Prioritas</flux:table.column>
+					<flux:table.column>Status</flux:table.column>
 					<flux:table.column>Aksi</flux:table.column>
 				</flux:table.columns>
 
 				<flux:table.rows>
-					@forelse ($daftarTamu as $tamu)
-					<flux:table.row>
-						<flux:table.cell class="align-top">
-							<div class="font-medium whitespace-nowrap">{{ \Carbon\Carbon::parse($tamu->tanggal_kunjungan)->translatedFormat('d M Y') }}</div>
-							<div class="text-[10px] text-zinc-500 mt-1">Penerima: {{ $tamu->user->name ?? '-' }}</div>
-						</flux:table.cell>
+					@forelse ($dataBukuTamu as $index => $tamu)
+						<flux:table.row>
+							<!-- Kolom No Urut (Akurat meski pindah halaman pagination) -->
+							<flux:table.cell class="font-medium text-zinc-500">
+								{{ $dataBukuTamu->firstItem() + $index }}
+							</flux:table.cell>
 
-						<flux:table.cell class="align-top">
-							<div class="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-								{{ $tamu->nama_pengunjung }}
-								@if($tamu->kunjungan_ke > 1)
-									<span class="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider" title="Kunjungan ke-{{ $tamu->kunjungan_ke }}">
-										Ke-{{ $tamu->kunjungan_ke }}
-									</span>
-								@endif
-							</div>
-							<div class="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-								<span class="font-medium">Instansi:</span> {{ $tamu->asal_instansi ?? '-' }}
-							</div>
-							<div class="text-[11px] text-zinc-500 flex items-center gap-2 mt-0.5">
-								<span><flux:icon.phone class="w-3 h-3 inline pb-0.5" /> {{ $tamu->kontak_wa ?? '-' }}</span>
-								<span>•</span>
-								<span>{{ $tamu->pekerjaan_status ?? '-' }}</span>
-							</div>
-						</flux:table.cell>
-
-						<flux:table.cell class="align-top whitespace-normal min-w-[200px]">
-							<p class="text-sm text-zinc-700 dark:text-zinc-300 line-clamp-3" title="{{ $tamu->alasan_kunjungan }}">
-								{{ $tamu->alasan_kunjungan }}
-							</p>
-						</flux:table.cell>
-
-						<flux:table.cell class="align-top whitespace-normal min-w-[150px]">
-							@if($tamu->tindak_lanjut)
-								<div class="text-sm text-emerald-700 dark:text-emerald-400 line-clamp-3">
-									<flux:icon.check-circle class="w-3.5 h-3.5 inline pb-0.5 text-emerald-500" />
-									{{ $tamu->tindak_lanjut }}
-								</div>
-							@else
-								<span class="text-xs text-zinc-400 italic bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">Belum ada tindak lanjut</span>
-							@endif
-						</flux:table.cell>
-
-						<flux:table.cell class="align-top text-right min-w-[120px]">
-							<a href="{{ route('buku-tamu.cetak', ['nama' => urlencode($tamu->nama_pengunjung)]) }}" target="_blank">
-								<flux:button size="sm" variant="ghost" icon="printer" title="Cetak Riwayat Kunjungan" class="text-zinc-600 hover:text-zinc-900" />
-							</a>
-
-							<flux:button wire:click="edit({{ $tamu->id }})" size="sm" variant="ghost" icon="pencil-square" title="Edit / Isi Tindak Lanjut" class="text-indigo-600" />
+							<flux:table.cell class="font-medium text-zinc-900 dark:text-white">
+								{{ \Carbon\Carbon::parse($tamu->tanggal_kunjungan)->translatedFormat('l, d F Y') }}
+							</flux:table.cell>
 							
-							@if(Auth::user()->role === 'admin')
-								<flux:button wire:click="konfirmasiHapus({{ $tamu->id }})" size="sm" variant="ghost" color="danger" icon="trash" />
-							@endif
-						</flux:table.cell>
-					</flux:table.row>
+							<flux:table.cell class="font-medium text-zinc-900 dark:text-white">
+								{{ $tamu->nama_pengunjung ?? '-' }}
+								<br>
+								<span class="text-sm text-zinc-500">Telp. {{ $tamu->kontak_wa ?? '-' }}</span>
+								<br>
+								<span class="text-sm text-zinc-500">Asal: {{ $tamu->asal_instansi ?? '-' }}</span>
+							</flux:table.cell>
+
+							<flux:table.cell class="font-medium text-zinc-900 dark:text-white">
+								{{ $tamu->alasan_kunjungan ?? '-' }}
+								@if($tamu->tindak_lanjut)
+									<br>
+									<span class="text-sm text-zinc-500">Tindak Lanjut: {{ $tamu->tindak_lanjut }}</span>
+								@endif
+							</flux:table.cell>
+							
+							<flux:table.cell>
+								<flux:badge size="sm" color="{{ $tamu->prioritas == 'Prioritas 1' ? 'danger' : ($tamu->prioritas == 'Prioritas 2' ? 'warning' : 'zinc') }}">
+									{{ $tamu->prioritas ?? '-' }}
+								</flux:badge>
+							</flux:table.cell>
+
+							<flux:table.cell>
+								<flux:badge size="sm" color="{{ $tamu->status == 'Selesai' ? 'success' : ($tamu->status == 'Proses' ? 'blue' : 'zinc') }}">
+									{{ $tamu->status ?? 'Tamu masuk' }}
+								</flux:badge>
+							</flux:table.cell>
+							<flux:table.cell class="align-top text-right min-w-[120px]">
+								<a href="{{ route('buku-tamu.cetak', ['nama' => urlencode($tamu->nama_pengunjung)]) }}" target="_blank">
+									<flux:button size="sm" variant="ghost" icon="printer" title="Cetak Riwayat Kunjungan" class="text-zinc-600 hover:text-zinc-900" />
+								</a>
+
+								<flux:button wire:click="edit({{ $tamu->id }})" size="sm" variant="ghost" icon="pencil-square" title="Edit / Isi Tindak Lanjut" class="text-indigo-600" />
+								
+								@if(Auth::user()->role === 'admin')
+									<flux:button wire:click="konfirmasiHapus({{ $tamu->id }})" size="sm" variant="ghost" color="danger" icon="trash" />
+								@endif
+							</flux:table.cell>
+						</flux:table.row>
 					@empty
-					<flux:table.row>
-						<flux:table.cell colspan="5" class="text-center text-zinc-500 py-8">
-							<flux:icon.clipboard-document-list class="w-8 h-8 mx-auto text-zinc-300 mb-2" />
-							Belum ada catatan kunjungan yang ditemukan.
-						</flux:table.cell>
-					</flux:table.row>
+						<flux:table.row>
+							<flux:table.cell colspan="7" class="text-center text-zinc-500 py-8">
+								Data tamu tidak ditemukan.
+							</flux:table.cell>
+						</flux:table.row>
 					@endforelse
 				</flux:table.rows>
 			</flux:table>
-			
-			<div class="mt-4">{{ $daftarTamu->links() }}</div>
+
+			<!-- Pagination -->
+			<div class="mt-4">
+				{{ $dataBukuTamu->links() }}
+			</div>
 		</div>
 	</flux:card>
 
@@ -306,6 +367,16 @@ new class extends Component
 					<flux:textarea wire:model="alasan_kunjungan" label="Alasan Datang / Keterangan" rows="3" placeholder="Sampaikan secara ringkas tujuan kedatangan..." required />
 				</div>
 			</div>
+
+			<!-- Dropdown Prioritas -->
+			<flux:field class="mt-4">
+				<flux:label>Tingkat Prioritas</flux:label>
+				<flux:select wire:model="prioritas">
+					<option value="Prioritas 1">Prioritas 1</option>
+					<option value="Prioritas 2">Prioritas 2</option>
+					<option value="Prioritas 3">Prioritas 3</option>
+				</flux:select>
+			</flux:field>
 
 			<div class="flex justify-end gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-700">
 				<flux:modal.close><flux:button variant="ghost">Batal</flux:button></flux:modal.close>
@@ -336,9 +407,29 @@ new class extends Component
 				</div>
 			</div>
 
+			<!-- Dropdown Prioritas -->
+			<flux:field class="mt-4">
+				<flux:label>Tingkat Prioritas</flux:label>
+				<flux:select wire:model="prioritas">
+					<option value="Prioritas 1">Prioritas 1</option>
+					<option value="Prioritas 2">Prioritas 2</option>
+					<option value="Prioritas 3">Prioritas 3</option>
+				</flux:select>
+			</flux:field>
+
 			<div class="md:col-span-2 pt-4 border-t-2 border-indigo-100 dark:border-indigo-900/30">
-				<flux:textarea wire:model="tindak_lanjut" label="Tindak Lanjut (Diisi setelah selesai)" rows="3" placeholder="Catat hasil diskusi atau tindakan lanjutan yang diberikan..." class="bg-indigo-50/50 dark:bg-indigo-900/10" />
+				<flux:textarea wire:model="tindak_lanjut" label="Tindak Lanjut" rows="3" placeholder="Catat hasil diskusi atau tindakan lanjutan yang diberikan..." class="bg-indigo-50/50 dark:bg-indigo-900/10" />
 			</div>
+
+			<!-- Dropdown Status -->
+			<flux:field class="mt-4">
+				<flux:label>Status Tindak Lanjut</flux:label>
+				<flux:select wire:model="status">
+					<option value="Tamu masuk">Tamu masuk</option>
+					<option value="Proses">Proses</option>
+					<option value="Selesai">Selesai</option>
+				</flux:select>
+			</flux:field>
 
 			<div class="flex justify-end gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-700">
 				<flux:modal.close><flux:button variant="ghost">Batal</flux:button></flux:modal.close>
