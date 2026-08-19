@@ -15,6 +15,9 @@ new class extends Component { // Sesuaikan nama class jika berbeda
     use WithPagination, WithFileUploads;
     
     #[Layout('layouts.app')]
+
+    // Properti untuk menyimpan ID transaksi yang akan dihapus
+    public $transaksi_id;
     
     public string $search = '';
     public string $sortBy = 'tanggal_bayar'; 
@@ -143,6 +146,28 @@ new class extends Component { // Sesuaikan nama class jika berbeda
         \Flux::toast('Data transaksi berhasil diperbarui!', variant: 'success');
     }
 
+    // Fungsi saat tombol sampah diklik
+    public function konfirmasiHapus($id)
+    {
+        $this->transaksi_id = $id;
+        $this->js('$flux.modal("hapus-transaksi").show()');
+    }
+
+    // Fungsi saat tombol "Ya, Hapus" di dalam modal diklik
+    public function hapusTransaksi()
+    {
+        if ($this->transaksi_id) {
+            \App\Models\Transaksi::findOrFail($this->transaksi_id)->delete();
+            
+            // Bersihkan properti ID
+            $this->transaksi_id = null; 
+            
+            // Tutup modal dan tampilkan notifikasi
+            $this->js('$flux.modal("hapus-transaksi").close(); $flux.modal("edit-transaksi").close();');
+            \Flux::toast('Riwayat pembayaran berhasil dihapus.', variant: 'success');
+        }
+    }
+
     // --- REUSABLE QUERY UNTUK TABLE & EXPORT ---
     private function buildQuery()
     {
@@ -265,6 +290,7 @@ new class extends Component { // Sesuaikan nama class jika berbeda
             
             <flux:table>
                 <flux:table.columns>
+                    <flux:table.column>No.</flux:table.column>
                     <flux:table.column sortable :sorted="$sortBy === 'tanggal_bayar'" :direction="$sortDir" wire:click="setSortBy('tanggal_bayar')">Tanggal Masuk</flux:table.column>
                     <flux:table.column>Identitas & Kategori</flux:table.column>
                     <flux:table.column sortable :sorted="$sortBy === 'periode_bulan'" :direction="$sortDir" wire:click="setSortBy('periode_bulan')">Untuk Periode</flux:table.column>
@@ -279,6 +305,9 @@ new class extends Component { // Sesuaikan nama class jika berbeda
                 <flux:table.rows>
                     @forelse ($transaksis as $trx)
                     <flux:table.row>
+                        <flux:table.cell>
+							<div class="text-sm text-zinc-500">{{ $loop->iteration + ($transaksis->currentPage() - 1) * $transaksis->perPage() }}</div>
+						</flux:table.cell>
                         <flux:table.cell>
                             <div class="font-medium">{{ \Carbon\Carbon::parse($trx->tanggal_bayar)->translatedFormat('d M Y') }}</div>
                             <div class="text-[10px] text-zinc-400">{{ $trx->created_at->format('H:i') }} WITA</div>
@@ -416,7 +445,28 @@ new class extends Component { // Sesuaikan nama class jika berbeda
 
             <div class="flex justify-end gap-2 pt-2">
                 <flux:button type="button" x-on:click="$flux.modal('edit-transaksi').close()" variant="ghost">Batal</flux:button>
+                <flux:button wire:click="konfirmasiHapus({{ $trx->id }})" icon="trash" class="text-red-500 hover:text-red-700 hover:bg-red-50" />
                 <flux:button type="submit" variant="primary">Simpan Perubahan</flux:button>
+            </div>
+        </form>
+    </flux:modal>
+    <!-- Modal Konfirmasi Hapus Transaksi -->
+    <flux:modal name="hapus-transaksi" class="min-w-[22rem]">
+        <form wire:submit.prevent="hapusTransaksi">
+            <div class="space-y-6">
+                <div>
+                    <flux:heading size="lg">Hapus Riwayat Pembayaran</flux:heading>
+                    <flux:subheading>
+                        Apakah Anda yakin ingin menghapus riwayat transaksi ini? Tindakan ini tidak dapat dibatalkan dan akan mempengaruhi laporan keuangan.
+                    </flux:subheading>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <!-- Tombol Batal -->
+                    <flux:button type="button" x-on:click="$flux.modal('hapus-transaksi').close()" variant="ghost">Batal</flux:button>
+                    <!-- Tombol Hapus (merah) -->
+                    <flux:button type="submit" variant="danger">Ya, Hapus</flux:button>
+                </div>
             </div>
         </form>
     </flux:modal>
