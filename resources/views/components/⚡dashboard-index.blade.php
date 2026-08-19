@@ -208,16 +208,16 @@ new class extends Component {
 					<flux:table>
 						<flux:table.columns>
 							<flux:table.column>Nama Petugas</flux:table.column>
-							<flux:table.column>Target</flux:table.column>
-							<flux:table.column>Terkumpul</flux:table.column>
+							<flux:table.column align="right">Target</flux:table.column>
+							<flux:table.column align="right">Terkumpul</flux:table.column>
 							<flux:table.column>Kinerja</flux:table.column>
 						</flux:table.columns>
 						<flux:table.rows>
 							@forelse ($kinerjaPetugas as $petugas)
 							<flux:table.row>
 								<flux:table.cell class="font-semibold">{{ $petugas->name }}</flux:table.cell>
-								<flux:table.cell class="text-xs text-zinc-500">Rp {{ number_format($petugas->target, 0, ',', '.') }}</flux:table.cell>
-								<flux:table.cell class="align-right font-mono text-emerald-600 font-bold">Rp {{ number_format($petugas->total_kolek, 0, ',', '.') }}</flux:table.cell>
+								<flux:table.cell align="right" class=" text-right text-xs text-zinc-500">Rp {{ number_format($petugas->target, 0, ',', '.') }}</flux:table.cell>
+								<flux:table.cell align="right" class="text-right font-mono text-emerald-600 font-bold">Rp {{ number_format($petugas->total_kolek, 0, ',', '.') }}</flux:table.cell>
 								<flux:table.cell>
 									<span class="font-bold {{ $petugas->persentase >= 100 ? 'text-green-500' : 'text-amber-500' }}">
 										{{ $petugas->persentase }}%
