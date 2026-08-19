@@ -122,7 +122,7 @@ new class extends Component {
         </flux:badge>
     </div>
 
-    <div class="space-y-3 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+    <div class="h-[650px] flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
         @forelse($daftarTunggakan as $tunggakan)
             <a href="{{ route('transaksi.input', ['wp_id' => $tunggakan->id]) }}" wire:navigate class="group flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-all cursor-pointer">
                 <div>

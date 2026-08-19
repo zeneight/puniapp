@@ -39,44 +39,61 @@ new class extends Component {
 		$user = Auth::user();
 		$modeTahunan = empty($this->filterBulan);
 
-		// 1. Ambil 5 Transaksi Terakhir (Sesuaikan dengan filter)
+		// 1. Ambil 10 Transaksi Terakhir (Ubah limit dari 5 ke 10)
 		$queryTransaksi = Transaksi::with(['wajibPunia', 'user'])
-								   ->where('periode_tahun', $this->filterTahun)
-								   ->orderBy('created_at', 'desc')
-								   ->limit(5);
+								->where('periode_tahun', $this->filterTahun)
+								->orderBy('created_at', 'desc')
+								->limit(10); // <--- UBAH DI SINI
 
-		// Jika bukan "Semua Bulan", tambahkan filter bulan
 		if (!$modeTahunan) {
 			$queryTransaksi->where('periode_bulan', $this->filterBulan);
 		}
-
 		if ($user->role === 'inputer') {
 			$queryTransaksi->where('user_id', $user->id);
 		}
 
-		// 2. WIDGET KHUSUS ADMIN: Hitung Kinerja Petugas
+		// 2. WIDGET KHUSUS ADMIN: Hitung Kinerja Petugas & Persentase
 		$kinerjaPetugas = collect();
+		$persentaseKeseluruhan = 0; // State untuk capain total
+
 		if ($user->role === 'admin') {
-			// Gunakan 'use' agar variabel dari luar bisa dibaca di dalam fungsi map
 			$kinerjaPetugas = User::where('role', 'inputer')->get()->map(function($petugas) use ($modeTahunan) {
 				
+				// Hitung Terkumpul
 				$q = Transaksi::where('user_id', $petugas->id)
-							  ->where('periode_tahun', $this->filterTahun);
-				
+							->where('periode_tahun', $this->filterTahun);
 				if (!$modeTahunan) {
 					$q->where('periode_bulan', $this->filterBulan);
 				}
-				
-				$petugas->total_kolek = $q->sum('nominal');
+				$terkumpul = $q->sum('nominal'); // Atau 'nominal_bayar', sesuaikan DB Bli
+
+				// Hitung Target (Total Pagu dari WP yang Aktif)
+				$target = \App\Models\WajibPunia::where('user_id', $petugas->id)
+												->where('is_active', 1)
+												->sum('pagu_dudukan');
+
+				// Hitung Persentase Masing-masing
+				$persentase = $target > 0 ? round(($terkumpul / $target) * 100, 1) : 0;
+
+				// Masukkan ke object petugas
+				$petugas->target = $target;
+				$petugas->total_kolek = $terkumpul;
+				$petugas->persentase = $persentase;
+
 				return $petugas;
-				
-			})->sortByDesc('total_kolek'); // Urutkan dari yang kinerjanya tertinggi
+			})->sortByDesc('total_kolek');
+
+			// Hitung Persentase Keseluruhan
+			$totalSemuaTerkumpul = $kinerjaPetugas->sum('total_kolek');
+			$totalSemuaTarget = $kinerjaPetugas->sum('target');
+			$persentaseKeseluruhan = $totalSemuaTarget > 0 ? round(($totalSemuaTerkumpul / $totalSemuaTarget) * 100, 1) : 0;
 		}
 
 		return [
 			'transaksiTerbaru' => $queryTransaksi->get(),
 			'kinerjaPetugas' => $kinerjaPetugas,
-			'modeTahunan' => $modeTahunan // Kirim status mode ke HTML
+			'modeTahunan' => $modeTahunan,
+			'persentaseKeseluruhan' => $persentaseKeseluruhan // Kirim ini ke Blade
 		];
 	}
 };
@@ -146,15 +163,15 @@ new class extends Component {
 	</div>
 
 	<!-- 3. Grid Dua Kolom -->
-	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
-		<div class="relative">
+		<div class="relative h-full flex flex-col">
 			<div wire:loading wire:target="filterBulan, filterTahun" class="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
 				<div class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 shadow-sm rounded-full border border-zinc-200 dark:border-zinc-700">
 					<svg class="w-4 h-4 animate-spin text-zinc-800 dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
 				</div>
 			</div>
-			<div wire:loading.class="opacity-40 pointer-events-none transition-opacity duration-200" wire:target="filterBulan, filterTahun">
+			<div class="h-full" wire:loading.class="opacity-40 pointer-events-none transition-opacity duration-200" wire:target="filterBulan, filterTahun">
 				<livewire:dashboard-daftar-tunggakan :bulan="$filterBulan" :tahun="$filterTahun" />
 			</div>
 		</div>
@@ -172,26 +189,44 @@ new class extends Component {
 				</div>
 
 				<div wire:loading.class="opacity-40 pointer-events-none transition-opacity duration-200" wire:target="filterBulan, filterTahun">
-					<div class="mb-4">
-                        <flux:heading size="lg">Kinerja Petugas Lapangan</flux:heading>
-                        <flux:subheading>
-                            {{ $modeTahunan ? 'Total punia yang dikumpulkan sepanjang tahun ' . $filterTahun . '.' : 'Total punia yang dikumpulkan pada bulan ' . $filterBulan . ' / ' . $filterTahun . '.' }}
-                        </flux:subheading>
-                    </div>
+					<div class="mb-4 flex justify-between items-start">
+						<div>
+							<flux:heading size="lg">Kinerja Petugas Lapangan</flux:heading>
+							<flux:subheading>
+								{{ $modeTahunan ? 'Total punia yang dikumpulkan sepanjang tahun ' . $filterTahun . '.' : 'Total punia yang dikumpulkan pada bulan ' . $filterBulan . ' / ' . $filterTahun . '.' }}
+							</flux:subheading>
+						</div>
+						<!-- Capaian Keseluruhan -->
+						<div class="text-right">
+							<div class="text-[10px] text-zinc-500 mb-1">Capaian Keseluruhan</div>
+							<flux:badge color="{{ $persentaseKeseluruhan >= 100 ? 'success' : 'warning' }}" size="sm">
+								{{ $persentaseKeseluruhan }}%
+							</flux:badge>
+						</div>
+					</div>
+
 					<flux:table>
 						<flux:table.columns>
 							<flux:table.column>Nama Petugas</flux:table.column>
-							<flux:table.column>Total Terkumpul</flux:table.column>
+							<flux:table.column>Target</flux:table.column>
+							<flux:table.column>Terkumpul</flux:table.column>
+							<flux:table.column>Kinerja</flux:table.column>
 						</flux:table.columns>
 						<flux:table.rows>
 							@forelse ($kinerjaPetugas as $petugas)
 							<flux:table.row>
 								<flux:table.cell class="font-semibold">{{ $petugas->name }}</flux:table.cell>
-								<flux:table.cell class="font-mono text-emerald-600 font-bold">Rp {{ number_format($petugas->total_kolek, 0, ',', '.') }}</flux:table.cell>
+								<flux:table.cell class="text-xs text-zinc-500">Rp {{ number_format($petugas->target, 0, ',', '.') }}</flux:table.cell>
+								<flux:table.cell class="align-right font-mono text-emerald-600 font-bold">Rp {{ number_format($petugas->total_kolek, 0, ',', '.') }}</flux:table.cell>
+								<flux:table.cell>
+									<span class="font-bold {{ $petugas->persentase >= 100 ? 'text-green-500' : 'text-amber-500' }}">
+										{{ $petugas->persentase }}%
+									</span>
+								</flux:table.cell>
 							</flux:table.row>
 							@empty
 							<flux:table.row>
-								<flux:table.cell colspan="2" class="text-center text-zinc-500">Belum ada data petugas.</flux:table.cell>
+								<flux:table.cell colspan="4" class="text-center text-zinc-500">Belum ada data petugas.</flux:table.cell>
 							</flux:table.row>
 							@endforelse
 						</flux:table.rows>
@@ -211,7 +246,7 @@ new class extends Component {
 				<div wire:loading.class="opacity-40 pointer-events-none transition-opacity duration-200" wire:target="filterBulan, filterTahun">
 					<div class="mb-4 flex justify-between items-center">
                         <div>
-                            <flux:heading size="lg">5 Transaksi Terakhir</flux:heading>
+                            <flux:heading size="lg">10 Transaksi Terakhir</flux:heading>
                             <flux:subheading>
                                 {{ $modeTahunan ? 'Aktivitas terbaru di tahun ' . $filterTahun . '.' : 'Aktivitas terbaru di bulan ini.' }}
                             </flux:subheading>
