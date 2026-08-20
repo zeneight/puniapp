@@ -478,8 +478,6 @@ new class extends Component {
                             <div class="font-semibold">{{ $wp->nama }}</div>
                             <div class="text-xs text-zinc-500">
                                 {{ $wp->jenisUsaha->nama_jenis_usaha ?? '-' }} • Br. {{ $wp->banjar->nama_banjar ?? '-' }}
-								<br>
-								{{ $wp->alamat ?? '-' }}
                             </div>
                             
                             @if(Auth::user()->role === 'admin')
