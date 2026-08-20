@@ -95,37 +95,40 @@ new class extends Component {
 	}
 
 	// --- FUNGSI CREATE ---
-	public function simpan()
-	{
-		$this->validate();
-		WajibPunia::create([
-			'nama' => $this->nama,
-			'no_registrasi' => $this->no_registrasi,
-			'tgl_registrasi' => $this->tgl_registrasi,
-			'pagu_dudukan' => $this->pagu_dudukan,
-			'kategori_id' => $this->kategori_id,
-			'is_active' => $this->is_active,
-			// 'pemilik_id' => $this->pemilik_id,
-			'pemilik_nama' => $this->pemilik_nama,
-			'jenis_usaha_id' => $this->jenis_usaha_id,
-			'banjar_id' => $this->banjar_id,
-			'alamat' => $this->alamat,
-			'keterangan' => $this->keterangan,
-			'kontak_pengelola' => $this->kontak_pengelola,
-			'latitude' => $this->latitude,
-			'longitude' => $this->longitude,
-			'user_id' => $this->user_id,
-		]);
+    public function simpan()
+    {
+        $this->validate();
+        
+        // TAMBAHKAN $wp = DI SINI untuk menangkap ID data yang baru dibuat
+        $wp = WajibPunia::create([
+            'nama' => $this->nama,
+            'no_registrasi' => $this->no_registrasi,
+            'tgl_registrasi' => $this->tgl_registrasi,
+            'pagu_dudukan' => $this->pagu_dudukan,
+            'kategori_id' => $this->kategori_id,
+            'is_active' => $this->is_active,
+            // 'pemilik_id' => $this->pemilik_id,
+            'pemilik_nama' => $this->pemilik_nama,
+            'jenis_usaha_id' => $this->jenis_usaha_id,
+            'banjar_id' => $this->banjar_id,
+            'alamat' => $this->alamat,
+            'keterangan' => $this->keterangan,
+            'kontak_pengelola' => $this->kontak_pengelola,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'user_id' => $this->user_id,
+        ]);
 
-		// Panggil mesin kompresi & upload
-		if($this->dokumens) {
-			$this->prosesUpload($wp->id);
-		}
-		
-		$this->batal();
-		$this->js('$flux.modal("tambah-wp").close()');
-		\Flux::toast('Data Wajib Punia berhasil ditambahkan.', variant: 'success');
-	}
+        // Panggil mesin kompresi & upload
+        if($this->dokumens) {
+            // Sekarang $wp->id sudah ada nilainya!
+            $this->prosesUpload($wp->id);
+        }
+        
+        $this->batal();
+        $this->js('$flux.modal("tambah-wp").close()');
+        \Flux::toast('Data Wajib Punia berhasil ditambahkan.', variant: 'success');
+    }
 
 	// --- FUNGSI UPDATE ---
 	public function edit($id)
