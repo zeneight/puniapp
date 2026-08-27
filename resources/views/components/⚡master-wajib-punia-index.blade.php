@@ -549,17 +549,38 @@ new class extends Component {
 				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800" wire:ignore>
 					<flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
 					
-					<div class="grid grid-cols-2 gap-4 mb-3">
-						<flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
-						<flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
-					</div>
-					
-					<div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
-
-					<!-- Alpine.js untuk membungkus logika Leaflet -->
+					<!-- Alpine.js Ditarik ke atas agar membungkus semua form koordinat -->
 					<div x-data="{
 							map: null,
 							marker: null,
+							
+							// FUNGSI BARU: Tangkap event paste dari Google Maps
+							handlePaste(e) {
+								let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+								
+								// Cek apakah ada koma (format khas Google Maps)
+								if (pastedText.includes(',')) {
+									e.preventDefault(); // Hentikan paste biasa
+									
+									let parts = pastedText.split(',');
+									let lat = parseFloat(parts[0].trim());
+									let lng = parseFloat(parts[1].trim());
+
+									// Pastikan yang di-paste benar-benar angka
+									if (!isNaN(lat) && !isNaN(lng)) {
+										// 1. Update form Livewire
+										$wire.set('latitude', lat.toFixed(8));
+										$wire.set('longitude', lng.toFixed(8));
+										
+										// 2. Langsung geser pin peta saat itu juga
+										this.syncMap(lat, lng);
+										
+										// 3. Tampilkan format rapi di dalam kotaknya
+										e.target.value = lat.toFixed(8) + ', ' + lng.toFixed(8);
+									}
+								}
+							},
+
 							init() {
 								// 1. MATIKAN SCROLL ZOOM
 								this.map = L.map($refs.mapContainer, {
@@ -599,6 +620,7 @@ new class extends Component {
 								// 5. Pantau perubahan data Livewire (termasuk saat form di-reset)
 								$watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
 							},
+							
 							updateMarker(lat, lng) {
 								if (this.marker) {
 									this.marker.setLatLng([lat, lng]);
@@ -614,11 +636,12 @@ new class extends Component {
 									});
 								}
 							},
+							
 							syncMap(lat, lng) {
 								if (lat && lng) {
-									// Jika ada koordinat (Mode Edit / Peta Diklik)
+									// Jika ada koordinat (Mode Edit / Peta Diklik / Di-paste)
 									this.updateMarker(lat, lng);
-									this.map.setView([lat, lng], this.map.getZoom());
+									this.map.setView([lat, lng], 16); // Zoom lebih dekat saat di-paste
 								} else {
 									// JIKA KOORDINAT KOSONG (Mode Tambah Data Baru / Form Di-reset)
 									if (this.marker) {
@@ -629,12 +652,26 @@ new class extends Component {
 									this.map.setView([-8.650000, 115.216667], 12);
 								}
 							}
-						 }"
-						 class="relative z-0">
+						}" class="relative z-0">
 						
+						<!-- UI BARU: Kotak Khusus untuk Paste -->
+						<div class="mb-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/50">
+							<flux:field>
+								<flux:label class="text-blue-800 dark:text-blue-300 font-semibold mb-1">Cari dari Google Maps?</flux:label>
+								<!-- x-on:paste menangkap event paste dari user -->
+								<flux:input x-on:paste="handlePaste($event)" icon="magnifying-glass" placeholder="Paste koordinat Google Maps (Contoh: -8.647961, 115.169800) di sini..." />
+							</flux:field>
+						</div>
+
+						<div class="grid grid-cols-2 gap-4 mb-3">
+							<flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
+							<flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
+						</div>
+						
+						<div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
+
 						<div x-ref="mapContainer" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
 					</div>
-					<!-- div x-data -->
 				</div>
 				
 				<flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
@@ -789,17 +826,38 @@ new class extends Component {
 				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800" wire:ignore>
 					<flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
 					
-					<div class="grid grid-cols-2 gap-4 mb-3">
-						<flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
-						<flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
-					</div>
-					
-					<div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
-
-					<!-- Alpine.js untuk membungkus logika Leaflet -->
+					<!-- Alpine.js Ditarik ke atas agar membungkus semua form koordinat -->
 					<div x-data="{
 							map: null,
 							marker: null,
+							
+							// FUNGSI BARU: Tangkap event paste dari Google Maps
+							handlePaste(e) {
+								let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+								
+								// Cek apakah ada koma (format khas Google Maps)
+								if (pastedText.includes(',')) {
+									e.preventDefault(); // Hentikan paste biasa
+									
+									let parts = pastedText.split(',');
+									let lat = parseFloat(parts[0].trim());
+									let lng = parseFloat(parts[1].trim());
+
+									// Pastikan yang di-paste benar-benar angka
+									if (!isNaN(lat) && !isNaN(lng)) {
+										// 1. Update form Livewire
+										$wire.set('latitude', lat.toFixed(8));
+										$wire.set('longitude', lng.toFixed(8));
+										
+										// 2. Langsung geser pin peta saat itu juga
+										this.syncMap(lat, lng);
+										
+										// 3. Tampilkan format rapi di dalam kotaknya
+										e.target.value = lat.toFixed(8) + ', ' + lng.toFixed(8);
+									}
+								}
+							},
+
 							init() {
 								// 1. MATIKAN SCROLL ZOOM
 								this.map = L.map($refs.mapContainer, {
@@ -839,6 +897,7 @@ new class extends Component {
 								// 5. Pantau perubahan data Livewire (termasuk saat form di-reset)
 								$watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
 							},
+							
 							updateMarker(lat, lng) {
 								if (this.marker) {
 									this.marker.setLatLng([lat, lng]);
@@ -854,11 +913,12 @@ new class extends Component {
 									});
 								}
 							},
+							
 							syncMap(lat, lng) {
 								if (lat && lng) {
-									// Jika ada koordinat (Mode Edit / Peta Diklik)
+									// Jika ada koordinat (Mode Edit / Peta Diklik / Di-paste)
 									this.updateMarker(lat, lng);
-									this.map.setView([lat, lng], this.map.getZoom());
+									this.map.setView([lat, lng], 16); // Zoom lebih dekat saat di-paste
 								} else {
 									// JIKA KOORDINAT KOSONG (Mode Tambah Data Baru / Form Di-reset)
 									if (this.marker) {
@@ -869,12 +929,26 @@ new class extends Component {
 									this.map.setView([-8.650000, 115.216667], 12);
 								}
 							}
-						 }"
-						 class="relative z-0">
+						}" class="relative z-0">
 						
+						<!-- UI BARU: Kotak Khusus untuk Paste -->
+						<div class="mb-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/50">
+							<flux:field>
+								<flux:label class="text-blue-800 dark:text-blue-300 font-semibold mb-1">Cari dari Google Maps?</flux:label>
+								<!-- x-on:paste menangkap event paste dari user -->
+								<flux:input x-on:paste="handlePaste($event)" icon="magnifying-glass" placeholder="Paste koordinat Google Maps (Contoh: -8.647961, 115.169800) di sini..." />
+							</flux:field>
+						</div>
+
+						<div class="grid grid-cols-2 gap-4 mb-3">
+							<flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
+							<flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
+						</div>
+						
+						<div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi tempat usaha.</div>
+
 						<div x-ref="mapContainer" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
 					</div>
-					<!-- div x-data -->
 				</div>
 
 				<flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
