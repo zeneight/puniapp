@@ -1,9 +1,7 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Models\BukuTamu;
-
 use App\Livewire\Master\BanjarIndex;
-
 
 Route::view('/', 'welcome')->name('home');
 
@@ -44,6 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //     return view('cetak.buku-tamu', compact('nama_pengunjung', 'riwayatKunjungan'));
     // })->name('buku-tamu.cetak')->middleware('auth');
+    
 });
 
 require __DIR__.'/settings.php';
