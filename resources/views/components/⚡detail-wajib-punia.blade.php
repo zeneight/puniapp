@@ -15,39 +15,31 @@ new class extends Component
     public $tahunPilih;
     public $daftarTahun = [];
 
-    // Fungsi mount akan menangkap parameter {id} dari Route atau saat dipanggil
     public function mount($id)
     {
-        // Simpan ID Wajib Punia untuk digunakan di computed property
         $this->wpId = $id;
 
-        // Ambil data beserta relasi kategori dan transaksi (urut terbaru)
-        $this->wp = WajibPunia::with(['kategori', 'dokumens' => function($query) {
+        // PERBAIKAN 1: Tambahkan relasi petugas, banjar, dan jenisUsaha agar datanya terbaca
+        $this->wp = WajibPunia::with(['kategori', 'jenisUsaha', 'banjar', 'petugas', 'dokumens' => function($query) {
             $query->latest();
         }])->findOrFail($id);
 
-        // dd($this->wp);
-
         // Cek kelengkapan data
         $kolomWajib = [
-            'alamat'            => 'Alamat Lengkap',
-            'kontak_pengelola'  => 'Nomor HP',
-            // 'file_dokumen'      => 'File Dokumen Pendukung'
+            'alamat'           => 'Alamat Lengkap',
+            'kontak_pengelola' => 'Nomor HP',
         ];
 
         foreach ($kolomWajib as $kolom => $label) {
-            // Jika kolom di database kosong (null atau string kosong)
             if (empty($this->wp->$kolom)) {
                 $this->dataKurang[] = $label;
             }
         }
 
-        // Cek dari relasi dokumens
         if ($this->wp->dokumens->isEmpty()) {
             $this->dataKurang[] = 'File Dokumen Pendukung';
         }
 
-        // 2. Ambil daftar tahun yang pernah dibayar oleh user ini untuk isi Dropdown
         $this->daftarTahun = Transaksi::where('wajib_punia_id', $id)
             ->select('periode_tahun')
             ->distinct()
@@ -55,16 +47,14 @@ new class extends Component
             ->pluck('periode_tahun')
             ->toArray();
 
-        // 3. Set default tahun terpilih (Tahun terbaru atau tahun berjalan)
         if (count($this->daftarTahun) > 0) {
             $this->tahunPilih = $this->daftarTahun[0];
         } else {
             $this->tahunPilih = date('Y');
-            $this->daftarTahun = [date('Y')]; // Jaga-jaga jika kosong, tampilkan tahun ini
+            $this->daftarTahun = [date('Y')]; 
         }
     }
 
-    // Fungsi reaktif untuk menarik transaksi berdasarkan tahun yang dipilih
     #[Computed]
     public function transaksiDifilter()
     {
@@ -77,21 +67,21 @@ new class extends Component
 ?>
 
 <div>
-    <!-- Tombol Kembali menggunakan Flux -->
+    <!-- Tombol Kembali -->
     <div class="mb-6">
-        <flux:button href="{{ route('master.wajibpunia') }}" wire:navigate icon="arrow-left" variant="ghost">
+        <flux:button href="{{ route('master.wajibpunia') }}" wire:navigate icon="arrow-left" variant="ghost" class="-ml-3">
             Kembali ke Master Data
         </flux:button>
     </div>
 
-    <!-- Alert Peringatan Jika Data Kurang (Tailwind Native) -->
+    <!-- Alert Data Kurang -->
     @if(count($dataKurang) > 0)
-        <div class="mb-6 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-300">
-            <div class="flex items-center gap-2 font-semibold mb-2">
-                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                Perhatian: Data Belum Lengkap!
+        <div class="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 shadow-sm">
+            <div class="flex items-center gap-2 font-bold mb-2 text-sm">
+                <flux:icon.exclamation-triangle class="w-5 h-5" />
+                Perhatian: Kelengkapan Data Kurang!
             </div>
-            <ul class="list-disc list-inside text-sm mt-1">
+            <ul class="list-disc list-inside text-sm mt-1 space-y-0.5 opacity-90 ml-1">
                 @foreach($dataKurang as $kurang)
                     <li>{{ $kurang }}</li>
                 @endforeach
@@ -99,73 +89,155 @@ new class extends Component
         </div>
     @endif
 
-    <!-- Layout Grid (1 Kolom di HP, 3 Kolom di PC) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
-        <!-- KOLOM KIRI: Profil & File -->
-        <div class="col-span-1">
-            <flux:card>
-                <div class="mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
-                    <flux:heading size="xl">{{ $wp->nama }}</flux:heading>
-                    <flux:subheading>{{ $wp->kategori->nama_kategori ?? 'Tanpa Kategori' }}</flux:subheading>
-                </div>
-
-                <div class="space-y-4 text-sm">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500 dark:text-gray-400">Status</span>
-                        <flux:badge color="{{ $wp->is_active == 1 ? 'green' : 'zinc' }}" size="sm" inset="top bottom">
+        <!-- ========================================== -->
+        <!-- KOLOM KIRI: Profil & File Wajib Punia      -->
+        <!-- ========================================== -->
+        <div class="col-span-1 space-y-6">
+            
+            <flux:card class="flex flex-col gap-6">
+                <!-- Header Profil -->
+                <div class="border-b border-zinc-200 dark:border-zinc-700 pb-5">
+                    <div class="flex justify-between items-start mb-2">
+                        <flux:heading size="xl" class="leading-tight">{{ $wp->nama }}</flux:heading>
+                        <flux:badge color="{{ $wp->is_active == 1 ? 'success' : 'zinc' }}" size="sm" class="shrink-0 ml-2">
                             {{ $wp->is_active == 1 ? 'Aktif' : 'Non-Aktif' }}
                         </flux:badge>
                     </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500 dark:text-gray-400">Pagu Dudukan</span>
-                        <span class="font-bold text-gray-900 dark:text-white">Rp {{ number_format($wp->pagu_dudukan, 0, ',', '.') }}</span>
-                    </div>
-                    <div>
-                        <span class="block text-gray-500 dark:text-gray-400 text-xs mb-1">No. HP</span>
-                        <span class="text-gray-900 dark:text-gray-200">{{ $wp->kontak_pengelola ?? '-' }}</span>
-                    </div>
-                    <div>
-                        <span class="block text-gray-500 dark:text-gray-400 text-xs mb-1">Alamat Lengkap</span>
-                        <span class="text-gray-900 dark:text-gray-200">{{ $wp->alamat ?? '-' }}</span>
+                    <flux:subheading>{{ $wp->kategori->nama_kategori ?? 'Tanpa Kategori' }}</flux:subheading>
+                </div>
+
+                <!-- Informasi Utama (Diubah jadi Grid agar padat) -->
+                <div>
+                    <div class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Informasi Utama</div>
+                    <div class="grid grid-cols-2 gap-y-4 gap-x-2">
+                        <div class="col-span-2 flex justify-between items-center bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-700">
+                            <span class="text-sm text-zinc-500 dark:text-zinc-400">Pagu Dudukan</span>
+                            <span class="font-mono font-bold text-lg text-emerald-600 dark:text-emerald-400">
+                                Rp {{ number_format($wp->pagu_dudukan, 0, ',', '.') }}
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <span class="block text-[11px] text-zinc-500 mb-0.5">Pemilik</span>
+                            <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $wp->pemilik_nama ?? '-' }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-[11px] text-zinc-500 mb-0.5">No. Kontak / WA</span>
+                            <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $wp->kontak_pengelola ?? '-' }}</span>
+                        </div>
+                        
+                        <div>
+                            <span class="block text-[11px] text-zinc-500 mb-0.5">Jenis Usaha</span>
+                            <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $wp->jenisUsaha->nama_jenis_usaha ?? '-' }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-[11px] text-zinc-500 mb-0.5">Petugas Penanggung Jawab</span>
+                            <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400">{{ $wp->petugas->name ?? '-' }}</span>
+                        </div>
+
+                        <div>
+                            <span class="block text-[11px] text-zinc-500 mb-0.5">No. Registrasi</span>
+                            <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $wp->no_registrasi ?? '-' }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-[11px] text-zinc-500 mb-0.5">Tgl Registrasi</span>
+                            <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                {{ $wp->tgl_registrasi ? \Carbon\Carbon::parse($wp->tgl_registrasi)->translatedFormat('d M Y') : '-' }}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <flux:heading size="md" class="mb-3">Dokumen Pendukung</flux:heading>
+                <!-- Informasi Lokasi & Peta -->
+                <div class="pt-5 border-t border-zinc-200 dark:border-zinc-700">
+                    <div class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Lokasi Usaha</div>
                     
-                    @if($wp->dokumens->count() > 0)
-                        <div class="space-y-2">
-                            @foreach($wp->dokumens as $doc)
-                                <!-- Sesuaikan kolom 'file_path' dengan nama kolom lokasi file di tabel dokumenmu -->
-                                <flux:button href="{{ asset('storage/' . $doc->path_file) }}" target="_blank" icon="arrow-down-tray" class="w-full" variant="outline">
-                                    <!-- Sesuaikan kolom 'nama_dokumen' dengan kolom namamu, atau pakai nama default -->
-                                    {{ $doc->nama_file ?? 'Unduh Dokumen ' . $loop->iteration }}
-                                </flux:button>
-                            @endforeach
+                    <div class="mb-3">
+                        <span class="block text-[11px] text-zinc-500 mb-0.5">Wilayah Banjar</span>
+                        <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $wp->banjar->nama_banjar ?? '-' }}</span>
+                    </div>
+                    <div class="mb-4">
+                        <span class="block text-[11px] text-zinc-500 mb-0.5">Alamat Lengkap</span>
+                        <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100 leading-snug">{{ $wp->alamat ?? '-' }}</span>
+                    </div>
+
+                    <!-- Mini Map Leaflet Terintegrasi -->
+                    @if($wp->latitude && $wp->longitude)
+                        <div class="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm relative z-0" wire:ignore>
+                            <div x-data="{
+                                map: null,
+                                init() {
+                                    // Map Read-only (Tidak bisa digeser/zoom agar tidak mengganggu scroll HP)
+                                    this.map = L.map($refs.miniMap, {
+                                        zoomControl: false,
+                                        dragging: false,
+                                        scrollWheelZoom: false,
+                                        doubleClickZoom: false,
+                                        touchZoom: false
+                                    }).setView([{{ $wp->latitude }}, {{ $wp->longitude }}], 16);
+                                    
+                                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+                                    L.marker([{{ $wp->latitude }}, {{ $wp->longitude }}]).addTo(this.map);
+                                }
+                            }">
+                                <div x-ref="miniMap" class="h-36 w-full z-0 relative"></div>
+                            </div>
+                            <!-- Tombol pintasan buka di aplikasi Google Maps -->
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ $wp->latitude }},{{ $wp->longitude }}" target="_blank" class="block w-full text-center py-2.5 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                                Buka di Google Maps ↗
+                            </a>
                         </div>
                     @else
-                        <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center text-sm text-gray-500 dark:text-gray-400 italic">
-                            Belum ada dokumen yang diunggah
+                        <div class="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-center text-xs text-zinc-500">
+                            Titik koordinat lokasi belum ditambahkan.
                         </div>
                     @endif
                 </div>
+
+                @if($wp->keterangan)
+                <div class="pt-5 border-t border-zinc-200 dark:border-zinc-700">
+                    <span class="block text-[11px] text-zinc-500 mb-1">Catatan / Keterangan Khusus</span>
+                    <p class="text-sm text-zinc-700 dark:text-zinc-300 bg-yellow-50 dark:bg-yellow-900/10 p-3 rounded-lg border border-yellow-100 dark:border-yellow-900/30">{{ $wp->keterangan }}</p>
+                </div>
+                @endif
             </flux:card>
+
+            <!-- Card Khusus Dokumen -->
+            <flux:card>
+                <flux:heading size="md" class="mb-4">Dokumen Pendukung</flux:heading>
+                @if($wp->dokumens->count() > 0)
+                    <div class="space-y-2.5">
+                        @foreach($wp->dokumens as $doc)
+                            <flux:button href="{{ asset('storage/' . $doc->path_file) }}" target="_blank" icon="document-arrow-down" class="w-full justify-start text-left" variant="outline">
+                                <span class="truncate">{{ $doc->nama_file ?? 'Unduh Dokumen ' . $loop->iteration }}</span>
+                            </flux:button>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg text-center text-sm text-zinc-500 border border-dashed border-zinc-300 dark:border-zinc-700">
+                        Belum ada file dokumen.
+                    </div>
+                @endif
+            </flux:card>
+
         </div>
 
-        <!-- KOLOM KANAN: History Pembayaran -->
-        <div class="col-span-1 md:col-span-2">
-            <flux:card>
+        <!-- ========================================== -->
+        <!-- KOLOM KANAN: History Pembayaran            -->
+        <!-- ========================================== -->
+        <div class="col-span-1 lg:col-span-2">
+            <flux:card class="h-full">
                 <!-- Header Card dengan Dropdown Filter -->
-                <div class="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 border-b border-zinc-200 dark:border-zinc-700 pb-4">
                     <div>
                         <flux:heading size="lg">Riwayat Pembayaran</flux:heading>
-                        <flux:subheading>Daftar transaksi yang telah dilakukan</flux:subheading>
+                        <flux:subheading>Daftar transaksi setoran yang telah dilakukan.</flux:subheading>
                     </div>
                     
-                    <!-- Dropdown Filter Tahun -->
-                    <div class="w-full sm:w-40">
-                        <flux:select wire:model.live="tahunPilih" size="sm">
+                    <div class="w-full sm:w-48">
+                        <flux:select wire:model.live="tahunPilih" icon="calendar" size="sm">
                             @foreach($daftarTahun as $tahun)
                                 <option value="{{ $tahun }}">Tahun {{ $tahun }}</option>
                             @endforeach
@@ -173,40 +245,39 @@ new class extends Component
                     </div>
                 </div>
                 
-                <div class="overflow-x-auto border rounded-lg dark:border-gray-700">
-                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-300">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-zinc-600 dark:text-zinc-400">
+                        <thead class="text-[11px] text-zinc-500 uppercase bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-700">
                             <tr>
-                                <th scope="col" class="px-4 py-3">No</th>
-                                <th scope="col" class="px-4 py-3">Bulan</th>
-                                <th scope="col" class="px-4 py-3">Tgl Bayar</th>
-                                <th scope="col" class="px-4 py-3 text-right">Nominal</th>
-                                <!-- <th scope="col" class="px-4 py-3 text-center">Status</th> -->
+                                <th scope="col" class="px-4 py-3 font-semibold rounded-tl-lg">No</th>
+                                <th scope="col" class="px-4 py-3 font-semibold">Bulan</th>
+                                <th scope="col" class="px-4 py-3 font-semibold">Tgl Bayar</th>
+                                <th scope="col" class="px-4 py-3 font-semibold text-right rounded-tr-lg">Nominal</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <!-- PANGGIL COMPUTED PROPERTY DI SINI -->
+                        <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
                             @forelse($this->transaksiDifilter as $index => $trx)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <td class="px-4 py-3">{{ $index + 1 }}</td>
-                                    <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-200">
-                                        {{ \Carbon\Carbon::create()->month($trx->periode_bulan)->translatedFormat('F') }}
+                                <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group">
+                                    <td class="px-4 py-3.5 text-zinc-500">{{ $index + 1 }}</td>
+                                    <td class="px-4 py-3.5 font-semibold text-zinc-900 dark:text-zinc-200">
+                                        {{ \Carbon\Carbon::create()->month($trx->periode_bulan)->locale('id')->isoFormat('MMMM') }}
                                     </td>
-                                    <!-- Kolom tahun dihapus karena sudah diwakili filter dropdown -->
-                                    <td class="px-4 py-3">{{ \Carbon\Carbon::parse($trx->tanggal_bayar)->translatedFormat('d M Y') }}</td>
-                                    <td class="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
-                                        Rp {{ number_format($trx->nominal, 0, ',', '.') }}
+                                    <td class="px-4 py-3.5 text-zinc-500">
+                                        {{ \Carbon\Carbon::parse($trx->tanggal_bayar)->locale('id')->isoFormat('D MMM YYYY') }}
                                     </td>
-                                    <!-- <td class="px-4 py-3 text-center">
-                                        <flux:badge color="success" size="sm">Lunas</flux:badge>
-                                    </td> -->
+                                    <td class="px-4 py-3.5 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                                        Rp {{ number_format($trx->nominal_bayar ?? $trx->nominal, 0, ',', '.') }}
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-12 text-center text-gray-500">
+                                    <td colspan="4" class="px-4 py-16 text-center text-zinc-500">
                                         <div class="flex flex-col items-center justify-center">
-                                            <svg class="size-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                                            <p>Tidak ada riwayat pembayaran di tahun {{ $tahunPilih }}.</p>
+                                            <div class="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-3">
+                                                <flux:icon.document-magnifying-glass class="w-6 h-6 text-zinc-400" />
+                                            </div>
+                                            <p class="font-medium text-zinc-600 dark:text-zinc-300">Tidak ada riwayat pembayaran</p>
+                                            <p class="text-xs mt-1">Belum ada transaksi tercatat untuk tahun {{ $tahunPilih }}.</p>
                                         </div>
                                     </td>
                                 </tr>
