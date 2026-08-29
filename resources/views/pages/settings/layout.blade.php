@@ -4,6 +4,13 @@
             <flux:navlist.item :href="route('profile.edit')" wire:navigate>{{ __('Profile') }}</flux:navlist.item>
             <flux:navlist.item :href="route('security.edit')" wire:navigate>{{ __('Security') }}</flux:navlist.item>
             <flux:navlist.item :href="route('appearance.edit')" wire:navigate>{{ __('Appearance') }}</flux:navlist.item>
+            
+            <!-- TAMBAHAN MENU BARU -->
+            <flux:navlist.item :href="route('settings.history')" wire:navigate>{{ __('Log History') }}</flux:navlist.item>
+            
+            @if(Auth::user()->role === 'admin')
+                <flux:navlist.item :href="route('settings.backup')" wire:navigate>{{ __('System Backup') }}</flux:navlist.item>
+            @endif
         </flux:navlist>
     </div>
 

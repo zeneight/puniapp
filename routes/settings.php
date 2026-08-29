@@ -16,4 +16,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'password.confirm',
         ])
         ->name('security.edit');
+
+    Route::livewire('settings/history', 'pages::settings.history')->name('settings.history');
+    Route::livewire('settings/backup', 'pages::settings.backup')->name('settings.backup');
 });
