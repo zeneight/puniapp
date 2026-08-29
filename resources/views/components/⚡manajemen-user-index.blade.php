@@ -175,6 +175,7 @@ new class extends Component {
     <flux:card class="relative">
         <flux:table>
             <flux:table.columns>
+                <flux:table.column>Avatar</flux:table.column>
                 <flux:table.column>Nama & Email</flux:table.column>
                 <flux:table.column>Hak Akses</flux:table.column>
                 <flux:table.column>Status</flux:table.column>
@@ -184,6 +185,13 @@ new class extends Component {
             <flux:table.rows>
                 @forelse ($users as $user)
                     <flux:table.row wire:key="user-{{ $user->id }}">
+                        <flux:table.cell>
+                            <flux:avatar
+                                :src="$user->photo ? asset('storage/' . $user->photo) : null"
+                                :name="$user->name"
+                                :initials="$user->initials()"
+                            />
+                        </flux:table.cell>
                         <flux:table.cell>
                             <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $user->name }}</div>
                             <div class="text-sm text-zinc-500">{{ $user->email }}</div>
