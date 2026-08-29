@@ -29,18 +29,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // buku tamu
     Route::livewire('/buku-tamu', 'buku-tamu-index')->name('buku-tamu');
-        
-    Route::get('/buku-tamu/cetak/{nama}', function ($nama) {
-        $nama_pengunjung = urldecode($nama);
-        
-        // Tarik semua riwayat kunjungan orang tersebut, urutkan dari yang paling awal
-        $riwayatKunjungan = BukuTamu::with('user')
-            ->where('nama_pengunjung', $nama_pengunjung)
-            ->orderBy('tanggal_kunjungan', 'asc')
-            ->get();
 
-        return view('cetak.buku-tamu', compact('nama_pengunjung', 'riwayatKunjungan'));
-    })->name('buku-tamu.cetak')->middleware('auth');
+    // cetak
+    Route::get('/buku-tamu/cetak/{tamu_id}', [\App\Http\Controllers\BukuTamuController::class, 'cetak'])->name('buku-tamu.cetak');
+        
+    // Route::get('/buku-tamu/cetak/{nama}', function ($nama) {
+    //     $nama_pengunjung = urldecode($nama);
+        
+    //     // Tarik semua riwayat kunjungan orang tersebut, urutkan dari yang paling awal
+    //     $riwayatKunjungan = BukuTamu::with('user')
+    //         ->where('nama_pengunjung', $nama_pengunjung)
+    //         ->orderBy('tanggal_kunjungan', 'asc')
+    //         ->get();
+
+    //     return view('cetak.buku-tamu', compact('nama_pengunjung', 'riwayatKunjungan'));
+    // })->name('buku-tamu.cetak')->middleware('auth');
 });
 
 require __DIR__.'/settings.php';
