@@ -133,20 +133,28 @@ new class extends Component
                             <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $wp->jenisUsaha->nama_jenis_usaha ?? '-' }}</span>
                         </div>
                         <div>
-                            <span class="block text-[11px] text-zinc-500 mb-0.5">Petugas Penanggung Jawab</span>
+                            <span class="block text-[11px] text-zinc-500 mb-0.5">Petugas</span>
                             <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400">{{ $wp->petugas->name ?? '-' }}</span>
                         </div>
 
-                        <div>
-                            <span class="block text-[11px] text-zinc-500 mb-0.5">No. Registrasi</span>
-                            <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $wp->no_registrasi ?? '-' }}</span>
+                        <div class="col-span-2">
+                            <!-- No Registrasi -->
+                            <div>
+                                <span class="block text-[11px] text-zinc-500 mb-0.5">No. Registrasi</span>
+                                <span class="text-sm font-mono font-medium text-zinc-900 dark:text-zinc-100 break-all block">{{ $wp->no_registrasi ?? '-' }}</span>
+                            </div>
+                            
+                            <!-- Tgl Registrasi (Dipisah ke bawah dengan garis tipis) -->
+                            <div class="pt-2.5">
+                                <span class="block text-[11px] text-zinc-500 mb-0.5">Tgl Registrasi</span>
+                                <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100 block">
+                                    {{ $wp->tgl_registrasi ? \Carbon\Carbon::parse($wp->tgl_registrasi)->locale('id')->isoFormat('D MMM YYYY') : '-' }}
+                                </span>
+                            </div>
                         </div>
-                        <div>
-                            <span class="block text-[11px] text-zinc-500 mb-0.5">Tgl Registrasi</span>
-                            <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                                {{ $wp->tgl_registrasi ? \Carbon\Carbon::parse($wp->tgl_registrasi)->translatedFormat('d M Y') : '-' }}
-                            </span>
-                        </div>
+                        
+
+
                     </div>
                 </div>
 
