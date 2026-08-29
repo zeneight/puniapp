@@ -32,7 +32,7 @@
             <h1 class="text-xl font-bold uppercase tracking-widest mb-0.5">Pengelola Desa Wisata Munggu</h1>
             <h2 class="text-sm font-bold uppercase mb-1">Kecamatan Mengwi, Kabupaten Badung</h2>
             <p class="text-[10px] leading-tight">Alamat : Jl Nakula, Br Pempatan Desa Munggu. Email : ds.wisata.munggu@gmail.com</p>
-            <p class="text-[10px] leading-tight">Whatsapp : 0822-5888-6394, Website : www.dswisatamunggu.com</p>
+            <p class="text-[10px] leading-tight">Whatsapp : 0823-5513-6822, Website : www.dswisatamunggu.com</p>
         </div>
 
     <h3 class="text-center font-bold text-lg underline mb-6">LAPORAN RIWAYAT KUNJUNGAN TAMU</h3>
