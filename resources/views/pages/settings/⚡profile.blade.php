@@ -141,8 +141,6 @@ new #[Title('Pengaturan Profil')] class extends Component {
 
         @if ($this->showDeleteUser)
             <div class="pt-8 mt-8 border-t border-zinc-200 dark:border-zinc-700">
-                <flux:heading size="md" class="text-red-600">Hapus Akun</flux:heading>
-                <flux:subheading class="mb-4">Hapus akun Anda beserta seluruh datanya secara permanen.</flux:subheading>
                 <livewire:pages::settings.delete-user-form />
             </div>
         @endif
