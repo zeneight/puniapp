@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
+use Livewire\WithFileUploads;
 
 // Pastikan model-model baru ini sudah Bli buat ya!
 use App\Models\Tamu;
@@ -16,6 +17,7 @@ use App\Models\Banjar;
 new class extends Component
 {
     use WithPagination;
+    use WithFileUploads;
 
     #[Layout('layouts.app')]
 
@@ -26,7 +28,7 @@ new class extends Component
     public $filter_prioritas = '';
 
     // Variabel Master Tamu (Auto-fill)
-    public $tamu_id = null; // Jika null berarti tamu baru
+    public $tamu_id = null;
     public $nama_pengunjung = '';
     public $kontak_wa = '';
     public $asal_instansi = '';
@@ -46,9 +48,12 @@ new class extends Component
     public $tindak_lanjut_baru = '';
     public $status_baru = 'Proses';
 
-    public $edit_kunjungan_id;
+    // Lokasi & File
+    public $latitude = '-8.650000'; // Default: Tengah Kota Denpasar
+    public $longitude = '115.216667';
+    public $lampiran;
 
-    // Variabel Hapus
+    public $edit_kunjungan_id;
     public $hapus_id;
 
     public function mount()
@@ -69,10 +74,16 @@ new class extends Component
     {
         $this->reset([
             'tamu_id', 'nama_pengunjung', 'kontak_wa', 'asal_instansi', 'pekerjaan_status',
-            'alasan_kunjungan', 'banjar_id', 'petugas', 'tindak_lanjut_baru', 'kunjungan_id'
+            'alasan_kunjungan', 'banjar_id', 'petugas', 'tindak_lanjut_baru', 'kunjungan_id',
+            'lampiran', 'edit_kunjungan_id'
         ]);
         $this->prioritas = 'Prioritas 3';
         $this->tanggal_kunjungan = date('Y-m-d');
+        
+        // Reset koordinat ke tengah Denpasar saat form dibatalkan
+        $this->latitude = '-8.650000';
+        $this->longitude = '115.216667';
+        
         $this->resetValidation();
     }
 
@@ -87,7 +98,6 @@ new class extends Component
             $this->asal_instansi = $tamuExist->asal_instansi;
             $this->pekerjaan_status = $tamuExist->pekerjaan_status;
         } else {
-            // Biarkan teks ketikan ada, tapi reset ID karena ini tamu baru
             $this->tamu_id = null; 
         }
     }
@@ -101,7 +111,17 @@ new class extends Component
             'alasan_kunjungan' => 'required|string',
             'banjar_id' => 'required',
             'petugas' => 'required|string',
+            'lampiran' => 'nullable|file|max:5120',
+            'latitude' => 'nullable',
+            'longitude' => 'nullable',
         ]);
+
+        // Proses upload lampiran (Berdasarkan Tahun/Bulan)
+        $pathLampiran = null;
+        if ($this->lampiran) {
+            $folderPath = 'lampiran-kunjungan/' . date('Y/m');
+            $pathLampiran = $this->lampiran->store($folderPath, 'public');
+        }
 
         // 1. Simpan/Update Master Tamu
         if (!$this->tamu_id) {
@@ -114,7 +134,6 @@ new class extends Component
             $this->tamu_id = $tamu->id;
         }
 
-        // Hitung Kunjungan Ke Berapa
         $kunjunganKe = KunjunganTamu::where('tamu_id', $this->tamu_id)->count() + 1;
 
         // 2. Simpan Transaksi Kunjungan
@@ -128,9 +147,12 @@ new class extends Component
             'prioritas' => $this->prioritas,
             'status' => 'Tamu masuk',
             'kunjungan_ke' => $kunjunganKe,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'lampiran' => $pathLampiran,
         ]);
 
-        // 3. Simpan Riwayat Awal (Timeline 1)
+        // 3. Simpan Riwayat Awal
         RiwayatTindakLanjut::create([
             'kunjungan_id' => $kunjungan->id,
             'status_log' => 'Tamu masuk',
@@ -152,8 +174,6 @@ new class extends Component
                                         ->orderBy('created_at', 'asc')
                                         ->get();
 
-        // --- PERBAIKAN DI SINI ---
-        // Jika statusnya masih 'Tamu masuk', otomatis arahkan default ke 'Proses'
         if ($this->detailKunjungan->status === 'Tamu masuk') {
             $this->status_baru = 'Proses';
         } else {
@@ -174,17 +194,14 @@ new class extends Component
             'status_baru' => 'required'
         ]);
 
-        // Tambah Riwayat Baru
         RiwayatTindakLanjut::create([
             'kunjungan_id' => $this->kunjungan_id,
             'status_log' => $this->status_baru,
             'catatan' => $this->tindak_lanjut_baru
         ]);
 
-        // Update Status Terakhir di Tabel Kunjungan
         $this->detailKunjungan->update(['status' => $this->status_baru]);
 
-        // Refresh Data Timeline agar langsung muncul tanpa loading ulang modal
         $this->riwayat_kunjungan = RiwayatTindakLanjut::where('kunjungan_id', $this->kunjungan_id)
                                         ->orderBy('created_at', 'asc')
                                         ->get();
@@ -210,32 +227,30 @@ new class extends Component
     // --- FUNGSI BUKA MODAL EDIT ---
     public function bukaEditKunjungan($id)
     {
-        // 1. Tutup modal detail yang sedang terbuka
         $this->js('$flux.modal("detail-kunjungan").close()');
 
-        // 2. Tarik data dari database
         $kunjungan = KunjunganTamu::with('tamu')->findOrFail($id);
         
-        // 3. Isi state form dengan data lama
         $this->edit_kunjungan_id = $kunjungan->id;
         $this->tamu_id = $kunjungan->tamu_id;
         
-        // Data Tamu
         $this->nama_pengunjung = $kunjungan->tamu->nama_pengunjung;
         $this->kontak_wa = $kunjungan->tamu->kontak_wa;
         $this->pekerjaan_status = $kunjungan->tamu->pekerjaan_status;
         $this->asal_instansi = $kunjungan->tamu->asal_instansi;
 
-        // Data Kunjungan
         $this->tanggal_kunjungan = $kunjungan->tanggal_kunjungan;
         $this->banjar_id = $kunjungan->banjar_id;
         $this->petugas = $kunjungan->petugas;
         $this->alasan_kunjungan = $kunjungan->alasan_kunjungan;
         $this->prioritas = $kunjungan->prioritas;
+        
+        // PENTING: Ambil data lokasi lama agar map bergeser otomatis
+        $this->latitude = $kunjungan->latitude ?? '-8.650000';
+        $this->longitude = $kunjungan->longitude ?? '115.216667';
 
         $this->resetValidation();
         
-        // 4. Buka modal edit (pakai setTimeout agar modal sebelumnya benar-benar tertutup dulu)
         $this->js('setTimeout(() => { $flux.modal("edit-kunjungan").show() }, 300)');
     }
 
@@ -248,11 +263,13 @@ new class extends Component
             'alasan_kunjungan' => 'required|string',
             'banjar_id' => 'required',
             'petugas' => 'required|string',
+            'lampiran' => 'nullable|file|max:5120',
+            'latitude' => 'nullable',
+            'longitude' => 'nullable',
         ]);
 
         $kunjungan = KunjunganTamu::findOrFail($this->edit_kunjungan_id);
 
-        // 1. Update Data Master Tamu
         if ($kunjungan->tamu_id) {
             Tamu::where('id', $kunjungan->tamu_id)->update([
                 'nama_pengunjung' => $this->nama_pengunjung,
@@ -262,17 +279,21 @@ new class extends Component
             ]);
         }
 
-        // 2. Update Data Kunjungan
+        $folderPath = 'lampiran-kunjungan/' . date('Y/m');
+
         $kunjungan->update([
             'tanggal_kunjungan' => $this->tanggal_kunjungan,
             'banjar_id' => $this->banjar_id,
             'petugas' => $this->petugas,
             'alasan_kunjungan' => $this->alasan_kunjungan,
             'prioritas' => $this->prioritas,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'lampiran' => $this->lampiran ? $this->lampiran->store($folderPath, 'public') : $kunjungan->lampiran,
         ]);
 
         $this->js('$flux.modal("edit-kunjungan").close()');
-        $this->batal(); // Bersihkan state
+        $this->batal(); 
         \Flux::toast('Data utama kunjungan berhasil diperbarui!', variant: 'success');
     }
 
@@ -280,7 +301,6 @@ new class extends Component
     {
         $totalKeseluruhan = KunjunganTamu::count();
 
-        // Query relasi Kunjungan -> Tamu -> Banjar
         $query = KunjunganTamu::with(['tamu', 'banjar', 'user'])
             ->when($this->search, function ($q) {
                 $q->whereHas('tamu', function ($sub) {
@@ -300,13 +320,13 @@ new class extends Component
 
         return [
             'dataKunjungan' => $query->paginate(10),
-            'daftarNamaTamu' => Tamu::pluck('nama_pengunjung'), // Untuk Auto-fill datalist
+            'daftarNamaTamu' => Tamu::pluck('nama_pengunjung'), 
             'daftarBanjar' => Banjar::orderBy('nama_banjar')->get(),
             'totalKeseluruhan' => $totalKeseluruhan,
             'totalDifilter' => $totalDifilter,
         ];
     }
-}
+};
 ?>
 <div>
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -319,7 +339,7 @@ new class extends Component
         </flux:button>
     </div>
 
-    <!-- Filter (Tetap sama seperti kode Bli sebelumnya) -->
+    <!-- Filter -->
     <div class="flex flex-col md:flex-row gap-3 mb-4">
         <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama, instansi, atau keperluan..." class="w-full md:w-96" />
         <flux:input wire:model.live="filter_tanggal" type="date" class="w-full md:w-48" />
@@ -383,15 +403,14 @@ new class extends Component
                             </flux:table.cell>
                             
                             <flux:table.cell>
-                                <flux:badge size="sm" color="{{ $kunjungan->prioritas == 'Prioritas 1' ? 'danger' : ($kunjungan->prioritas == 'Prioritas 2' ? 'warning' : 'zinc') }}">{{ $kunjungan->prioritas }}</flux:badge>
+                                <flux:badge size="sm" color="{{ $kunjungan->prioritas == 'Prioritas 1' ? 'red' : ($kunjungan->prioritas == 'Prioritas 2' ? 'yellow' : 'zinc') }}">{{ $kunjungan->prioritas }}</flux:badge>
                             </flux:table.cell>
 
                             <flux:table.cell>
-                                <flux:badge size="sm" color="{{ $kunjungan->status == 'Selesai' ? 'success' : ($kunjungan->status == 'Proses' ? 'blue' : 'zinc') }}">{{ $kunjungan->status }}</flux:badge>
+                                <flux:badge size="sm" color="{{ $kunjungan->status == 'Selesai' ? 'green' : ($kunjungan->status == 'Proses' ? 'blue' : 'zinc') }}">{{ $kunjungan->status }}</flux:badge>
                             </flux:table.cell>
                             
                             <flux:table.cell>
-                                <!-- HANYA 1 TOMBOL: Detail & Tindak Lanjut -->
                                 <flux:button wire:click="bukaDetail({{ $kunjungan->id }})" size="sm" variant="subtle" icon="clipboard-document-list">Detail</flux:button>
                                 <a href="{{ route('buku-tamu.cetak', $kunjungan->tamu_id) }}" target="_blank">
                                     <flux:button size="sm" variant="ghost" icon="printer" title="Cetak Riwayat Kunjungan" class="text-zinc-600 hover:text-zinc-900" />
@@ -420,7 +439,6 @@ new class extends Component
                 <flux:subheading>Ketik nama tamu lama untuk auto-fill, atau ketik nama baru.</flux:subheading>
             </div>
 
-            <!-- Datalist Sugesti Nama -->
             <datalist id="listTamu">
                 @foreach($daftarNamaTamu as $nama) <option value="{{ $nama }}"> @endforeach
             </datalist>
@@ -441,16 +459,14 @@ new class extends Component
                     <flux:input wire:model="asal_instansi" label="Instansi / Alamat Pengunjung (Asal Tamu)" placeholder="Cth: Universitas Udayana" />
                 </div>
 
-                <div class="md:col-span-2 pt-3 border-t border-zinc-100 dark:border-zinc-800"></div>
-
-                <!-- Input Kunjungan Baru -->
-                <flux:field>
-                    <flux:label>Lokasi Terkait (Wilayah Banjar)</flux:label>
-                    <flux:select wire:model="banjar_id" required>
-                        <option value="">Pilih Banjar...</option>
-                        @foreach($daftarBanjar as $b) <option value="{{ $b->id }}">{{ $b->nama_banjar }}</option> @endforeach
-                    </flux:select>
-                </flux:field>
+                <div class="md:col-span-2">
+                    <flux:field>
+                        <flux:label>File Lampiran / Foto (Opsional)</flux:label>
+                        <input type="file" wire:model="lampiran" class="mt-2 block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400">
+                        <div wire:loading wire:target="lampiran" class="text-xs text-indigo-500 mt-1">Mengunggah file...</div>
+                        @error('lampiran') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                    </flux:field>
+                </div>
 
                 <flux:input wire:model="petugas" label="Petugas Penerima" placeholder="Nama petugas..." required />
 
@@ -468,6 +484,104 @@ new class extends Component
                 </flux:select>
             </flux:field>
 
+            <div class="md:col-span-2 pt-3 border-t border-zinc-100 dark:border-zinc-800"></div>
+
+            <flux:field>
+                <flux:label>Lokasi Terkait (Wilayah Banjar)</flux:label>
+                <flux:select wire:model="banjar_id" required>
+                    <option value="">Pilih Banjar...</option>
+                    @foreach($daftarBanjar as $b) <option value="{{ $b->id }}">{{ $b->nama_banjar }}</option> @endforeach
+                </flux:select>
+            </flux:field>
+
+            <!-- PETA: Unik x-ref untuk Tambah -->
+            <div class="md:col-span-2 pt-4" wire:ignore>
+                <flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
+                <div x-data="{
+                        map: null,
+                        marker: null,
+                        handlePaste(e) {
+                            let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                            if (pastedText.includes(',')) {
+                                e.preventDefault();
+                                let parts = pastedText.split(',');
+                                let lat = parseFloat(parts[0].trim());
+                                let lng = parseFloat(parts[1].trim());
+                                if (!isNaN(lat) && !isNaN(lng)) {
+                                    $wire.set('latitude', lat.toFixed(8));
+                                    $wire.set('longitude', lng.toFixed(8));
+                                    this.syncMap(lat, lng);
+                                    e.target.value = lat.toFixed(8) + ', ' + lng.toFixed(8);
+                                }
+                            }
+                        },
+                        init() {
+                            this.map = L.map($refs.mapContainerTambah, { scrollWheelZoom: false }).setView([-8.650000, 115.216667], 12);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(this.map);
+
+                            const resizeObserver = new ResizeObserver(() => {
+                                if (this.map) this.map.invalidateSize();
+                            });
+                            resizeObserver.observe(this.$refs.mapContainerTambah);
+
+                            if ($wire.latitude && $wire.longitude) {
+                                this.updateMarker($wire.latitude, $wire.longitude);
+                                this.map.setView([$wire.latitude, $wire.longitude], 14);
+                            }
+
+                            this.map.on('click', (e) => {
+                                const lat = e.latlng.lat.toFixed(8);
+                                const lng = e.latlng.lng.toFixed(8);
+                                this.updateMarker(lat, lng);
+                                $wire.set('latitude', lat);
+                                $wire.set('longitude', lng);
+                            });
+
+                            $watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
+                        },
+                        updateMarker(lat, lng) {
+                            if (this.marker) {
+                                this.marker.setLatLng([lat, lng]);
+                            } else {
+                                this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+                                this.marker.on('dragend', (e) => {
+                                    const position = this.marker.getLatLng();
+                                    $wire.set('latitude', position.lat.toFixed(8));
+                                    $wire.set('longitude', position.lng.toFixed(8));
+                                });
+                            }
+                        },
+                        syncMap(lat, lng) {
+                            if (lat && lng) {
+                                this.updateMarker(lat, lng);
+                                this.map.setView([lat, lng], 16);
+                            } else {
+                                if (this.marker) {
+                                    this.map.removeLayer(this.marker);
+                                    this.marker = null;
+                                }
+                                this.map.setView([-8.650000, 115.216667], 12);
+                            }
+                        }
+                    }" class="relative z-0">
+                    
+                    <div class="mb-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/50">
+                        <flux:field>
+                            <flux:label class="text-blue-800 dark:text-blue-300 font-semibold mb-1">Cari dari Google Maps?</flux:label>
+                            <flux:input x-on:paste="handlePaste($event)" icon="magnifying-glass" placeholder="Paste koordinat Google Maps (Contoh: -8.647961, 115.169800) di sini..." />
+                        </flux:field>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-3">
+                        <flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
+                        <flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
+                    </div>
+                    <div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi.</div>
+                    
+                    <!-- REFRENSINYA DIUBAH MENJADI mapContainerTambah -->
+                    <div x-ref="mapContainerTambah" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
+                </div>
+            </div>
+
             <div class="flex justify-end gap-2 pt-4 border-t border-zinc-200">
                 <flux:modal.close><flux:button variant="ghost">Batal</flux:button></flux:modal.close>
                 <flux:button type="submit" variant="primary">Simpan Kunjungan</flux:button>
@@ -475,37 +589,94 @@ new class extends Component
         </form>
     </flux:modal>
 
-    <!-- MODAL 2: DETAIL & TIMELINE (VIEW + EDIT JADI SATU) -->
+    <!-- MODAL 2: DETAIL & TIMELINE -->
     <flux:modal name="detail-kunjungan" class="md:w-[650px]">
         @if($detailKunjungan)
         <div class="flex flex-col h-full max-h-[85vh]">
-            
-            <!-- HEADER -->
             <div class="border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4 shrink-0">
                 <div class="flex justify-between items-start">
                     <div>
                         <flux:heading size="lg">
                             {{ $detailKunjungan->tamu->nama_pengunjung }}
-
-                            <!-- Tombol Edit Data Utama Kunjungan -->
                             <flux:button wire:click="bukaEditKunjungan({{ $detailKunjungan->id }})" size="sm" variant="subtle" icon="pencil-square" class="ml-2 text-indigo-500" />
-
                         </flux:heading>
                         <flux:subheading>{{ $detailKunjungan->tamu->kontak_wa ?? '-' }} • {{ $detailKunjungan->tamu->pekerjaan_status ?? '-' }}</flux:subheading>
                     </div>
-                    <flux:badge color="{{ $detailKunjungan->status == 'Selesai' ? 'success' : 'warning' }}">{{ $detailKunjungan->status }}</flux:badge>
+                    <flux:badge class="mr-8" color="{{ $detailKunjungan->status == 'Selesai' ? 'green' : 'blue' }}">{{ $detailKunjungan->status }}</flux:badge>
                 </div>
                 
-                <div class="mt-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg text-sm text-zinc-700 dark:text-zinc-300">
-                    <div class="font-semibold text-zinc-900 dark:text-white mb-1">Maksud Kunjungan:</div>
-                    <p>{{ $detailKunjungan->alasan_kunjungan }}</p>
-                    <div class="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700 text-xs text-zinc-500">
-                        Lokasi: {{ $detailKunjungan->banjar->nama_banjar ?? '-' }} | Petugas: {{ $detailKunjungan->petugas }} | Prioritas: {{ $detailKunjungan->prioritas }}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                    
+                    <!-- KOLOM KIRI: Detail Maksud Kunjungan & Lampiran -->
+                    <div class="bg-zinc-50 dark:bg-zinc-800/50 p-3.5 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 flex flex-col justify-between">
+                        <div>
+                            <div class="font-semibold text-zinc-900 dark:text-white mb-1.5">Maksud Kunjungan:</div>
+                            <p class="leading-relaxed">{{ $detailKunjungan->alasan_kunjungan }}</p>
+                            
+                            @if($detailKunjungan->lampiran)
+                            <div class="mt-3">
+                                <a href="{{ asset('storage/' . $detailKunjungan->lampiran) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+                                    <flux:icon.paper-clip class="w-3.5 h-3.5" /> Lihat File Lampiran
+                                </a>
+                            </div>
+                            @endif
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-700 flex flex-wrap items-center gap-2">
+                            <!-- Lokasi Banjar -->
+                            <flux:badge size="sm" color="zinc" icon="map-pin" class="!px-2">
+                                {{ $detailKunjungan->banjar->nama_banjar ?? '-' }}
+                            </flux:badge>
+                            
+                            <!-- Petugas -->
+                            <flux:badge size="sm" color="zinc" icon="user" class="!px-2">
+                                {{ $detailKunjungan->petugas }}
+                            </flux:badge>
+                            
+                            <!-- Prioritas -->
+                            <flux:badge size="sm" icon="flag" class="!px-2" color="{{ $detailKunjungan->prioritas == 'Prioritas 1' ? 'red' : ($detailKunjungan->prioritas == 'Prioritas 2' ? 'yellow' : 'zinc') }}">
+                                {{ $detailKunjungan->prioritas }}
+                            </flux:badge>
+                        </div>
                     </div>
+
+                    <!-- KOLOM KANAN: Peta Mini -->
+                    @if($detailKunjungan->latitude && $detailKunjungan->longitude)
+                    <div class="h-full rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm flex flex-col relative z-0" wire:ignore>
+                        <div x-data="{
+                                map: null,
+                                init() {
+                                    this.map = L.map($refs.miniMap, {
+                                        zoomControl: false,
+                                        dragging: false,
+                                        scrollWheelZoom: false,
+                                        doubleClickZoom: false,
+                                        touchZoom: false
+                                    }).setView([{{ $detailKunjungan->latitude }}, {{ $detailKunjungan->longitude }}], 16);
+                                    
+                                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+                                    L.marker([{{ $detailKunjungan->latitude }}, {{ $detailKunjungan->longitude }}]).addTo(this.map);
+                                }
+                            }" class="flex-1 min-h-[140px]">
+                            <!-- Ketinggian map menggunakan h-full agar mengisi ruang sejajar dengan kotak teks -->
+                            <div x-ref="miniMap" class="h-full w-full z-0 relative"></div>
+                        </div>
+                        
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ $detailKunjungan->latitude }},{{ $detailKunjungan->longitude }}" target="_blank" class="block w-full shrink-0 text-center py-2 text-[11px] uppercase tracking-wider font-bold bg-zinc-100 dark:bg-zinc-800 border-t border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                            Buka di Google Maps ↗
+                        </a>
+                    </div>
+                    @else
+                    <!-- Tampilan Cadangan Jika Tidak Ada Peta (Tetap menjaga bentuk kotak sebelahnya) -->
+                    <div class="h-full rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center p-4 text-center">
+                        <flux:icon.map class="w-8 h-8 text-zinc-400 mb-2" />
+                        <span class="text-xs text-zinc-500">Tidak ada titik koordinat lokasi yang dilampirkan.</span>
+                    </div>
+                    @endif
+
                 </div>
             </div>
 
-            <!-- BODY TIMELINE -->
             <div class="flex-1 overflow-y-auto pr-2 mb-4">
                 <div class="font-semibold text-sm mb-4">Timeline Penanganan</div>
                 
@@ -525,7 +696,6 @@ new class extends Component
                 </div>
             </div>
 
-            <!-- FOOTER FORM TINDAK LANJUT -->
             @if($detailKunjungan->status !== 'Selesai')
             <div class="shrink-0 pt-4 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/30 -mx-6 -mb-6 px-6 pb-6 rounded-b-xl">
                 <form wire:submit.prevent="simpanTindakLanjut" class="space-y-3">
@@ -567,7 +737,6 @@ new class extends Component
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <flux:input wire:model="tanggal_kunjungan" type="date" label="Tanggal Kunjungan" required />
                 <flux:input wire:model="nama_pengunjung" label="Nama Pengunjung" required />
-                
                 <flux:input wire:model="kontak_wa" label="No Kontak WA" />
                 <flux:input wire:model="pekerjaan_status" label="Pekerjaan / Jabatan" />
                 
@@ -575,15 +744,12 @@ new class extends Component
                     <flux:input wire:model="asal_instansi" label="Instansi / Alamat Pengunjung (Asal Tamu)" />
                 </div>
 
-                <div class="md:col-span-2 pt-3 border-t border-zinc-100 dark:border-zinc-800"></div>
-
-                <flux:field>
-                    <flux:label>Lokasi Terkait (Wilayah Banjar)</flux:label>
-                    <flux:select wire:model="banjar_id" required>
-                        <option value="">Pilih Banjar...</option>
-                        @foreach($daftarBanjar as $b) <option value="{{ $b->id }}">{{ $b->nama_banjar }}</option> @endforeach
-                    </flux:select>
-                </flux:field>
+                <div class="md:col-span-2">
+                    <flux:label>File Lampiran / Foto (Opsional)</flux:label>
+                    <input type="file" wire:model="lampiran" class="mt-2 block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400">
+                    <div wire:loading wire:target="lampiran" class="text-xs text-indigo-500 mt-1">Mengunggah file...</div>
+                    @error('lampiran') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                </div>
 
                 <flux:input wire:model="petugas" label="Petugas Penerima" required />
 
@@ -600,6 +766,104 @@ new class extends Component
                     <option value="Prioritas 3">Prioritas 3 (Rendah)</option>
                 </flux:select>
             </flux:field>
+
+            <div class="md:col-span-2 pt-3 border-t border-zinc-100 dark:border-zinc-800"></div>
+
+            <flux:field>
+                <flux:label>Lokasi Terkait (Wilayah Banjar)</flux:label>
+                <flux:select wire:model="banjar_id" required>
+                    <option value="">Pilih Banjar...</option>
+                    @foreach($daftarBanjar as $b) <option value="{{ $b->id }}">{{ $b->nama_banjar }}</option> @endforeach
+                </flux:select>
+            </flux:field>
+
+            <!-- PETA: Unik x-ref untuk Edit -->
+            <div class="md:col-span-2 pt-4" wire:ignore>
+                <flux:heading size="sm" class="mb-3">Titik Koordinat Lokasi (Opsional)</flux:heading>
+                <div x-data="{
+                        map: null,
+                        marker: null,
+                        handlePaste(e) {
+                            let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                            if (pastedText.includes(',')) {
+                                e.preventDefault();
+                                let parts = pastedText.split(',');
+                                let lat = parseFloat(parts[0].trim());
+                                let lng = parseFloat(parts[1].trim());
+                                if (!isNaN(lat) && !isNaN(lng)) {
+                                    $wire.set('latitude', lat.toFixed(8));
+                                    $wire.set('longitude', lng.toFixed(8));
+                                    this.syncMap(lat, lng);
+                                    e.target.value = lat.toFixed(8) + ', ' + lng.toFixed(8);
+                                }
+                            }
+                        },
+                        init() {
+                            this.map = L.map($refs.mapContainerEdit, { scrollWheelZoom: false }).setView([-8.650000, 115.216667], 12);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(this.map);
+
+                            const resizeObserver = new ResizeObserver(() => {
+                                if (this.map) this.map.invalidateSize();
+                            });
+                            resizeObserver.observe(this.$refs.mapContainerEdit);
+
+                            if ($wire.latitude && $wire.longitude) {
+                                this.updateMarker($wire.latitude, $wire.longitude);
+                                this.map.setView([$wire.latitude, $wire.longitude], 14);
+                            }
+
+                            this.map.on('click', (e) => {
+                                const lat = e.latlng.lat.toFixed(8);
+                                const lng = e.latlng.lng.toFixed(8);
+                                this.updateMarker(lat, lng);
+                                $wire.set('latitude', lat);
+                                $wire.set('longitude', lng);
+                            });
+
+                            $watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
+                        },
+                        updateMarker(lat, lng) {
+                            if (this.marker) {
+                                this.marker.setLatLng([lat, lng]);
+                            } else {
+                                this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+                                this.marker.on('dragend', (e) => {
+                                    const position = this.marker.getLatLng();
+                                    $wire.set('latitude', position.lat.toFixed(8));
+                                    $wire.set('longitude', position.lng.toFixed(8));
+                                });
+                            }
+                        },
+                        syncMap(lat, lng) {
+                            if (lat && lng) {
+                                this.updateMarker(lat, lng);
+                                this.map.setView([lat, lng], 16);
+                            } else {
+                                if (this.marker) {
+                                    this.map.removeLayer(this.marker);
+                                    this.marker = null;
+                                }
+                                this.map.setView([-8.650000, 115.216667], 12);
+                            }
+                        }
+                    }" class="relative z-0">
+                    
+                    <div class="mb-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/50">
+                        <flux:field>
+                            <flux:label class="text-blue-800 dark:text-blue-300 font-semibold mb-1">Cari dari Google Maps?</flux:label>
+                            <flux:input x-on:paste="handlePaste($event)" icon="magnifying-glass" placeholder="Paste koordinat Google Maps di sini..." />
+                        </flux:field>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-3">
+                        <flux:input wire:model="latitude" label="Latitude" readonly />
+                        <flux:input wire:model="longitude" label="Longitude" readonly />
+                    </div>
+                    <div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pada peta untuk menentukan lokasi presisi.</div>
+                    
+                    <!-- REFRENSINYA DIUBAH MENJADI mapContainerEdit -->
+                    <div x-ref="mapContainerEdit" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
+                </div>
+            </div>
 
             <div class="flex justify-end gap-2 pt-4 border-t border-zinc-200">
                 <flux:modal.close><flux:button variant="ghost">Batal</flux:button></flux:modal.close>
@@ -619,4 +883,8 @@ new class extends Component
             <flux:button wire:click="destroy" variant="danger">Ya, Hapus</flux:button>
         </div>
     </flux:modal>
+  
+    <!-- Library Peta Leaflet (Cukup link library saja, script logika sudah pakai Alpine JS di atas) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </div>

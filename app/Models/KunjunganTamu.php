@@ -5,10 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class KunjunganTamu extends Model
 {
-    protected $fillable = [
-        'tamu_id', 'user_id', 'banjar_id', 'tanggal_kunjungan', 
-        'petugas', 'alasan_kunjungan', 'prioritas', 'status', 'kunjungan_ke'
-    ];
+    protected $guarded = ['id'];
 
     public function tamu()
     {
