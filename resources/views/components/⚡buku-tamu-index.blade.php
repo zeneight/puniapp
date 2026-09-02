@@ -397,7 +397,9 @@ new class extends Component
                             </flux:table.cell>
 
                             <flux:table.cell>
-                                <div class="font-medium text-zinc-900 dark:text-white line-clamp-1">{{ $kunjungan->alasan_kunjungan }}</div>
+                                <div class="font-medium text-zinc-900 dark:text-white text-sm" title="{{ strip_tags($kunjungan->alasan_kunjungan) }}">
+                                    {{ \Illuminate\Support\Str::limit(strip_tags($kunjungan->alasan_kunjungan), 45) }}
+                                </div>
                                 <div class="text-xs text-zinc-500 mt-1">Petugas: {{ $kunjungan->petugas }} | {{ $kunjungan->banjar->nama_banjar ?? '-' }}</div>
                                 <div class="text-[10px] text-zinc-400 mt-0.5">{{ \Carbon\Carbon::parse($kunjungan->tanggal_kunjungan)->translatedFormat('l, d F Y') }}</div>
                             </flux:table.cell>
@@ -611,7 +613,9 @@ new class extends Component
                     <div class="bg-zinc-50 dark:bg-zinc-800/50 p-3.5 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 flex flex-col justify-between">
                         <div>
                             <div class="font-semibold text-zinc-900 dark:text-white mb-1.5">Maksud Kunjungan:</div>
-                            <p class="leading-relaxed">{{ $detailKunjungan->alasan_kunjungan }}</p>
+                            <div class="prose prose-sm dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 leading-relaxed mb-3">
+                                {!! $detailKunjungan->alasan_kunjungan !!}
+                            </div>
                             
                             @if($detailKunjungan->lampiran)
                             <div class="mt-3">

@@ -81,5 +81,8 @@
 
         @fluxScripts
         <flux:toast position="top-right" />
+
+        <!-- Sebelum tutup </body> -->
+        <script type="text/javascript" src="https://unpkg.com/trix@2.0.8/dist/trix.umd.js"></script>
     </body>
 </html>
