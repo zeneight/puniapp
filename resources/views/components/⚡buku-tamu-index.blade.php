@@ -49,8 +49,8 @@ new class extends Component
     public $status_baru = 'Proses';
 
     // Lokasi & File
-    public $latitude = '-8.650000'; // Default: Tengah Kota Denpasar
-    public $longitude = '115.216667';
+    public $latitude = null;
+    public $longitude = null;
     public $lampiran;
 
     public $edit_kunjungan_id;
@@ -81,9 +81,9 @@ new class extends Component
         $this->tanggal_kunjungan = date('Y-m-d');
         
         // Reset koordinat ke tengah Denpasar saat form dibatalkan
-        $this->latitude = '-8.650000';
-        $this->longitude = '115.216667';
-        
+        $this->latitude = null;
+        $this->longitude = null;
+
         $this->resetValidation();
     }
 
@@ -159,9 +159,12 @@ new class extends Component
             'catatan' => 'Kunjungan baru didaftarkan.'
         ]);
 
-        $this->js('$flux.modal("tambah-tamu").close()');
+        // Bersihkan state
         $this->batal();
-        \Flux::toast('Data kunjungan berhasil dicatat!', variant: 'success');
+
+        // Tutup modal dan refresh halaman secara otomatis untuk menghindari error DOM Diffing Livewire
+        session()->flash('success', 'Data kunjungan berhasil dicatat!');
+        return redirect()->to(request()->header('Referer'));
     }
 
     // --- BUKA MODAL DETAIL & TIMELINE ---
@@ -184,6 +187,10 @@ new class extends Component
         $this->resetValidation();
 
         $this->js('$flux.modal("detail-kunjungan").show()');
+
+        $this->js("setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 200)");
     }
 
     // --- SIMPAN TINDAK LANJUT DARI DALAM MODAL ---
@@ -246,8 +253,8 @@ new class extends Component
         $this->prioritas = $kunjungan->prioritas;
         
         // PENTING: Ambil data lokasi lama agar map bergeser otomatis
-        $this->latitude = $kunjungan->latitude ?? '-8.650000';
-        $this->longitude = $kunjungan->longitude ?? '115.216667';
+        $this->latitude = $kunjungan->latitude;
+        $this->longitude = $kunjungan->longitude;
 
         $this->resetValidation();
         
@@ -646,23 +653,36 @@ new class extends Component
 
                     <!-- KOLOM KANAN: Peta Mini -->
                     @if($detailKunjungan->latitude && $detailKunjungan->longitude)
-                    <div class="h-full rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm flex flex-col relative z-0" wire:ignore>
+                    <div class="h-full rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm flex flex-col relative z-0" wire:key="map-kunjungan-{{ $detailKunjungan->id }}">
                         <div x-data="{
                                 map: null,
+                                marker: null,
+                                lat: {{ $detailKunjungan->latitude }},
+                                lng: {{ $detailKunjungan->longitude }},
                                 init() {
-                                    this.map = L.map($refs.miniMap, {
+                                    this.initMap();
+                                },
+                                initMap() {
+                                    if (this.map) {
+                                        this.map.remove();
+                                        this.map = null;
+                                    }
+
+                                    this.map = L.map(this.$refs.miniMap, {
                                         zoomControl: false,
                                         dragging: false,
                                         scrollWheelZoom: false,
                                         doubleClickZoom: false,
                                         touchZoom: false
-                                    }).setView([{{ $detailKunjungan->latitude }}, {{ $detailKunjungan->longitude }}], 16);
+                                    }).setView([this.lat, this.lng], 16);
                                     
                                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-                                    L.marker([{{ $detailKunjungan->latitude }}, {{ $detailKunjungan->longitude }}]).addTo(this.map);
+                                    this.marker = L.marker([this.lat, this.lng]).addTo(this.map);
+
+                                    setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 150);
                                 }
-                            }" class="flex-1 min-h-[140px]">
-                            <!-- Ketinggian map menggunakan h-full agar mengisi ruang sejajar dengan kotak teks -->
+                            }" class="flex-1 min-h-[140px]" wire:ignore>
+                            
                             <div x-ref="miniMap" class="h-full w-full z-0 relative"></div>
                         </div>
                         
@@ -671,8 +691,7 @@ new class extends Component
                         </a>
                     </div>
                     @else
-                    <!-- Tampilan Cadangan Jika Tidak Ada Peta (Tetap menjaga bentuk kotak sebelahnya) -->
-                    <div class="h-full rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center p-4 text-center">
+                    <div class="h-full rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center p-4 text-center" wire:key="map-empty-{{ $detailKunjungan->id }}">
                         <flux:icon.map class="w-8 h-8 text-zinc-400 mb-2" />
                         <span class="text-xs text-zinc-500">Tidak ada titik koordinat lokasi yang dilampirkan.</span>
                     </div>
