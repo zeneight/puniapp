@@ -237,6 +237,8 @@ new class extends Component {
 
 		$this->reset(['wajib_punia_id', 'nominal', 'keterangan', 'bukti_dokumen']);
 		$this->mount(); // Kembalikan form ke kondisi default
+
+        return $this->redirect(route('transaksi.input'), navigate: true);
 	}
 
 	public function editTransaksi($id)

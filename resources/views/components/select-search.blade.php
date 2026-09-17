@@ -45,8 +45,12 @@
 
                         // B. Pantau perubahan secara real-time (Misal Bli klik tombol Edit dari baris tabel lain)
                         $watch('$wire.{{ $modelName }}', (newValue) => {
-                            // Samakan tipe data ke String untuk perbandingan yang akurat
-                            if (String(this.tom.getValue()) !== String(newValue)) {
+                            // JIKA NILAI KOSONG (Form di-reset setelah submit)
+                            if (!newValue || newValue === '') {
+                                this.tom.clear(true); // Bersihkan pilihan tanpa memicu event error
+                            } 
+                            // JIKA ADA NILAI BARU
+                            else if (String(this.tom.getValue()) !== String(newValue)) {
                                 this.tom.setValue(newValue, true);
                             }
                         });
