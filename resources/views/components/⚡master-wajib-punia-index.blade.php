@@ -419,34 +419,34 @@ new class extends Component {
 
         <div x-show="showFilters" x-collapse x-cloak>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                <flux:select wire:model.live="filter_kategori" label="Jenis Kategori Punia">
-                    <flux:select.option value="">Semua Kategori</flux:select.option>
+                <x-select-search wire:model.live="filter_kategori" label="Jenis Kategori Punia">
+                    <option value="">Semua Kategori</option>
                     @foreach($daftarKategori as $kat)
-                        <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
+                        <option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</option>
                     @endforeach
-                </flux:select>
+                </x-select-search>
 
-                <flux:select wire:model.live="filter_jenis_usaha" label="Jenis Usaha">
-                    <flux:select.option value="">Semua Jenis Usaha</flux:select.option>
+                <x-select-search wire:model.live="filter_jenis_usaha" label="Jenis Usaha">
+                    <option value="">Semua Jenis Usaha</option>
                     @foreach($daftarJenisUsaha as $ju)
-                        <flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
+                        <option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</option>
                     @endforeach
-                </flux:select>
-                
-                <flux:select wire:model.live="filter_banjar" label="Wilayah Banjar">
-                    <flux:select.option value="">Semua Wilayah Banjar</flux:select.option>
+                </x-select-search>
+
+                <x-select-search wire:model.live="filter_banjar" label="Wilayah Banjar">
+                    <option value="">Semua Wilayah Banjar</option>
                     @foreach($daftarBanjar as $b)
-                        <flux:select.option value="{{ $b->id }}">Br. {{ $b->nama_banjar }}</flux:select.option>
+                        <option value="{{ $b->id }}">Br. {{ $b->nama_banjar }}</option>
                     @endforeach
-                </flux:select>
+                </x-select-search>
 
                 @if(Auth::user()->role === 'admin')
-                <flux:select wire:model.live="filter_petugas" label="Petugas Penanggung Jawab">
-                    <flux:select.option value="">Semua Petugas</flux:select.option>
+                <x-select-search wire:model.live="filter_petugas" label="Petugas Penanggung Jawab">
+                    <option value="">Semua Petugas</option>
                     @foreach($daftarPetugas as $p)
-                        <flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
+                        <option value="{{ $p->id }}">{{ $p->name }}</option>
                     @endforeach
-                </flux:select>
+                </x-select-search>
                 @endif
             </div>
         </div>
@@ -674,19 +674,19 @@ new class extends Component {
 					</div>
 				</div>
 				
-				<flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
+				<x-select-search wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Jenis Usaha...">
+					<option value="">Pilih Jenis Usaha</option>
 					@foreach($daftarJenisUsaha as $ju)
-						<flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
+						<option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</option>
 					@endforeach
-				</flux:select>
+				</x-select-search>
 				
-				<flux:select wire:model="banjar_id" label="Wilayah Banjar" placeholder="Pilih Banjar...">
+				<x-select-search wire:model="banjar_id" label="Wilayah Banjar" placeholder="Pilih Banjar...">
+					<option value="">Pilih Wilayah Banjar</option>
 					@foreach($daftarBanjar as $b)
-						<flux:select.option value="{{ $b->id }}">{{ $b->nama_banjar }}</flux:select.option>
+						<option value="{{ $b->id }}">{{ $b->nama_banjar }}</option>
 					@endforeach
-				</flux:select>
-
-				
+				</x-select-search>
 
 				<flux:input wire:model="no_registrasi" label="Nomor Registrasi" placeholder="Opsional" />
 				<flux:input wire:model="tgl_registrasi" type="date" label="Tanggal Registrasi" />
@@ -732,17 +732,19 @@ new class extends Component {
 					</flux:field>
 				</div>
 				<!-- x-data nominal pagu -->
-				<flux:select wire:model="kategori_id" label="Kategori Dudukan" placeholder="Pilih Kategori Dudukan...">
+				<x-select-search wire:model="kategori_id" label="Kategori Dudukan" placeholder="Pilih Kategori Dudukan...">
+					<option value="">Pilih Kategori Dudukan</option>
 					@foreach($daftarKategori as $k)
-						<flux:select.option value="{{ $k->id }}">{{ $k->nama_kategori }}</flux:select.option>
+						<option value="{{ $k->id }}">{{ $k->nama_kategori }}</option>
 					@endforeach
-				</flux:select>
+				</x-select-search>
 
-				<flux:select wire:model="user_id" label="Petugas" placeholder="Pilih Petugas...">
+				<x-select-search wire:model="user_id" label="Petugas" placeholder="Pilih Petugas...">
+					<option value="">Pilih Petugas</option>
 					@foreach($daftarPetugas as $p)
-						<flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
+						<option value="{{ $p->id }}">{{ $p->name }}</option>
 					@endforeach
-				</flux:select>
+				</x-select-search>
 
 				<div class="flex items-center h-full pt-6">
 					<flux:switch wire:model="is_active" label="Status Aktif" />
@@ -951,17 +953,17 @@ new class extends Component {
 					</div>
 				</div>
 
-				<flux:select wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
+				<x-select-search wire:model="jenis_usaha_id" label="Jenis Usaha" placeholder="Pilih Kategori...">
 					@foreach($daftarJenisUsaha as $ju)
-						<flux:select.option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</flux:select.option>
+						<option value="{{ $ju->id }}">{{ $ju->nama_jenis_usaha }}</option>
 					@endforeach
-				</flux:select>
+				</x-select-search>
 				
-				<flux:select wire:model="banjar_id" label="Wilayah Banjar" placeholder="Pilih Banjar...">
+				<x-select-search wire:model="banjar_id" label="Wilayah Banjar" placeholder="Pilih Banjar...">
 					@foreach($daftarBanjar as $b)
-						<flux:select.option value="{{ $b->id }}">{{ $b->nama_banjar }}</flux:select.option>
+						<option value="{{ $b->id }}">{{ $b->nama_banjar }}</option>
 					@endforeach
-				</flux:select>
+				</x-select-search>
 
 				<flux:input wire:model="no_registrasi" label="Nomor Registrasi" />
 				<flux:input wire:model="tgl_registrasi" type="date" label="Tanggal Registrasi" />
@@ -1007,17 +1009,17 @@ new class extends Component {
 				</div>
 				<!-- x-data nominal pagu -->
 
-				<flux:select wire:model="kategori_id" label="Kategori Dudukan" placeholder="Pilih Kategori Dudukan...">
+				<x-select-search wire:model="kategori_id" label="Kategori Dudukan" placeholder="Pilih Kategori Dudukan...">
 					@foreach($daftarKategori as $k)
-						<flux:select.option value="{{ $k->id }}">{{ $k->nama_kategori }}</flux:select.option>
+						<option value="{{ $k->id }}">{{ $k->nama_kategori }}</option>
 					@endforeach
-				</flux:select>
+				</x-select-search>
 
-				<flux:select wire:model="user_id" label="Petugas" placeholder="Pilih Petugas...">
+				<x-select-search wire:model="user_id" label="Petugas" placeholder="Pilih Petugas...">
 					@foreach($daftarPetugas as $p)
-						<flux:select.option value="{{ $p->id }}">{{ $p->name }}</flux:select.option>
+						<option value="{{ $p->id }}">{{ $p->name }}</option>
 					@endforeach
-				</flux:select>
+				</x-select-search>
 
 				<div class="flex items-center h-full pt-6">
 					<flux:switch wire:model="is_active" label="Status Aktif" />
