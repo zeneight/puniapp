@@ -1,4 +1,4 @@
-@props(['label' => '', 'placeholder' => 'Pilih atau ketik untuk mencari...'])
+@props(['label' => '', 'placeholder' => 'Pilih atau ketik untuk mencari...', 'description' => ''])
 
 @php
     // Komponen pintar: otomatis mendeteksi variabel Livewire apa yang sedang digunakan
@@ -8,6 +8,9 @@
 <div class="mb-4">
     @if($label)
         <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">{{ $label }}</label>
+    @endif
+    @if($description)
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-1.5">{{ $description }}</p>
     @endif
     
     <div wire:ignore>

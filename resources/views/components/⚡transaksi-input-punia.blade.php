@@ -338,18 +338,19 @@ new class extends Component {
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                            <flux:select wire:model.live="wajib_punia_id" label="Wajib Punia" placeholder="Pilih Wajib Punia..." searchable description="Pilih nama wajib punia yang akan dibayarkan.">
+                            <x-select-search wire:model.live="wajib_punia_id" label="Wajib Punia" placeholder="Pilih Wajib Punia..." searchable description="Pilih nama wajib punia yang akan dibayarkan.">
+                                <option value="">Pilih Wajib Punia</option>
                                 @foreach ($daftarWajibPunia as $wp)
-                                    <flux:select.option value="{{ $wp->id }}">{{ $wp->nama }}</flux:select.option>
+                                    <option value="{{ $wp->id }}">{{ $wp->nama }}</option>
                                 @endforeach
-                            </flux:select>
+                            </x-select-search>
 
-                            <flux:select wire:model="kategori_id" label="Kategori Punia" placeholder="Pilih Kategori..." description="Otomatis terisi sesuai WP.">
-                                <flux:select.option value="">-</flux:select.option>
+                            <x-select-search wire:model="kategori_id" label="Kategori Punia" placeholder="Pilih Kategori..." description="Otomatis terisi sesuai WP.">
+                                <option value="">Pilih Kategori</option>
                                 @foreach ($daftarKategori as $kat)
-                                    <flux:select.option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</flux:select.option>
+                                    <option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</option>
                                 @endforeach
-                            </flux:select>
+                            </x-select-search>
                         </div>
                     </div>
 
