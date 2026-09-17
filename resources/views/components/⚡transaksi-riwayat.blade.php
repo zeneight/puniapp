@@ -445,7 +445,7 @@ new class extends Component { // Sesuaikan nama class jika berbeda
 
             <div class="flex justify-end gap-2 pt-2">
                 <flux:button type="button" x-on:click="$flux.modal('edit-transaksi').close()" variant="ghost">Batal</flux:button>
-                <flux:button wire:click="konfirmasiHapus({{ $trx->id }})" icon="trash" class="text-red-500 hover:text-red-700 hover:bg-red-50" />
+                <flux:button wire:click="konfirmasiHapus({{ $edit_transaksi_id }})" icon="trash" class="text-red-500 hover:text-red-700 hover:bg-red-50" />
                 <flux:button type="submit" variant="primary">Simpan Perubahan</flux:button>
             </div>
         </form>
