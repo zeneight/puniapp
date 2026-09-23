@@ -56,6 +56,9 @@ new class extends Component
     public $edit_kunjungan_id;
     public $hapus_id;
 
+    // State penampung data rombongan
+    public $rombonganTamu = [];
+
     public function mount()
     {
         $this->tanggal_kunjungan = date('Y-m-d');
@@ -68,6 +71,29 @@ new class extends Component
     {
         $this->reset(['search', 'filter_tanggal', 'filter_status', 'filter_prioritas']);
         $this->resetPage();
+    }
+
+    // Saat modal tambah kunjungan dibuka, sediakan 1 baris form kosong
+    public function bukaTambahKunjungan()
+    {
+        $this->reset();
+        $this->rombonganTamu = [
+            ['nama' => '', 'wa' => '', 'pekerjaan' => '']
+        ];
+        $this->js('$flux.modal("modal-kunjungan").show()');
+    }
+
+    // Fungsi untuk menambah baris form tamu baru
+    public function tambahTamu()
+    {
+        $this->rombonganTamu[] = ['nama' => '', 'wa' => '', 'pekerjaan' => ''];
+    }
+
+    // Fungsi untuk menghapus baris form
+    public function hapusTamu($index)
+    {
+        unset($this->rombonganTamu[$index]);
+        $this->rombonganTamu = array_values($this->rombonganTamu); // Susun ulang index array
     }
 
     public function batal()
@@ -134,6 +160,8 @@ new class extends Component
             $this->tamu_id = $tamu->id;
         }
 
+        // -----------
+
         $kunjunganKe = KunjunganTamu::where('tamu_id', $this->tamu_id)->count() + 1;
 
         // 2. Simpan Transaksi Kunjungan
@@ -151,6 +179,21 @@ new class extends Component
             'longitude' => $this->longitude,
             'lampiran' => $pathLampiran,
         ]);
+
+        // 2.5. Looping data rombongan, simpan ke master tamu, lalu relasikan
+        foreach ($this->rombonganTamu as $tamuForm) {
+            // Cek atau buat data tamu di database master (agar terpisah)
+            $tamu = Tamu::firstOrCreate(
+                ['nama_pengunjung' => $tamuForm['nama']],
+                [
+                    'kontak_wa' => $tamuForm['wa'],
+                    'pekerjaan_status' => $tamuForm['pekerjaan']
+                ]
+            );
+
+            // Hubungkan tamu dengan kunjungan ini (Many-to-Many)
+            $kunjungan->tamu()->attach($tamu->id);
+        }
 
         // 3. Simpan Riwayat Awal
         RiwayatTindakLanjut::create([
