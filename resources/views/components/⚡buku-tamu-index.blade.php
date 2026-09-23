@@ -1134,7 +1134,54 @@ new class extends Component
                 <flux:input wire:model="petugas" label="Petugas Penerima" required />
 
                 <div class="md:col-span-2">
-                    <flux:textarea wire:model="alasan_kunjungan" label="Maksud Kunjungan / Laporan" rows="3" required />
+                    <flux:label class="mb-2">Maksud Kunjungan / Laporan <span class="text-red-500">*</span></flux:label>
+                    
+                    <!-- Wrapper dengan wire:ignore agar Livewire tidak merusak editor saat render ulang -->
+                    <div wire:ignore class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md overflow-hidden shadow-sm">
+                        <div x-data="{
+                            // BINDING UTAMA: Menyambungkan variabel Alpine dengan Livewire
+                            content: @entangle('alasan_kunjungan'),
+                            
+                            init() {
+                                let quill = new Quill(this.$refs.editorAlasan, {
+                                    theme: 'snow',
+                                    placeholder: 'Ketik maksud kunjungan atau laporan di sini...',
+                                    modules: {
+                                        toolbar: [
+                                            ['bold', 'italic', 'underline'],
+                                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                            ['clean']
+                                        ]
+                                    }
+                                });
+                                
+                                // 1. DATA -> EDITOR: Saat pertama kali modal/halaman dibuka (Mode Edit)
+                                if (this.content) { 
+                                    quill.root.innerHTML = this.content; 
+                                }
+                                
+                                // 2. EDITOR -> DATA: Saat user mengetik, langsung update ke variabel Livewire
+                                quill.on('text-change', () => {
+                                    this.content = quill.root.innerHTML;
+                                });
+                                
+                                // 3. LIVEWIRE -> EDITOR: Berjaga-jaga jika Livewire mereset form (tombol batal/simpan)
+                                this.$watch('content', value => {
+                                    if (value !== quill.root.innerHTML) {
+                                        quill.root.innerHTML = value || '';
+                                    }
+                                });
+                            }
+                        }">
+                            <!-- x-ref untuk target inisialisasi Quill -->
+                            <div x-ref="editorAlasan" class="min-h-[120px] text-sm text-zinc-800 dark:text-zinc-200"></div>
+                        </div>
+                    </div>
+
+                    <!-- Menampilkan pesan error validasi manual -->
+                    @error('alasan_kunjungan') 
+                        <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> 
+                    @enderror
                 </div>
             </div>
 
