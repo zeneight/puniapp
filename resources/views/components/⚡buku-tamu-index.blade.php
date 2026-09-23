@@ -56,6 +56,11 @@ new class extends Component
     public $edit_kunjungan_id;
     public $hapus_id;
 
+    // text
+    public $edit_riwayat_id = null;
+    public $edit_catatan = '';
+    public $edit_status_log = '';
+
     // State penampung data rombongan
     public $rombonganTamu = [];
 
@@ -407,6 +412,44 @@ new class extends Component
         \Flux::toast('Data utama kunjungan berhasil diperbarui!', variant: 'success');
     }
 
+    // Fungsi untuk membuka form edit riwayat di dalam modal
+    public function editRiwayat($riwayat_id)
+    {
+        $riwayat = RiwayatTindakLanjut::findOrFail($riwayat_id);
+        $this->edit_riwayat_id = $riwayat->id;
+        $this->edit_catatan = $riwayat->catatan;
+        $this->edit_status_log = $riwayat->status_log;
+    }
+
+    // Fungsi batal edit
+    public function batalEditRiwayat()
+    {
+        $this->reset(['edit_riwayat_id', 'edit_catatan', 'edit_status_log']);
+    }
+
+    // Fungsi simpan perubahan riwayat
+    public function updateRiwayat()
+    {
+        $this->validate([
+            'edit_catatan' => 'required',
+            'edit_status_log' => 'required',
+        ]);
+
+        $riwayat = RiwayatTindakLanjut::findOrFail($this->edit_riwayat_id);
+        $riwayat->update([
+            'catatan' => $this->edit_catatan,
+            'status_log' => $this->edit_status_log,
+        ]);
+
+        // PERBAIKAN: Refresh langsung variabel $riwayat_kunjungan yang dipakai di looping Blade
+        $this->riwayat_kunjungan = RiwayatTindakLanjut::where('kunjungan_id', $riwayat->kunjungan_id)
+                                    ->orderBy('created_at', 'asc') // Sesuaikan urutannya 
+                                    ->get();
+
+        $this->batalEditRiwayat();
+        \Flux::toast('Riwayat berhasil diperbarui!', variant: 'success');
+    }
+
     public function with()
     {
         $totalKeseluruhan = KunjunganTamu::count();
@@ -620,7 +663,44 @@ new class extends Component
                 <flux:input wire:model="petugas" label="Petugas Penerima" placeholder="Nama petugas..." required />
 
                 <div class="md:col-span-2">
-                    <flux:textarea wire:model="alasan_kunjungan" label="Maksud Kunjungan / Laporan" rows="3" required />
+                    <flux:label class="mb-2">Maksud Kunjungan / Laporan</flux:label>
+                    
+                    <!-- Wrapper dengan wire:ignore agar Livewire tidak merusak editor saat me-refresh komponen -->
+                    <div wire:ignore class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
+                        <div x-data="{
+                            content: @entangle('alasan_kunjungan'),
+                            init() {
+                                let quill = new Quill(this.$refs.editor, {
+                                    theme: 'snow',
+                                    modules: {
+                                        toolbar: [
+                                            ['bold', 'italic', 'underline'],
+                                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                            ['clean'] // Tombol hapus format
+                                        ]
+                                    }
+                                });
+                                
+                                // Isi nilai awal jika mode edit
+                                if (this.content) { quill.root.innerHTML = this.content; }
+                                
+                                // Kirim perubahan ke Livewire
+                                quill.on('text-change', () => {
+                                    this.content = quill.root.innerHTML;
+                                });
+                                
+                                // Dengarkan perubahan dari Livewire (saat tombol batal/reset ditekan)
+                                this.$watch('content', value => {
+                                    if (value !== quill.root.innerHTML) {
+                                        quill.root.innerHTML = value || '';
+                                    }
+                                });
+                            }
+                        }">
+                            <div x-ref="editor" class="min-h-[120px] text-zinc-800 dark:text-zinc-200"></div>
+                        </div>
+                    </div>
+                    @error('alasan_kunjungan') <span class="text-xs text-red-500 mt-1">{{ $message }}</span> @enderror
                 </div>
             </div>
 
@@ -850,14 +930,71 @@ new class extends Component
                 <div class="space-y-5 border-l-2 border-indigo-200 dark:border-indigo-900/50 ml-3">
                     @foreach($riwayat_kunjungan as $log)
                     <div class="relative pl-6">
+                        <!-- Titik Indikator Timeline -->
                         <span class="absolute -left-[9px] top-1 w-4 h-4 rounded-full border-4 border-white dark:border-zinc-900 {{ $log->status_log == 'Selesai' ? 'bg-green-500' : ($log->status_log == 'Proses' ? 'bg-blue-500' : 'bg-zinc-400') }}"></span>
-                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1">
-                            <span class="font-bold text-sm text-zinc-900 dark:text-white">{{ $log->status_log }}</span>
-                            <span class="text-[11px] text-zinc-500">{{ $log->created_at->translatedFormat('d M Y, H:i') }}</span>
-                        </div>
-                        <div class="text-sm text-zinc-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm mt-1">
-                            {{ $log->catatan }}
-                        </div>
+                        
+                        <!-- JIKA SEDANG MODE EDIT UNTUK LOG INI -->
+                        @if($edit_riwayat_id == $log->id)
+                            <div class="bg-indigo-50/50 dark:bg-indigo-900/10 p-3 rounded-lg border border-indigo-200 dark:border-indigo-800/50 shadow-sm mt-1">
+                                
+                                <flux:field class="mb-3">
+                                    <flux:label>Ubah Status</flux:label>
+                                    <flux:select wire:model="edit_status_log" size="sm">
+                                        <option value="Tamu masuk">Tamu masuk</option>
+                                        <option value="Proses">Proses</option>
+                                        <option value="Selesai">Selesai</option>
+                                    </flux:select>
+                                </flux:field>
+
+                                <flux:field class="mb-3">
+                                    <flux:label class="mb-2">Perbaiki Catatan</flux:label>
+                                    <!-- WYSIWYG Editor Quill -->
+                                    <div wire:ignore class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
+                                        <div x-data="{
+                                            content: @entangle('edit_catatan'),
+                                            init() {
+                                                let quill = new Quill(this.$refs.editorRiwayat, {
+                                                    theme: 'snow',
+                                                    modules: { toolbar: [['bold', 'italic', 'underline'], [{'list': 'ordered'}, {'list': 'bullet'}], ['clean']] }
+                                                });
+                                                if (this.content) { quill.root.innerHTML = this.content; }
+                                                quill.on('text-change', () => { this.content = quill.root.innerHTML; });
+                                                this.$watch('content', value => { if (value !== quill.root.innerHTML) { quill.root.innerHTML = value || ''; } });
+                                            }
+                                        }">
+                                            <div x-ref="editorRiwayat" class="text-sm text-zinc-800 dark:text-zinc-200"></div>
+                                        </div>
+                                    </div>
+                                </flux:field>
+
+                                <div class="flex gap-2 justify-end">
+                                    <flux:button wire:click="batalEditRiwayat" size="sm" variant="ghost">Batal</flux:button>
+                                    <flux:button wire:click="updateRiwayat" size="sm" variant="primary">Simpan</flux:button>
+                                </div>
+                            </div>
+
+                        <!-- JIKA MODE TAMPILAN BIASA -->
+                        @else
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1 group">
+                                <span class="font-bold text-sm text-zinc-900 dark:text-white">{{ $log->status_log }}</span>
+                                
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[11px] text-zinc-500">{{ $log->created_at->translatedFormat('d M Y, H:i') }}</span>
+                                    <!-- Tombol Edit Riwayat (Hanya muncul jika di-hover untuk menjaga UI tetap bersih) -->
+                                    <button type="button" wire:click="editRiwayat({{ $log->id }})" class="text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                        <flux:icon.pencil-square class="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="text-sm text-zinc-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm mt-1">
+                                
+                                <div class="[&>p]:mb-1 [&>ol]:list-decimal [&>ol]:ml-5 [&>ul]:list-disc [&>ul]:ml-5 last:[&>*]:mb-0">
+                                    {!! $log->catatan !!}
+                                </div>
+                            </div>
+                        @endif
+
                     </div>
                     @endforeach
                 </div>
@@ -875,7 +1012,47 @@ new class extends Component
                             </flux:select>
                         </div>
                         <div class="w-full sm:w-2/3">
-                            <flux:input wire:model="tindak_lanjut_baru" placeholder="Ketik hasil tindakan yang dilakukan..." required />
+                            <!-- Wrapper dengan wire:ignore agar Livewire tidak me-reset UI editor -->
+                            <div wire:ignore class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md overflow-hidden shadow-sm">
+                                <div x-data="{
+                                    content: @entangle('tindak_lanjut_baru'),
+                                    init() {
+                                        let quill = new Quill(this.$refs.editorTindakLanjut, {
+                                            theme: 'snow',
+                                            // Placeholder diletakkan di dalam konfigurasi Quill
+                                            placeholder: 'Ketik hasil tindakan yang dilakukan...',
+                                            modules: {
+                                                toolbar: [
+                                                    ['bold', 'italic', 'underline'],
+                                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                                    ['clean']
+                                                ]
+                                            }
+                                        });
+                                        
+                                        if (this.content) { quill.root.innerHTML = this.content; }
+                                        
+                                        quill.on('text-change', () => {
+                                            this.content = quill.root.innerHTML;
+                                        });
+                                        
+                                        // Mengosongkan editor otomatis ketika berhasil disimpan (variabel di-reset)
+                                        this.$watch('content', value => {
+                                            if (value !== quill.root.innerHTML) {
+                                                quill.root.innerHTML = value || '';
+                                            }
+                                        });
+                                    }
+                                }">
+                                    <!-- Tempat editor dirender -->
+                                    <div x-ref="editorTindakLanjut" class="text-sm text-zinc-800 dark:text-zinc-200"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pesan error validasi manual (karena kita tidak pakai flux:input lagi) -->
+                            @error('tindak_lanjut_baru') 
+                                <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> 
+                            @enderror
                         </div>
                     </div>
                     <div class="flex justify-end gap-2 mt-3">
