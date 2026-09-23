@@ -14,6 +14,6 @@ class Tamu extends Model
 
     public function kunjungans()
     {
-        return $this->belongsToMany(KunjunganTamu::class, 'detail_kunjungan_tamu', 'tamu_id', 'kunjungan_tamu_id');
+        return $this->belongsToMany(KunjunganTamu::class, 'detail_kunjungan_tamu', 'tamu_id', 'kunjungan_id');
     }
 }

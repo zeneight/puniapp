@@ -10,7 +10,7 @@ class KunjunganTamu extends Model
     public function tamu()
     {
         // belongsToMany(ModelTujuan, NamaTabelPivot, ForeignKunciIni, ForeignKunciTujuan)
-        return $this->belongsToMany(Tamu::class, 'detail_kunjungan_tamu', 'kunjungan_tamu_id', 'tamu_id');
+        return $this->belongsToMany(Tamu::class, 'detail_kunjungan_tamu', 'kunjungan_id', 'tamu_id');
     }
 
     public function user()
