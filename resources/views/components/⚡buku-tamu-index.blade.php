@@ -174,7 +174,7 @@ new class extends Component
             'alasan_kunjungan' => 'required|string',
             'banjar_id' => 'required',
             'petugas' => 'required|string',
-            'lampiran' => 'nullable|file|max:5120',
+            'lampiran' => 'nullable|file|max:25120',
             'latitude' => 'nullable',
             'longitude' => 'nullable',
         ]);
@@ -655,6 +655,16 @@ new class extends Component
                     <flux:field>
                         <flux:label>File Lampiran / Foto (Opsional)</flux:label>
                         <input type="file" wire:model="lampiran" class="mt-2 block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400">
+                        
+                        <!-- TAMBAHAN INFORMASI BATAS UPLOAD -->
+                        <div class="flex justify-between items-start mt-1">
+                            <span class="text-[11px] text-zinc-500 flex items-center gap-1">
+                                <flux:icon.information-circle class="w-3.5 h-3.5" />
+                                Format: PDF, JPG, PNG, DOCX, XLS. Maksimal ukuran: 25 MB.
+                            </span>
+                            <div wire:loading wire:target="lampiran" class="text-[11px] font-medium text-indigo-500 animate-pulse">Mengunggah file...</div>
+                        </div>
+
                         <div wire:loading wire:target="lampiran" class="text-xs text-indigo-500 mt-1">Mengunggah file...</div>
                         @error('lampiran') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                     </flux:field>
@@ -1127,6 +1137,16 @@ new class extends Component
                 <div class="md:col-span-2">
                     <flux:label>File Lampiran / Foto (Opsional)</flux:label>
                     <input type="file" wire:model="lampiran" class="mt-2 block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400">
+                    
+                    <!-- TAMBAHAN INFORMASI BATAS UPLOAD -->
+                    <div class="flex justify-between items-start mt-1">
+                        <span class="text-[11px] text-zinc-500 flex items-center gap-1">
+                            <flux:icon.information-circle class="w-3.5 h-3.5" />
+                            Format: PDF, JPG, PNG, DOCX, XLS. Maksimal ukuran: 25 MB.
+                        </span>
+                        <div wire:loading wire:target="lampiran" class="text-[11px] font-medium text-indigo-500 animate-pulse">Mengunggah file...</div>
+                    </div>
+                    
                     <div wire:loading wire:target="lampiran" class="text-xs text-indigo-500 mt-1">Mengunggah file...</div>
                     @error('lampiran') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                 </div>

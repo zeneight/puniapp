@@ -752,7 +752,7 @@ new class extends Component {
 
 				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
 					<flux:input wire:model="dokumens" type="file" label="Lampiran Dokumen (Opsional)" multiple accept="image/*,application/pdf" />
-					<div class="text-[11px] text-zinc-500 mt-1">Bisa pilih file Gambar (otomatis dikompres) atau Dokumen PDF.</div>
+					<div class="text-[11px] text-zinc-500 mt-1">Bisa pilih file Gambar (otomatis dikompres) atau Dokumen PDF. Max: 25MB</div>
 					
 					<div wire:loading wire:target="dokumens" class="mt-3">
 						<div class="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 rounded-lg inline-flex">
@@ -1027,7 +1027,7 @@ new class extends Component {
 
 				<div class="md:col-span-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
 					<flux:input wire:model="dokumens" type="file" label="Lampiran Dokumen (Opsional)" multiple accept="image/*,application/pdf" />
-					<div class="text-[11px] text-zinc-500 mt-1">Bisa pilih file Gambar (otomatis dikompres) atau Dokumen PDF.</div>
+					<div class="text-[11px] text-zinc-500 mt-1">Bisa pilih file Gambar (otomatis dikompres) atau Dokumen PDF. Max: 25MB</div>
 					
 					<div wire:loading wire:target="dokumens" class="mt-3">
 						<div class="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 rounded-lg inline-flex">
