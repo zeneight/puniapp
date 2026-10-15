@@ -15,11 +15,72 @@ new class extends Component
     public $tahunPilih;
     public $daftarTahun = [];
 
+    // --- TAMBAHAN: State untuk modal edit transaksi ---
+    public $edit_trx_id = null;
+    public $edit_tanggal_bayar;
+    public $edit_nominal;
+    public $edit_keterangan;
+    public $trxDetail = null;
+
+    public function bukaDetailTransaksi($id)
+    {
+        // Tarik data transaksi, sesuaikan relasi 'user' atau 'petugas' jika ada di model Transaksi
+        $this->trxDetail = Transaksi::findOrFail($id);
+        
+        $this->js('$flux.modal("detail-transaksi").show()');
+    }
+
+    public function bukaEditTransaksi($id)
+    {
+        $trx = Transaksi::findOrFail($id);
+        
+        $this->edit_trx_id = $trx->id;
+        $this->edit_tanggal_bayar = $trx->tanggal_bayar;
+        // Ambil nominal (jaga-jaga namanya kolomnya nominal_bayar atau nominal)
+        $this->edit_nominal = $trx->nominal_bayar ?? $trx->nominal; 
+        $this->edit_keterangan = $trx->keterangan;
+
+        $this->resetErrorBag();
+        
+        $this->js('$flux.modal("edit-transaksi").show()');
+    }
+
+    public function updateTransaksi()
+    {
+        $this->validate([
+            'edit_tanggal_bayar' => 'required|date',
+            'edit_nominal' => 'required|numeric|min:0',
+            'edit_keterangan' => 'nullable|string',
+        ]);
+
+        $trx = Transaksi::findOrFail($this->edit_trx_id);
+        
+        // Update data dasar
+        $trx->tanggal_bayar = $this->edit_tanggal_bayar;
+        $trx->keterangan = $this->edit_keterangan;
+
+        // Cek struktur database untuk kolom nominal
+        if (array_key_exists('nominal_bayar', $trx->getAttributes())) {
+            $trx->nominal_bayar = $this->edit_nominal;
+        } else {
+            $trx->nominal = $this->edit_nominal;
+        }
+
+        $trx->save();
+
+        $this->js('$flux.modal("edit-transaksi").close()');
+        \Flux::toast('Data transaksi berhasil diperbarui!', variant: 'success');
+        
+        // Bersihkan form
+        $this->reset(['edit_trx_id', 'edit_tanggal_bayar', 'edit_nominal', 'edit_keterangan']);
+    }
+
+    // ----------------------------------------------------
+
     public function mount($id)
     {
         $this->wpId = $id;
 
-        // PERBAIKAN 1: Tambahkan relasi petugas, banjar, dan jenisUsaha agar datanya terbaca
         $this->wp = WajibPunia::with(['kategori', 'jenisUsaha', 'banjar', 'petugas', 'dokumens' => function($query) {
             $query->latest();
         }])->findOrFail($id);
@@ -108,7 +169,7 @@ new class extends Component
                     <flux:subheading>{{ $wp->kategori->nama_kategori ?? 'Tanpa Kategori' }}</flux:subheading>
                 </div>
 
-                <!-- Informasi Utama (Diubah jadi Grid agar padat) -->
+                <!-- Informasi Utama -->
                 <div>
                     <div class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Informasi Utama</div>
                     <div class="grid grid-cols-2 gap-y-4 gap-x-2">
@@ -138,13 +199,11 @@ new class extends Component
                         </div>
 
                         <div class="col-span-2">
-                            <!-- No Registrasi -->
                             <div>
                                 <span class="block text-[11px] text-zinc-500 mb-0.5">No. Registrasi</span>
                                 <span class="text-sm font-mono font-medium text-zinc-900 dark:text-zinc-100 break-all block">{{ $wp->no_registrasi ?? '-' }}</span>
                             </div>
                             
-                            <!-- Tgl Registrasi (Dipisah ke bawah dengan garis tipis) -->
                             <div class="pt-2.5">
                                 <span class="block text-[11px] text-zinc-500 mb-0.5">Tgl Registrasi</span>
                                 <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100 block">
@@ -152,9 +211,6 @@ new class extends Component
                                 </span>
                             </div>
                         </div>
-                        
-
-
                     </div>
                 </div>
 
@@ -177,7 +233,6 @@ new class extends Component
                             <div x-data="{
                                 map: null,
                                 init() {
-                                    // Map Read-only (Tidak bisa digeser/zoom agar tidak mengganggu scroll HP)
                                     this.map = L.map($refs.miniMap, {
                                         zoomControl: false,
                                         dragging: false,
@@ -260,7 +315,9 @@ new class extends Component
                                 <th scope="col" class="px-4 py-3 font-semibold rounded-tl-lg">No</th>
                                 <th scope="col" class="px-4 py-3 font-semibold">Bulan</th>
                                 <th scope="col" class="px-4 py-3 font-semibold">Tgl Bayar</th>
-                                <th scope="col" class="px-4 py-3 font-semibold text-right rounded-tr-lg">Nominal</th>
+                                <th scope="col" class="px-4 py-3 font-semibold text-right">Nominal</th>
+                                <!-- TAMBAHAN KOLOM AKSI -->
+                                <th scope="col" class="px-4 py-3 font-semibold text-center rounded-tr-lg">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -276,10 +333,22 @@ new class extends Component
                                     <td class="px-4 py-3.5 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
                                         Rp {{ number_format($trx->nominal_bayar ?? $trx->nominal, 0, ',', '.') }}
                                     </td>
+                                    <!-- TAMBAHAN TOMBOL DETAIL -->
+                                    <td class="px-4 py-3.5 text-center">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <flux:button wire:click="bukaDetailTransaksi({{ $trx->id }})" size="xs" variant="subtle" icon="document-text" class="text-zinc-500 hover:text-zinc-700">
+                                                Detail
+                                            </flux:button>
+                                            <flux:button wire:click="bukaEditTransaksi({{ $trx->id }})" size="xs" variant="subtle" icon="pencil-square" class="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                                                Edit
+                                            </flux:button>
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-4 py-16 text-center text-zinc-500">
+                                    <!-- COLSPAN DIUBAH MENJADI 5 -->
+                                    <td colspan="5" class="px-4 py-16 text-center text-zinc-500">
                                         <div class="flex flex-col items-center justify-center">
                                             <div class="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-3">
                                                 <flux:icon.document-magnifying-glass class="w-6 h-6 text-zinc-400" />
@@ -296,4 +365,106 @@ new class extends Component
             </flux:card>
         </div>
     </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL DETAIL TRANSAKSI                     -->
+    <!-- ========================================== -->
+    <flux:modal name="detail-transaksi" class="md:w-[500px]">
+        @if($trxDetail)
+        <div>
+            <div class="border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-5 flex justify-between items-start">
+                <div>
+                    <flux:heading size="lg">Detail Pembayaran</flux:heading>
+                    <flux:subheading>Periode {{ \Carbon\Carbon::create()->month($trxDetail->periode_bulan)->locale('id')->isoFormat('MMMM') }} {{ $trxDetail->periode_tahun }}</flux:subheading>
+                </div>
+                <flux:badge color="success" size="sm">Berhasil</flux:badge>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800 border-dashed">
+                    <span class="text-sm text-zinc-500">No. Transaksi / Kuitansi</span>
+                    <span class="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ $trxDetail->no_transaksi ?? 'TRX-'.str_pad($trxDetail->id, 5, '0', STR_PAD_LEFT) }}</span>
+                </div>
+
+                <div class="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800 border-dashed">
+                    <span class="text-sm text-zinc-500">Tanggal Pembayaran</span>
+                    <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ \Carbon\Carbon::parse($trxDetail->tanggal_bayar)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</span>
+                </div>
+
+                <!-- Jika Bli punya relasi ke User penginput, hapus komentar di bawah ini -->
+                <!--
+                <div class="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800 border-dashed">
+                    <span class="text-sm text-zinc-500">Petugas Penerima</span>
+                    <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400">{{ $trxDetail->user->name ?? 'Petugas' }}</span>
+                </div>
+                -->
+
+                <!-- Jika ada metode pembayaran (Cash/Transfer), sesuaikan fieldnya -->
+                @if(isset($trxDetail->metode_pembayaran))
+                <div class="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800 border-dashed">
+                    <span class="text-sm text-zinc-500">Metode</span>
+                    <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $trxDetail->metode_pembayaran }}</span>
+                </div>
+                @endif
+
+                <div class="flex justify-between items-center py-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg px-3 mt-2 border border-zinc-100 dark:border-zinc-700">
+                    <span class="font-semibold text-zinc-700 dark:text-zinc-300">Total Dibayar</span>
+                    <span class="font-mono text-xl font-bold text-emerald-600 dark:text-emerald-400">Rp {{ number_format($trxDetail->nominal_bayar ?? $trxDetail->nominal, 0, ',', '.') }}</span>
+                </div>
+
+                @if(isset($trxDetail->keterangan) && $trxDetail->keterangan)
+                <div class="mt-4">
+                    <span class="block text-xs text-zinc-500 mb-1">Catatan Transaksi</span>
+                    <p class="text-sm text-zinc-700 dark:text-zinc-300 p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                        {{ $trxDetail->keterangan }}
+                    </p>
+                </div>
+                @endif
+                
+                <!-- Jika Bli menyimpan bukti foto bayar, bisa ditampilkan di sini -->
+                @if(isset($trxDetail->bukti_bayar) && $trxDetail->bukti_bayar)
+                <div class="mt-4">
+                    <span class="block text-xs text-zinc-500 mb-1">Bukti Transfer / Foto</span>
+                    <a href="{{ asset('storage/' . $trxDetail->bukti_bayar) }}" target="_blank" class="block w-full text-center py-2 border border-indigo-200 bg-indigo-50 text-indigo-600 rounded-lg text-sm hover:bg-indigo-100 transition-colors">
+                        Lihat Lampiran Bukti
+                    </a>
+                </div>
+                @endif
+            </div>
+
+            <div class="mt-8 flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Tutup</flux:button>
+                </flux:modal.close>
+            </div>
+        </div>
+        @endif
+    </flux:modal>
+
+    <!-- ========================================== -->
+    <!-- MODAL EDIT TRANSAKSI                       -->
+    <!-- ========================================== -->
+    <flux:modal name="edit-transaksi" class="md:w-[500px]">
+        <form wire:submit.prevent="updateTransaksi" class="space-y-5">
+            <div>
+                <flux:heading size="lg">Edit Transaksi</flux:heading>
+                <flux:subheading>Ubah tanggal pembayaran, nominal, atau catatan transaksi.</flux:subheading>
+            </div>
+
+            <div class="space-y-4">
+                <flux:input wire:model="edit_tanggal_bayar" type="date" label="Tanggal Pembayaran" required />
+                
+                <flux:input wire:model="edit_nominal" type="number" label="Nominal (Rp)" required />
+                
+                <flux:textarea wire:model="edit_keterangan" label="Catatan / Keterangan Transaksi" rows="3" />
+            </div>
+
+            <div class="mt-6 flex justify-end gap-2 border-t border-zinc-200 dark:border-zinc-700 pt-4">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary">Simpan Perubahan</flux:button>
+            </div>
+        </form>
+    </flux:modal>
 </div>
