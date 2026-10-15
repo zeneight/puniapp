@@ -788,14 +788,22 @@ new class extends Component {
 
 						@if ($dokumens)
 							@foreach ($dokumens as $dok)
-								<div class="relative w-16 h-16 rounded-md overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-200 bg-indigo-50 flex items-center justify-center cursor-help" title="Belum tersimpan: {{ $dok->getClientOriginalName() }}">
+								<!-- BUNGKUS DENGAN TAG a href, lalu arahkan ke temporaryUrl() -->
+								<a href="{{ $dok->temporaryUrl() }}" 
+								target="_blank" 
+								class="relative w-16 h-16 rounded-md overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-200 bg-indigo-50 flex items-center justify-center cursor-pointer group" 
+								title="Lihat Pratinjau: {{ $dok->getClientOriginalName() }}">
+								
 									@if(in_array(strtolower($dok->getClientOriginalExtension()), ['pdf']))
-										<flux:icon.document-text class="w-8 h-8 text-red-500" />
+										<!-- Efek hover pada ikon PDF agar terlihat bisa diklik -->
+										<flux:icon.document-text class="w-8 h-8 text-red-500 group-hover:scale-110 transition-transform" />
 									@else
-										<img src="{{ $dok->temporaryUrl() }}" class="object-cover w-full h-full" alt="Preview">
+										<!-- Gambar otomatis bisa diklik karena sudah dibungkus tag a -->
+										<img src="{{ $dok->temporaryUrl() }}" class="object-cover w-full h-full group-hover:opacity-80 transition-opacity" alt="Preview">
 									@endif
+									
 									<div class="absolute inset-0 bg-indigo-500/10 border-2 border-indigo-500 border-dashed rounded-md"></div>
-								</div>
+								</a>
 							@endforeach
 						@endif
 					</div>
@@ -1063,14 +1071,22 @@ new class extends Component {
 
 						@if ($dokumens)
 							@foreach ($dokumens as $dok)
-								<div class="relative w-16 h-16 rounded-md overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-200 bg-indigo-50 flex items-center justify-center cursor-help" title="Belum tersimpan: {{ $dok->getClientOriginalName() }}">
+								<!-- BUNGKUS DENGAN TAG a href, lalu arahkan ke temporaryUrl() -->
+								<a href="{{ $dok->temporaryUrl() }}" 
+								target="_blank" 
+								class="relative w-16 h-16 rounded-md overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-200 bg-indigo-50 flex items-center justify-center cursor-pointer group" 
+								title="Lihat Pratinjau: {{ $dok->getClientOriginalName() }}">
+								
 									@if(in_array(strtolower($dok->getClientOriginalExtension()), ['pdf']))
-										<flux:icon.document-text class="w-8 h-8 text-red-500" />
+										<!-- Efek hover pada ikon PDF agar terlihat bisa diklik -->
+										<flux:icon.document-text class="w-8 h-8 text-red-500 group-hover:scale-110 transition-transform" />
 									@else
-										<img src="{{ $dok->temporaryUrl() }}" class="object-cover w-full h-full" alt="Preview">
+										<!-- Gambar otomatis bisa diklik karena sudah dibungkus tag a -->
+										<img src="{{ $dok->temporaryUrl() }}" class="object-cover w-full h-full group-hover:opacity-80 transition-opacity" alt="Preview">
 									@endif
+									
 									<div class="absolute inset-0 bg-indigo-500/10 border-2 border-indigo-500 border-dashed rounded-md"></div>
-								</div>
+								</a>
 							@endforeach
 						@endif
 					</div>
