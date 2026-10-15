@@ -832,7 +832,9 @@ new class extends Component
     <flux:modal name="detail-kunjungan" class="md:w-[650px]">
         @if($detailKunjungan)
         <div class="flex flex-col h-full max-h-[85vh]">
-            <div class="border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4 shrink-0">
+            
+            <!-- 1. HEADER (Fixed di Atas) -->
+            <div class="border-b border-zinc-200 dark:border-zinc-700 pb-4 shrink-0">
                 <div class="flex justify-between items-start">
                     <div>
                         <flux:heading size="lg">
@@ -847,8 +849,13 @@ new class extends Component
                     </div>
                     <flux:badge class="mr-8" color="{{ $detailKunjungan->status == 'Selesai' ? 'green' : 'blue' }}">{{ $detailKunjungan->status }}</flux:badge>
                 </div>
+            </div>
+            
+            <!-- 2. BODY SCROLL (Maksud Kunjungan, Peta, & Timeline bergabung di sini) -->
+            <div class="flex-1 overflow-y-auto py-4 pr-2 space-y-8">
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                <!-- A. Bagian Detail Kunjungan & Peta -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
                     <!-- KOLOM KIRI: Detail Maksud Kunjungan & Lampiran -->
                     <div class="bg-zinc-50 dark:bg-zinc-800/50 p-3.5 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 flex flex-col justify-between">
@@ -887,7 +894,7 @@ new class extends Component
 
                     <!-- KOLOM KANAN: Peta Mini -->
                     @if($detailKunjungan->latitude && $detailKunjungan->longitude)
-                    <div class="h-full rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm flex flex-col relative z-0" wire:key="map-kunjungan-{{ $detailKunjungan->id }}">
+                    <div class="h-full rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm flex flex-col relative z-0 min-h-[200px]" wire:key="map-kunjungan-{{ $detailKunjungan->id }}">
                         <div x-data="{
                                 map: null,
                                 marker: null,
@@ -915,7 +922,7 @@ new class extends Component
 
                                     setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 150);
                                 }
-                            }" class="flex-1 min-h-[140px]" wire:ignore>
+                            }" class="flex-1" wire:ignore>
                             
                             <div x-ref="miniMap" class="h-full w-full z-0 relative"></div>
                         </div>
@@ -925,93 +932,94 @@ new class extends Component
                         </a>
                     </div>
                     @else
-                    <div class="h-full rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center p-4 text-center" wire:key="map-empty-{{ $detailKunjungan->id }}">
+                    <div class="h-full min-h-[200px] rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center p-4 text-center" wire:key="map-empty-{{ $detailKunjungan->id }}">
                         <flux:icon.map class="w-8 h-8 text-zinc-400 mb-2" />
                         <span class="text-xs text-zinc-500">Tidak ada titik koordinat lokasi yang dilampirkan.</span>
                     </div>
                     @endif
 
                 </div>
-            </div>
 
-            <div class="flex-1 overflow-y-auto pr-2 mb-4">
-                <div class="font-semibold text-sm mb-4">Timeline Penanganan</div>
-                
-                <div class="space-y-5 border-l-2 border-indigo-200 dark:border-indigo-900/50 ml-3">
-                    @foreach($riwayat_kunjungan as $log)
-                    <div class="relative pl-6">
-                        <!-- Titik Indikator Timeline -->
-                        <span class="absolute -left-[9px] top-1 w-4 h-4 rounded-full border-4 border-white dark:border-zinc-900 {{ $log->status_log == 'Selesai' ? 'bg-green-500' : ($log->status_log == 'Proses' ? 'bg-blue-500' : 'bg-zinc-400') }}"></span>
-                        
-                        <!-- JIKA SEDANG MODE EDIT UNTUK LOG INI -->
-                        @if($edit_riwayat_id == $log->id)
-                            <div class="bg-indigo-50/50 dark:bg-indigo-900/10 p-3 rounded-lg border border-indigo-200 dark:border-indigo-800/50 shadow-sm mt-1">
-                                
-                                <flux:field class="mb-3">
-                                    <flux:label>Ubah Status</flux:label>
-                                    <flux:select wire:model="edit_status_log" size="sm">
-                                        <option value="Tamu masuk">Tamu masuk</option>
-                                        <option value="Proses">Proses</option>
-                                        <option value="Selesai">Selesai</option>
-                                    </flux:select>
-                                </flux:field>
-
-                                <flux:field class="mb-3">
-                                    <flux:label class="mb-2">Perbaiki Catatan</flux:label>
-                                    <!-- WYSIWYG Editor Quill -->
-                                    <div wire:ignore class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
-                                        <div x-data="{
-                                            content: @entangle('edit_catatan'),
-                                            init() {
-                                                let quill = new Quill(this.$refs.editorRiwayat, {
-                                                    theme: 'snow',
-                                                    modules: { toolbar: [['bold', 'italic', 'underline'], [{'list': 'ordered'}, {'list': 'bullet'}], ['clean']] }
-                                                });
-                                                if (this.content) { quill.root.innerHTML = this.content; }
-                                                quill.on('text-change', () => { this.content = quill.root.innerHTML; });
-                                                this.$watch('content', value => { if (value !== quill.root.innerHTML) { quill.root.innerHTML = value || ''; } });
-                                            }
-                                        }">
-                                            <div x-ref="editorRiwayat" class="text-sm text-zinc-800 dark:text-zinc-200"></div>
-                                        </div>
-                                    </div>
-                                </flux:field>
-
-                                <div class="flex gap-2 justify-end">
-                                    <flux:button wire:click="batalEditRiwayat" size="sm" variant="ghost">Batal</flux:button>
-                                    <flux:button wire:click="updateRiwayat" size="sm" variant="primary">Simpan</flux:button>
-                                </div>
-                            </div>
-
-                        <!-- JIKA MODE TAMPILAN BIASA -->
-                        @else
-                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1 group">
-                                <span class="font-bold text-sm text-zinc-900 dark:text-white">{{ $log->status_log }}</span>
-                                
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[11px] text-zinc-500">{{ $log->created_at->translatedFormat('d M Y, H:i') }}</span>
-                                    <!-- Tombol Edit Riwayat (Hanya muncul jika di-hover untuk menjaga UI tetap bersih) -->
-                                    <button type="button" wire:click="editRiwayat({{ $log->id }})" class="text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                                        <flux:icon.pencil-square class="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
+                <!-- B. Bagian Timeline -->
+                <div>
+                    <div class="font-semibold text-sm mb-4">Timeline Penanganan</div>
+                    
+                    <div class="space-y-5 border-l-2 border-indigo-200 dark:border-indigo-900/50 ml-3">
+                        @foreach($riwayat_kunjungan as $log)
+                        <div class="relative pl-6">
+                            <!-- Titik Indikator Timeline -->
+                            <span class="absolute -left-[9px] top-1 w-4 h-4 rounded-full border-4 border-white dark:border-zinc-900 {{ $log->status_log == 'Selesai' ? 'bg-green-500' : ($log->status_log == 'Proses' ? 'bg-blue-500' : 'bg-zinc-400') }}"></span>
                             
-                            <div class="text-sm text-zinc-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm mt-1">
-                                
-                                <div class="[&>p]:mb-1 [&>ol]:list-decimal [&>ol]:ml-5 [&>ul]:list-disc [&>ul]:ml-5 last:[&>*]:mb-0">
-                                    {!! $log->catatan !!}
+                            <!-- JIKA SEDANG MODE EDIT UNTUK LOG INI -->
+                            @if($edit_riwayat_id == $log->id)
+                                <div class="bg-indigo-50/50 dark:bg-indigo-900/10 p-3 rounded-lg border border-indigo-200 dark:border-indigo-800/50 shadow-sm mt-1">
+                                    
+                                    <flux:field class="mb-3">
+                                        <flux:label>Ubah Status</flux:label>
+                                        <flux:select wire:model="edit_status_log" size="sm">
+                                            <option value="Tamu masuk">Tamu masuk</option>
+                                            <option value="Proses">Proses</option>
+                                            <option value="Selesai">Selesai</option>
+                                        </flux:select>
+                                    </flux:field>
+
+                                    <flux:field class="mb-3">
+                                        <flux:label class="mb-2">Perbaiki Catatan</flux:label>
+                                        <!-- WYSIWYG Editor Quill -->
+                                        <div wire:ignore class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
+                                            <div x-data="{
+                                                    content: @entangle('edit_catatan'),
+                                                    init() {
+                                                        let quill = new Quill(this.$refs.editorRiwayat, {
+                                                            theme: 'snow',
+                                                            modules: { toolbar: [['bold', 'italic', 'underline'], [{'list': 'ordered'}, {'list': 'bullet'}], ['clean']] }
+                                                        });
+                                                        if (this.content) { quill.root.innerHTML = this.content; }
+                                                        quill.on('text-change', () => { this.content = quill.root.innerHTML; });
+                                                        this.$watch('content', value => { if (value !== quill.root.innerHTML) { quill.root.innerHTML = value || ''; } });
+                                                    }
+                                                }">
+                                                <div x-ref="editorRiwayat" class="text-sm text-zinc-800 dark:text-zinc-200"></div>
+                                            </div>
+                                        </div>
+                                    </flux:field>
+
+                                    <div class="flex gap-2 justify-end">
+                                        <flux:button wire:click="batalEditRiwayat" size="sm" variant="ghost">Batal</flux:button>
+                                        <flux:button wire:click="updateRiwayat" size="sm" variant="primary">Simpan</flux:button>
+                                    </div>
                                 </div>
-                            </div>
-                        @endif
 
+                            <!-- JIKA MODE TAMPILAN BIASA -->
+                            @else
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1 group">
+                                    <span class="font-bold text-sm text-zinc-900 dark:text-white">{{ $log->status_log }}</span>
+                                    
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] text-zinc-500">{{ $log->created_at->translatedFormat('d M Y, H:i') }}</span>
+                                        <button type="button" wire:click="editRiwayat({{ $log->id }})" class="text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                            <flux:icon.pencil-square class="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm mt-1">
+                                    <div class="[&>p]:mb-1 [&>ol]:list-decimal [&>ol]:ml-5 [&>ul]:list-disc [&>ul]:ml-5 last:[&>*]:mb-0">
+                                        {!! $log->catatan !!}
+                                    </div>
+                                </div>
+                            @endif
+
+                        </div>
+                        @endforeach
                     </div>
-                    @endforeach
                 </div>
-            </div>
 
+            </div> <!-- End of Body Scroll -->
+
+            <!-- 3. FOOTER / FORM TINDAK LANJUT (Fixed di Bawah) -->
             @if($detailKunjungan->status !== 'Selesai')
-            <div class="shrink-0 pt-4 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/30 -mx-6 -mb-6 px-6 pb-6 rounded-b-xl">
+            <div class="shrink-0 pt-4 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/30 -mx-6 -mb-6 px-6 pb-6 rounded-b-xl mt-4">
                 <form wire:submit.prevent="simpanTindakLanjut" class="space-y-3">
                     <div class="font-semibold text-sm text-indigo-700 dark:text-indigo-400 mb-2">Catat Tindak Lanjut Baru</div>
                     <div class="flex flex-col sm:flex-row gap-3">
@@ -1025,41 +1033,37 @@ new class extends Component
                             <!-- Wrapper dengan wire:ignore agar Livewire tidak me-reset UI editor -->
                             <div wire:ignore class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md overflow-hidden shadow-sm">
                                 <div x-data="{
-                                    content: @entangle('tindak_lanjut_baru'),
-                                    init() {
-                                        let quill = new Quill(this.$refs.editorTindakLanjut, {
-                                            theme: 'snow',
-                                            // Placeholder diletakkan di dalam konfigurasi Quill
-                                            placeholder: 'Ketik hasil tindakan yang dilakukan...',
-                                            modules: {
-                                                toolbar: [
-                                                    ['bold', 'italic', 'underline'],
-                                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                                    ['clean']
-                                                ]
-                                            }
-                                        });
-                                        
-                                        if (this.content) { quill.root.innerHTML = this.content; }
-                                        
-                                        quill.on('text-change', () => {
-                                            this.content = quill.root.innerHTML;
-                                        });
-                                        
-                                        // Mengosongkan editor otomatis ketika berhasil disimpan (variabel di-reset)
-                                        this.$watch('content', value => {
-                                            if (value !== quill.root.innerHTML) {
-                                                quill.root.innerHTML = value || '';
-                                            }
-                                        });
-                                    }
-                                }">
-                                    <!-- Tempat editor dirender -->
-                                    <div x-ref="editorTindakLanjut" class="text-sm text-zinc-800 dark:text-zinc-200"></div>
+                                        content: @entangle('tindak_lanjut_baru'),
+                                        init() {
+                                            let quill = new Quill(this.$refs.editorTindakLanjut, {
+                                                theme: 'snow',
+                                                placeholder: 'Ketik hasil tindakan yang dilakukan...',
+                                                modules: {
+                                                    toolbar: [
+                                                        ['bold', 'italic', 'underline'],
+                                                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                                        ['clean']
+                                                    ]
+                                                }
+                                            });
+                                            
+                                            if (this.content) { quill.root.innerHTML = this.content; }
+                                            
+                                            quill.on('text-change', () => {
+                                                this.content = quill.root.innerHTML;
+                                            });
+                                            
+                                            this.$watch('content', value => {
+                                                if (value !== quill.root.innerHTML) {
+                                                    quill.root.innerHTML = value || '';
+                                                }
+                                            });
+                                        }
+                                    }">
+                                    <div x-ref="editorTindakLanjut" class="text-sm text-zinc-800 dark:text-zinc-200 min-h-[80px]"></div>
                                 </div>
                             </div>
                             
-                            <!-- Pesan error validasi manual (karena kita tidak pakai flux:input lagi) -->
                             @error('tindak_lanjut_baru') 
                                 <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> 
                             @enderror
@@ -1072,10 +1076,11 @@ new class extends Component
                 </form>
             </div>
             @else
-            <div class="shrink-0 pt-4 border-t border-zinc-200 flex justify-end">
-                 <flux:button type="button" x-on:click="$flux.modal('detail-kunjungan').close()" variant="primary">Tutup Window</flux:button>
+            <div class="shrink-0 pt-4 border-t border-zinc-200 flex justify-end mt-4">
+                <flux:button type="button" x-on:click="$flux.modal('detail-kunjungan').close()" variant="primary">Tutup Window</flux:button>
             </div>
             @endif
+            
         </div>
         @endif
     </flux:modal>
