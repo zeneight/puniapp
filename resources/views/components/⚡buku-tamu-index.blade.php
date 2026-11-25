@@ -26,6 +26,7 @@ new class extends Component
     public $filter_tanggal = '';
     public $filter_status = '';
     public $filter_prioritas = '';
+    public $sort_by = 'terbaru';
 
     // Variabel Master Tamu (Auto-fill)
     public $tamu_id = null;
@@ -71,10 +72,13 @@ new class extends Component
 
     public function updatingSearch() { $this->resetPage(); }
     public function updatingFilterTanggal() { $this->resetPage(); }
+    public function updatingFilterStatus() { $this->resetPage(); }
+    public function updatingFilterPrioritas() { $this->resetPage(); }
+    public function updatingSortBy() { $this->resetPage(); }
 
     public function resetFilter()
     {
-        $this->reset(['search', 'filter_tanggal', 'filter_status', 'filter_prioritas']);
+        $this->reset(['search', 'filter_tanggal', 'filter_status', 'filter_prioritas', 'sort_by']);
         $this->resetPage();
     }
 
@@ -406,6 +410,7 @@ new class extends Component
         // 6. Tutup Modal & Reset
         $this->js('$flux.modal("edit-kunjungan").close()');
         $this->batal(); 
+        $this->kunjungan_id = $kunjungan->id;
         
         // Re-open detail modal
         $this->js('setTimeout(() => { $flux.modal("detail-kunjungan").show() }, 400)');
@@ -456,18 +461,37 @@ new class extends Component
 
         $query = KunjunganTamu::with(['tamu', 'banjar', 'user'])
             ->when($this->search, function ($q) {
-                $q->whereHas('tamu', function ($sub) {
-                    $sub->where('nama_pengunjung', 'like', '%' . $this->search . '%')
-                        ->orWhere('asal_instansi', 'like', '%' . $this->search . '%');
-                })->orWhere('alasan_kunjungan', 'like', '%' . $this->search . '%');
+                $q->where(function ($subQuery) {
+                    $subQuery->whereHas('tamu', function ($sub) {
+                        $sub->where('nama_pengunjung', 'like', '%' . $this->search . '%')
+                            ->orWhere('asal_instansi', 'like', '%' . $this->search . '%');
+                    })->orWhere('alasan_kunjungan', 'like', '%' . $this->search . '%');
+                });
             })
             ->when($this->filter_tanggal, function ($q) {
                 $q->whereDate('tanggal_kunjungan', $this->filter_tanggal);
-            })
-            ->orderBy('created_at', 'desc');
+            });
         
         if ($this->filter_status) $query->where('status', $this->filter_status);
         if ($this->filter_prioritas) $query->where('prioritas', $this->filter_prioritas);
+
+        // Pengurutan Dinamis
+        match ($this->sort_by) {
+            'terlama'   => $query->orderBy('created_at', 'asc'),
+            'nama_asc'  => $query->orderBy(
+                Tamu::select('nama_pengunjung')
+                    ->whereColumn('tamus.id', 'kunjungan_tamus.tamu_id')
+                    ->limit(1),
+                'asc'
+            ),
+            'nama_desc' => $query->orderBy(
+                Tamu::select('nama_pengunjung')
+                    ->whereColumn('tamus.id', 'kunjungan_tamus.tamu_id')
+                    ->limit(1),
+                'desc'
+            ),
+            default     => $query->orderBy('created_at', 'desc'),
+        };
 
         $totalDifilter = $query->count();
 
@@ -492,34 +516,47 @@ new class extends Component
         </flux:button>
     </div>
 
-    <!-- Filter -->
-    <div class="flex flex-col md:flex-row gap-3 mb-4">
-        <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama, instansi, atau keperluan..." class="w-full md:w-96" />
-        <flux:input wire:model.live="filter_tanggal" type="date" class="w-full md:w-48" />
-        <div class="w-full sm:w-48">
-            <flux:select wire:model.live="filter_status" placeholder="Semua Status">
+    <!-- Filter & Sorting -->
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+        <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="Cari nama, instansi, atau keperluan..." class="w-full md:w-80" />
+        <flux:input wire:model.live="filter_tanggal" type="date" class="w-full sm:w-44" />
+        
+        <div class="w-full sm:w-44">
+            <flux:select wire:model.live="filter_status">
                 <option value="">Semua Status</option>
                 <option value="Tamu masuk">Tamu masuk</option>
                 <option value="Proses">Proses</option>
                 <option value="Selesai">Selesai</option>
             </flux:select>
         </div>
-        <div class="w-full sm:w-48">
-            <flux:select wire:model.live="filter_prioritas" placeholder="Semua Prioritas">
+
+        <div class="w-full sm:w-44">
+            <flux:select wire:model.live="filter_prioritas">
                 <option value="">Semua Prioritas</option>
                 <option value="Prioritas 1">Prioritas 1</option>
                 <option value="Prioritas 2">Prioritas 2</option>
                 <option value="Prioritas 3">Prioritas 3</option>
             </flux:select>
         </div>
-        @if($search || $filter_tanggal || $filter_status || $filter_prioritas)
+
+        <!-- Dropdown Sorting -->
+        <div class="w-full sm:w-52">
+            <flux:select wire:model.live="sort_by" icon="arrows-up-down">
+                <option value="terbaru">Urutkan: Input Terbaru</option>
+                <option value="terlama">Urutkan: Input Terlama</option>
+                <option value="nama_asc">Urutkan: Nama (A - Z)</option>
+                <option value="nama_desc">Urutkan: Nama (Z - A)</option>
+            </flux:select>
+        </div>
+
+        @if($search || $filter_tanggal || $filter_status || $filter_prioritas || $sort_by !== 'terbaru')
             <flux:button wire:click="resetFilter" variant="subtle" icon="x-mark" class="px-3">Reset</flux:button>
         @endif
     </div>
 
     <!-- TABEL UTAMA -->
     <flux:card class="relative">
-        <div wire:loading wire:target="search, filter_tanggal, gotoPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
+        <div wire:loading wire:target="search, filter_tanggal, filter_status, filter_prioritas, sort_by, gotoPage" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-xl">
             <flux:icon.arrow-path class="w-6 h-6 animate-spin text-indigo-500" />
         </div>
 
@@ -894,7 +931,8 @@ new class extends Component
 
                     <!-- KOLOM KANAN: Peta Mini -->
                     @if($detailKunjungan->latitude && $detailKunjungan->longitude)
-                    <div class="h-full rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm flex flex-col relative z-0 min-h-[200px]" wire:key="map-kunjungan-{{ $detailKunjungan->id }}">
+                    <div class="h-full rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm flex flex-col relative z-0 min-h-[200px]" 
+                        wire:key="map-kunjungan-{{ $detailKunjungan->id }}-{{ $detailKunjungan->latitude }}-{{ $detailKunjungan->longitude }}">
                         <div x-data="{
                                 map: null,
                                 marker: null,
@@ -920,7 +958,13 @@ new class extends Component
                                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
                                     this.marker = L.marker([this.lat, this.lng]).addTo(this.map);
 
-                                    setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 150);
+                                    const resizeObserver = new ResizeObserver(() => {
+                                        if (this.map) {
+                                            this.map.invalidateSize();
+                                            this.map.setView([this.lat, this.lng], 16);
+                                        }
+                                    });
+                                    resizeObserver.observe(this.$refs.miniMap);
                                 }
                             }" class="flex-1" wire:ignore>
                             
@@ -932,7 +976,8 @@ new class extends Component
                         </a>
                     </div>
                     @else
-                    <div class="h-full min-h-[200px] rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center p-4 text-center" wire:key="map-empty-{{ $detailKunjungan->id }}">
+                    <div class="h-full min-h-[200px] rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center p-4 text-center" 
+                        wire:key="map-empty-{{ $detailKunjungan->id }}">
                         <flux:icon.map class="w-8 h-8 text-zinc-400 mb-2" />
                         <span class="text-xs text-zinc-500">Tidak ada titik koordinat lokasi yang dilampirkan.</span>
                     </div>
@@ -1231,7 +1276,107 @@ new class extends Component
 
             <!-- (BLOK PETA X-DATA SAMA PERSIS SEPERTI SEBELUMNYA) -->
             <div class="md:col-span-2 pt-4" wire:ignore>
-                <!-- ... Kode alpine peta Bli tetap biarkan utuh di sini ... -->
+                <div class="flex items-center justify-between mb-3">
+                    <flux:heading size="sm">Titik Koordinat Lokasi (Opsional)</flux:heading>
+                    <button type="button"
+                        x-show="$wire.latitude || $wire.longitude"
+                        x-on:click="$wire.set('latitude', null); $wire.set('longitude', null);"
+                        class="text-xs text-red-500 hover:text-red-600 font-medium">
+                        Reset Koordinat
+                    </button>
+                </div>
+
+                <div x-data="{
+                        map: null,
+                        marker: null,
+                        handlePaste(e) {
+                            let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                            if (pastedText.includes(',')) {
+                                e.preventDefault();
+                                let parts = pastedText.split(',');
+                                let lat = parseFloat(parts[0].trim());
+                                let lng = parseFloat(parts[1].trim());
+                                if (!isNaN(lat) && !isNaN(lng)) {
+                                    $wire.set('latitude', lat.toFixed(8));
+                                    $wire.set('longitude', lng.toFixed(8));
+                                    this.syncMap(lat, lng);
+                                    e.target.value = lat.toFixed(8) + ', ' + lng.toFixed(8);
+                                }
+                            }
+                        },
+                        init() {
+                            this.map = L.map(this.$refs.mapContainerEdit, { scrollWheelZoom: false }).setView([-8.650000, 115.216667], 12);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(this.map);
+
+                            const resizeObserver = new ResizeObserver(() => {
+                                if (this.map) {
+                                    this.map.invalidateSize();
+                                    if ($wire.latitude && $wire.longitude) {
+                                        this.map.setView([$wire.latitude, $wire.longitude], 16);
+                                    }
+                                }
+                            });
+                            resizeObserver.observe(this.$refs.mapContainerEdit);
+
+                            if ($wire.latitude && $wire.longitude) {
+                                this.syncMap($wire.latitude, $wire.longitude);
+                            }
+
+                            this.map.on('click', (e) => {
+                                const lat = e.latlng.lat.toFixed(8);
+                                const lng = e.latlng.lng.toFixed(8);
+                                this.updateMarker(lat, lng);
+                                $wire.set('latitude', lat);
+                                $wire.set('longitude', lng);
+                            });
+
+                            $watch('$wire.latitude', value => this.syncMap(value, $wire.longitude));
+                            $watch('$wire.longitude', value => this.syncMap($wire.latitude, value));
+                        },
+                        updateMarker(lat, lng) {
+                            if (this.marker) {
+                                this.marker.setLatLng([lat, lng]);
+                            } else {
+                                this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+                                this.marker.on('dragend', () => {
+                                    const position = this.marker.getLatLng();
+                                    $wire.set('latitude', position.lat.toFixed(8));
+                                    $wire.set('longitude', position.lng.toFixed(8));
+                                });
+                            }
+                        },
+                        syncMap(lat, lng) {
+                            if (lat && lng) {
+                                this.updateMarker(lat, lng);
+                                this.map.setView([lat, lng], 16);
+                                setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 150);
+                            } else {
+                                if (this.marker) {
+                                    this.map.removeLayer(this.marker);
+                                    this.marker = null;
+                                }
+                                if (this.$refs.pasteInputEdit) {
+                                    this.$refs.pasteInputEdit.value = '';
+                                }
+                                this.map.setView([-8.650000, 115.216667], 12);
+                            }
+                        }
+                    }" class="relative z-0">
+                    
+                    <div class="mb-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/50">
+                        <flux:field>
+                            <flux:label class="text-blue-800 dark:text-blue-300 font-semibold mb-1">Cari dari Google Maps?</flux:label>
+                            <flux:input x-ref="pasteInputEdit" x-on:paste="handlePaste($event)" icon="magnifying-glass" placeholder="Paste koordinat Google Maps (Contoh: -8.647961, 115.169800) di sini..." />
+                        </flux:field>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-3">
+                        <flux:input wire:model="latitude" label="Latitude" placeholder="Contoh: -8.650000" readonly />
+                        <flux:input wire:model="longitude" label="Longitude" placeholder="Contoh: 115.216667" readonly />
+                    </div>
+                    <div class="text-[11px] text-zinc-500 mb-2">Klik atau geser pin pada peta untuk mengubah lokasi.</div>
+                    
+                    <div x-ref="mapContainerEdit" class="h-64 w-full rounded-lg shadow-sm border border-zinc-300 dark:border-zinc-700 z-0 relative"></div>
+                </div>
             </div>
 
             <div class="flex justify-end gap-2 pt-4 border-t border-zinc-200">
