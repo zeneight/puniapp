@@ -15,10 +15,15 @@ use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use App\Models\Transaksi;
 
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
+    use LogsActivity;
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
@@ -51,5 +56,22 @@ class User extends Authenticatable implements PasskeyUser
     public function transaksis()
     {
         return $this->hasMany(Transaksi::class);
+    }
+
+    // aktivitas log
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('Manajemen User') // Nama modul untuk filter di admin
+            ->logAll() // Catat semua kolom
+            ->logExcept(['updated_at', 'created_at']) // Abaikan timestamp
+            ->logOnlyDirty() // Hanya catat kolom yang benar-benar berubah saat edit
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+                'created' => 'Menambahkan data user baru',
+                'updated' => 'Memperbarui data user',
+                'deleted' => 'Menghapus data user',
+                default   => "Aktivitas {$eventName} pada user",
+            });
     }
 }

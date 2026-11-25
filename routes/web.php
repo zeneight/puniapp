@@ -19,6 +19,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::livewire('/master/kategori', 'master-kategori-index')->name('master.kategori');
         Route::livewire('/master/pemilik', 'master-pemilik-index')->name('master.pemilik');
         Route::livewire('/master/user', 'manajemen-user-index')->name('master.user');
+        Route::livewire('/aktivitas-user', 'aktivitas-user')->name('aktivitas-user');
     });
 
     // transaksi

@@ -46,6 +46,10 @@
                             {{ __('Petugas') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
+
+                    <flux:navlist.item icon="clock" :href="route('aktivitas-user')" :current="request()->routeIs('aktivitas-user')" wire:navigate>
+                        {{ __('Aktivitas User') }}
+                    </flux:navlist.item>
                     @endif
                     
                 </flux:sidebar.group>
